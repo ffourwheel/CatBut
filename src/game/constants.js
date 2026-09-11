@@ -3,8 +3,8 @@ export const TABLE_ANCHOR = { x: 512, y: 512 };
 
 export const ASSEMBLY_DEPTH = {
   BACK: 10,
+  FRONT: 15,
   MIDDLE: 20,
-  FRONT: 30,
 };
 
 export const CAT_STATES = Object.freeze({
@@ -31,9 +31,21 @@ export const GAME_SCREENS = Object.freeze({
   GAME_OVER: 'game-over',
 });
 
-export const BUTTON_POSITIONS = [
-  { x: 300, y: 300 },
-  { x: 724, y: 300 },
-  { x: 300, y: 724 },
-  { x: 724, y: 724 },
+// Mobile-first button slots are offsets from the cat/table center (512, 512).
+// The three bands mirror the reference: top, side, and lower tabletop.
+// All eight slots stay safely on the tabletop and avoid both outer rims and the center hole.
+const BUTTON_OFFSETS = [
+  { x: -255, y: -160 }, // Top-Left
+  { x:  255, y: -160 }, // Top-Right
+  { x: -325, y:    0 }, // Mid-Left
+  { x:  325, y:    0 }, // Mid-Right
+  { x: -285, y:  128 }, // Lower-Left
+  { x:  285, y:  128 }, // Lower-Right
+  { x: -175, y:  220 }, // Bottom-Left
+  { x:  175, y:  220 }, // Bottom-Right
 ];
+
+export const BUTTON_POSITIONS = BUTTON_OFFSETS.map(({ x, y }) => ({
+  x: TABLE_ANCHOR.x + x,
+  y: TABLE_ANCHOR.y + y,
+}));

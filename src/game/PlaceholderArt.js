@@ -97,11 +97,9 @@ function createCatTextures(scene) {
 
   createTexture(scene, ASSET_KEYS.cat[CAT_STATES.WARNING], (graphics) => {
     drawHole(graphics);
-    graphics.fillStyle(COLORS.warning, 0.9);
-    graphics.fillCircle(512, 350, 34);
-    drawCatHead(graphics, 495);
-    graphics.lineStyle(10, COLORS.warning, 1);
-    graphics.strokeCircle(512, 350, 54);
+    graphics.fillStyle(COLORS.cream, 0.45);
+    graphics.fillCircle(445, 420, 18);
+    graphics.fillCircle(575, 420, 18);
   });
 
   createTexture(scene, ASSET_KEYS.cat[CAT_STATES.PEEK], (graphics) => {
@@ -147,20 +145,21 @@ export function ensurePlaceholderTextures(scene) {
   createCatTextures(scene);
 }
 
-export function createCatTableAssembly(scene, { useRealAssets = false } = {}) {
+export function createCatTableAssembly(scene, { useRealAssets = false, anchor = TABLE_ANCHOR } = {}) {
   if (!useRealAssets) ensurePlaceholderTextures(scene);
 
-  const container = scene.add.container(TABLE_ANCHOR.x, TABLE_ANCHOR.y).setDepth(1);
+  const container = scene.add.container(anchor.x, anchor.y).setDepth(1);
   container.setName('catTableContainer');
 
   const tableBack = scene.add.image(0, 0, ASSET_KEYS.tableBack).setOrigin(0.5, 0.5);
   tableBack.setName('tableBack').setDepth(ASSEMBLY_DEPTH.BACK);
-  const catState = scene.add.image(0, 0, ASSET_KEYS.cat[CAT_STATES.HIDDEN]).setOrigin(0.5, 0.5);
-  catState.setName('catState').setDepth(ASSEMBLY_DEPTH.MIDDLE);
   const tableFront = scene.add.image(0, 0, ASSET_KEYS.tableFront).setOrigin(0.5, 0.5);
   tableFront.setName('tableFront').setDepth(ASSEMBLY_DEPTH.FRONT);
+  const catState = scene.add.image(0, 0, ASSET_KEYS.cat[CAT_STATES.HIDDEN]).setOrigin(0.5, 0.5);
+  catState.setName('catState').setDepth(ASSEMBLY_DEPTH.MIDDLE);
 
-  container.add([tableBack, catState, tableFront]);
+  container.add([tableBack, tableFront, catState]);
+  container.sort('depth');
 
   return {
     container,
@@ -168,7 +167,8 @@ export function createCatTableAssembly(scene, { useRealAssets = false } = {}) {
     catState,
     tableFront,
     setCatState(state) {
-      catState.setTexture(ASSET_KEYS.cat[state]);
+      const textureKey = state === CAT_STATES.WARNING ? ASSET_KEYS.cat[CAT_STATES.HIDDEN] : ASSET_KEYS.cat[state];
+      catState.setTexture(textureKey);
     },
   };
 }

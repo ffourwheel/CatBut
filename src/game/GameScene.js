@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { createGameConfig } from '../config/gameConfig.js';
-import { preloadContractAssets } from './AssetManifest.js';
+import { ASSET_KEYS, preloadContractAssets } from './AssetManifest.js';
 import { createCatTableAssembly } from './PlaceholderArt.js';
 import { CAT_STATES, GAME_SCREENS } from './constants.js';
 import { AudioManager } from './AudioManager.js';
@@ -23,8 +23,23 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     this.preventBrowserScroll();
-    this.add.rectangle(512, 512, 1024, 1024, 0xf3dcc1).setDepth(-20);
-    this.assembly = createCatTableAssembly(this, { useRealAssets: this.config.useRealAssets });
+    this.boardOffsetY = Math.max(0, (this.scale.gameSize.height - this.config.canvasSize) / 2);
+    const boardCenterY = this.config.canvasSize / 2 + this.boardOffsetY;
+    this.add.rectangle(512, boardCenterY, 1024, 1024, 0xf3dcc1).setDepth(-10);
+    this.background = this.add.image(512, boardCenterY, ASSET_KEYS.background)
+      .setOrigin(0.5, 0.5)
+      .setDepth(0);
+    const bgScale = Math.max(1024 / this.background.width, 1024 / this.background.height);
+    this.background.setScale(bgScale);
+    this.backgroundForeground = this.add.image(200, 1635, ASSET_KEYS.backgroundForeground)
+      .setOrigin(0.5, 0.5)
+      .setScale(0.34)
+      .setDepth(25);
+    this.assembly = createCatTableAssembly(this, {
+      useRealAssets: this.config.useRealAssets,
+      anchor: { x: 512, y: boardCenterY },
+    });
+    this.zeroJumpReport = this.runZeroJumpVerification();
     this.audio = new AudioManager();
     this.stage = new StageManager();
     this.score = new ScoreManager(this.config, () => this.refreshHud());
@@ -42,12 +57,18 @@ export class GameScene extends Phaser.Scene {
       onMute: () => this.toggleMute(),
       onTutorialComplete: () => this.beginStage(),
       onTutorialReturn: () => this.showPause(),
+      boardOffsetY: this.boardOffsetY,
     });
 
     this.buttons = new ButtonManager(this, this.config, {
       canStartHold: () => this.canStartHold(),
-      onHoldStart: () => this.cat?.onPlayerStartedHold(),
+      onHoldStart: (button) => {
+        this.ui.onButtonHold(button.visual);
+        this.cat?.onPlayerStartedHold();
+      },
+      onHoldEnd: (button) => this.ui.onButtonRelease(button.visual),
       onComplete: (result) => this.handleButtonComplete(result),
+      worldOffsetY: this.boardOffsetY,
     });
 
     this.cat = new CatController(this, this.config, {
@@ -84,7 +105,7 @@ export class GameScene extends Phaser.Scene {
     this.buttons.setVisible(true);
     this.ui.show(GAME_SCREENS.GAMEPLAY);
     this.cat.start();
-    this.ui.setStatus('เปิดปุ่มให้ครบทั้งสี่');
+    this.ui.setStatus(`เปิดปุ่มให้ครบทั้ง ${this.buttons.getButtonCount()} ปุ่ม`);
     this.refreshHud();
   }
 
@@ -121,6 +142,7 @@ export class GameScene extends Phaser.Scene {
   handleButtonComplete({ button, isReactivation, reactivationCount }) {
     const scoreEvent = this.score.awardActivation({ isReactivation, reactivationCount });
     this.lastScoreEvent = scoreEvent;
+    this.ui.onButtonComplete(button, scoreEvent);
     this.audio.play(isReactivation ? 'reactivation' : 'button-complete');
     this.ui.setStatus(isReactivation ? 'เปิดปุ่มกลับมาแล้ว!' : 'เปิดปุ่มสำเร็จ!');
 
@@ -140,18 +162,13 @@ export class GameScene extends Phaser.Scene {
 
   handleCatState(state) {
     this.assembly.setCatState(state);
+    this.ui.onCatState(state, this.assembly.catState);
     if (state === CAT_STATES.WARNING || state === CAT_STATES.PEEK) {
-      this.ui.setStatus('ระวัง! แมวกำลังจับตาดูนะ');
       this.audio.play('warning');
     } else if (state === CAT_STATES.WATCH) {
-      this.ui.setStatus('แมวกำลังมองอยู่!');
     } else if (state === CAT_STATES.ATTACK) {
-      this.ui.setStatus('โดนจับแล้ว!');
     } else if (state === CAT_STATES.SABOTAGE) {
-      this.ui.setStatus('แมวแกล้งปิดปุ่ม!');
       this.audio.play('sabotage');
-    } else if (state === CAT_STATES.HIDDEN) {
-      this.ui.setStatus('เปิดปุ่มให้ครบทั้งสี่');
     }
     this.refreshHud();
   }
@@ -172,7 +189,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   handleSabotage(buttonId) {
+    const button = this.buttons.buttons[buttonId];
     this.buttons.sabotage(buttonId);
+    this.ui.onSabotage(button);
     this.audio.play('sabotage');
   }
 
@@ -184,7 +203,7 @@ export class GameScene extends Phaser.Scene {
     const bonus = this.score.addBonus(this.config.stageClearBonus);
     this.stage.clear();
     this.sessionScreen = GAME_SCREENS.STAGE_CLEAR;
-    this.ui.setResultMessage(GAME_SCREENS.STAGE_CLEAR, `คะแนนรวม ${this.score.score}\nโบนัส Stage Clear +${bonus}`);
+    this.ui.setClearStats(this.score.score, this.score.combo);
     this.ui.show(GAME_SCREENS.STAGE_CLEAR);
     this.audio.play('stage-clear');
   }
@@ -196,7 +215,7 @@ export class GameScene extends Phaser.Scene {
     this.buttons.setVisible(false);
     this.stage.gameOver();
     this.sessionScreen = GAME_SCREENS.GAME_OVER;
-    this.ui.setResultMessage(GAME_SCREENS.GAME_OVER, `คะแนนรวม ${this.score.score}\nลองใหม่อีกครั้งได้เลย`);
+    this.ui.setGameOverStats(this.score.score);
     this.ui.show(GAME_SCREENS.GAME_OVER);
   }
 
@@ -216,7 +235,8 @@ export class GameScene extends Phaser.Scene {
       combo: this.score.combo,
       health: this.health.health,
       maxHealth: this.health.maxHealth,
-      progress: this.buttons.getProgress(),
+      activeCount: this.buttons.getActivatedCount(),
+      totalCount: this.buttons.getButtonCount(),
       muted: this.audio?.muted ?? false,
       catState: this.cat?.state ?? CAT_STATES.HIDDEN,
     });
@@ -226,5 +246,40 @@ export class GameScene extends Phaser.Scene {
     const canvas = this.sys.game.canvas;
     canvas.style.touchAction = 'none';
     canvas.addEventListener('contextmenu', (event) => event.preventDefault());
+  }
+
+  runZeroJumpVerification() {
+    const layers = [this.assembly.tableBack, this.assembly.catState, this.assembly.tableFront];
+    const snapshot = (gameObject) => ({
+      x: gameObject.x,
+      y: gameObject.y,
+      scaleX: gameObject.scaleX,
+      scaleY: gameObject.scaleY,
+      rotation: gameObject.rotation,
+      originX: gameObject.originX,
+      originY: gameObject.originY,
+    });
+    const baseline = layers.map(snapshot);
+    const states = Object.values(CAT_STATES);
+    const checks = states.map((state) => {
+      this.assembly.setCatState(state);
+      const current = layers.map(snapshot);
+      const maxDelta = current.reduce((maxLayerDelta, layer, index) => {
+        const base = baseline[index];
+        return Math.max(
+          maxLayerDelta,
+          ...Object.keys(base).map((key) => Math.abs(layer[key] - base[key])),
+        );
+      }, 0);
+      return { state, maxDelta };
+    });
+
+    this.assembly.setCatState(CAT_STATES.HIDDEN);
+    const report = {
+      passed: checks.every((check) => check.maxDelta === 0),
+      checks,
+    };
+    console.info('[Zero-Jump Test]', report.passed ? 'PASS' : 'FAIL', report);
+    return report;
   }
 }
