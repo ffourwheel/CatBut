@@ -24,7 +24,9 @@ export class GameScene extends Phaser.Scene {
   create() {
     this.preventBrowserScroll();
     this.boardOffsetY = Math.max(0, (this.scale.gameSize.height - this.config.canvasSize) / 2);
-    const boardCenterY = this.config.canvasSize / 2 + this.boardOffsetY;
+    this.boardCenterY = this.config.canvasSize / 2 + this.boardOffsetY;
+    this.homeTableOffset = 365;
+    const boardCenterY = this.boardCenterY;
     this.add.rectangle(512, boardCenterY, 1024, 1024, 0xf3dcc1).setDepth(-10);
     this.background = this.add.image(512, boardCenterY, ASSET_KEYS.background)
       .setOrigin(0.5, 0.5)
@@ -33,7 +35,7 @@ export class GameScene extends Phaser.Scene {
     this.background.setScale(bgScale);
     this.backgroundForeground = this.add.image(200, 1635, ASSET_KEYS.backgroundForeground)
       .setOrigin(0.5, 0.5)
-      .setScale(0.34)
+      .setScale(0.48)
       .setDepth(25);
     this.assembly = createCatTableAssembly(this, {
       useRealAssets: this.config.useRealAssets,
@@ -53,6 +55,7 @@ export class GameScene extends Phaser.Scene {
       onPause: () => this.pauseStage(),
       onResume: () => this.resumeStage(),
       onRestart: () => this.beginStage(),
+      onStart: () => this.startGameFromHome(),
       onHome: () => this.showStart(),
       onMute: () => this.toggleMute(),
       onTutorialComplete: () => this.beginStage(),
@@ -79,7 +82,7 @@ export class GameScene extends Phaser.Scene {
       getSabotageTarget: () => this.buttons.getSabotageTarget(),
     });
 
-    this.ui.showStart();
+    this.showStart(true);
     this.refreshHud();
   }
 
@@ -95,6 +98,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   beginStage() {
+    if (this.assembly?.container) {
+      this.assembly.container.setY(this.boardCenterY);
+    }
+    if (this.buttons?.layer) {
+      this.buttons.layer.setY(0);
+    }
     this.score.reset();
     this.health.reset();
     this.buttons.reset();
@@ -130,13 +139,68 @@ export class GameScene extends Phaser.Scene {
     this.ui.setStatus('ปลอดภัยชั่วครู่...');
   }
 
-  showStart() {
+  showStart(immediate = false) {
     this.cat?.stop();
     this.stage.reset();
     this.buttons?.reset();
-    this.buttons?.setVisible(false);
+    this.buttons?.setVisible(true);
     this.sessionScreen = GAME_SCREENS.START;
+
+    const targetTableY = this.boardCenterY + this.homeTableOffset;
+    if (this.assembly?.container) {
+      this.tweens.killTweensOf(this.assembly.container);
+      if (immediate) {
+        this.assembly.container.setY(targetTableY);
+      } else {
+        this.tweens.add({
+          targets: this.assembly.container,
+          y: targetTableY,
+          duration: 400,
+          ease: 'Cubic.easeOut',
+        });
+      }
+      this.assembly.setCatState(CAT_STATES.WATCH);
+    }
+    if (this.buttons?.layer) {
+      this.tweens.killTweensOf(this.buttons.layer);
+      if (immediate) {
+        this.buttons.layer.setY(this.homeTableOffset);
+      } else {
+        this.tweens.add({
+          targets: this.buttons.layer,
+          y: this.homeTableOffset,
+          duration: 400,
+          ease: 'Cubic.easeOut',
+        });
+      }
+    }
+
     this.ui.showStart();
+  }
+
+  startGameFromHome() {
+    if (this.assembly?.container) {
+      this.tweens.killTweensOf(this.assembly.container);
+      this.tweens.add({
+        targets: this.assembly.container,
+        y: this.boardCenterY,
+        duration: 450,
+        ease: 'Cubic.easeOut',
+      });
+    }
+    if (this.buttons?.layer) {
+      this.tweens.killTweensOf(this.buttons.layer);
+      this.tweens.add({
+        targets: this.buttons.layer,
+        y: 0,
+        duration: 450,
+        ease: 'Cubic.easeOut',
+      });
+    }
+
+    this.ui.screens.playStartTransition(() => {
+      this.beginStage();
+    });
   }
 
   handleButtonComplete({ button, isReactivation, reactivationCount }) {
@@ -230,6 +294,10 @@ export class GameScene extends Phaser.Scene {
 
   refreshHud() {
     if (!this.ui || !this.score || !this.health || !this.buttons) return;
+    const timerInfo = this.cat?.getTimerInfo() ?? {
+      remaining: this.config.catIntervalMax,
+      duration: this.config.catIntervalMax,
+    };
     this.ui.updateStats({
       score: this.score.score,
       combo: this.score.combo,
@@ -239,6 +307,8 @@ export class GameScene extends Phaser.Scene {
       totalCount: this.buttons.getButtonCount(),
       muted: this.audio?.muted ?? false,
       catState: this.cat?.state ?? CAT_STATES.HIDDEN,
+      timeRemaining: timerInfo.remaining,
+      timeDuration: timerInfo.duration,
     });
   }
 

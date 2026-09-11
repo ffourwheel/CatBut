@@ -3,7 +3,7 @@ export const TABLE_ANCHOR = { x: 512, y: 512 };
 
 export const ASSEMBLY_DEPTH = {
   BACK: 10,
-  FRONT: 15,
+  FRONT: 30,
   MIDDLE: 20,
 };
 

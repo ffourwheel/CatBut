@@ -10,6 +10,7 @@ export class CatController {
     this.state = CAT_STATES.HIDDEN;
     this.phaseRemaining = 0;
     this.hiddenRemaining = 0;
+    this.hiddenDuration = 0;
     this.eventResolved = false;
     this.safeRemaining = 0;
     this.cooldownRemaining = 0;
@@ -154,12 +155,36 @@ export class CatController {
     const range = this.config.catIntervalMax - this.config.catIntervalMin;
     const random = this.config.debug.disableRandomness ? 0 : Math.random();
     const interval = this.config.catIntervalMin + Math.round(range * random);
-    this.hiddenRemaining = Math.max(interval, this.cooldownRemaining);
+    this.hiddenDuration = Math.max(interval, this.cooldownRemaining);
+    this.hiddenRemaining = this.hiddenDuration;
     this.eventResolved = false;
   }
 
   setState(state) {
     this.state = state;
     this.callbacks.onStateChange?.(state);
+  }
+
+  getTimerInfo() {
+    if (this.state === CAT_STATES.HIDDEN) {
+      return {
+        remaining: Math.max(0, this.hiddenRemaining),
+        duration: Math.max(1, this.hiddenDuration || this.config.catIntervalMax),
+      };
+    }
+
+    const durationByState = {
+      [CAT_STATES.WARNING]: this.config.warningDuration,
+      [CAT_STATES.PEEK]: this.config.peekDuration,
+      [CAT_STATES.WATCH]: this.config.watchDuration,
+      [CAT_STATES.ATTACK]: this.config.attackRecovery,
+      [CAT_STATES.SABOTAGE]: this.config.sabotageDuration,
+      [CAT_STATES.HIDE]: this.config.hideDuration,
+    };
+
+    return {
+      remaining: Math.max(0, this.phaseRemaining),
+      duration: Math.max(1, durationByState[this.state] ?? this.config.watchDuration),
+    };
   }
 }

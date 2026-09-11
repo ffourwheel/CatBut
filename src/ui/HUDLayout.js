@@ -71,6 +71,21 @@ export const HUD_LAYOUT_CONFIG = Object.freeze({
     ratioLabelX: 630,
   },
 
+  // Cat event countdown bar (Below progress bar)
+  timerBar: {
+    x: 512,
+    y: 214,
+    width: 320,
+    height: 44,
+    radius: 22,
+    bgColor: UI_COLORS.panelBg,
+    borderColor: UI_COLORS.panelBorder,
+    trackColor: 0x5a3e32,
+    fillColor: UI_COLORS.greenSuccess,
+    warningColor: UI_COLORS.accentAmber,
+    dangerColor: UI_COLORS.dangerCoral,
+  },
+
   // Bottom Floating Table Instruction Banner
   instructionBanner: {
     x: 512,
@@ -241,10 +256,67 @@ export function buildCozyHUD(scene, callbacks = {}) {
   }
   renderProgressSegments(0);
 
-  // 5. Warning Speech Bubble (Replaced by centered warning mark above cat head)
+  // 5. Cat event countdown bar
+  const cfgTimer = HUD_LAYOUT_CONFIG.timerBar;
+  const timerContainer = scene.add.container(0, 0);
+  const timerBg = scene.add.graphics();
+  timerBg.fillStyle(cfgTimer.bgColor, 0.88);
+  timerBg.fillRoundedRect(cfgTimer.x - cfgTimer.width / 2, cfgTimer.y - cfgTimer.height / 2, cfgTimer.width, cfgTimer.height, cfgTimer.radius);
+  timerBg.lineStyle(3, cfgTimer.borderColor, 0.8);
+  timerBg.strokeRoundedRect(cfgTimer.x - cfgTimer.width / 2, cfgTimer.y - cfgTimer.height / 2, cfgTimer.width, cfgTimer.height, cfgTimer.radius);
+
+  const timerLabel = scene.add.text(cfgTimer.x - 125, cfgTimer.y, 'เวลา', {
+    fontFamily: UI_FONTS.family,
+    fontSize: '17px',
+    color: UI_COLORS.textLight,
+    fontStyle: 'bold',
+  }).setOrigin(0.5);
+
+  const timerTrack = scene.add.graphics();
+  const timerFill = scene.add.graphics();
+  const timerValue = scene.add.text(cfgTimer.x + 122, cfgTimer.y, '5 วิ', {
+    fontFamily: UI_FONTS.family,
+    fontSize: '17px',
+    color: UI_COLORS.textGold,
+    fontStyle: 'bold',
+  }).setOrigin(0.5);
+
+  timerContainer.add([timerBg, timerTrack, timerFill, timerLabel, timerValue]);
+  container.add(timerContainer);
+
+  function renderTimer(remainingMs = 0, durationMs = 1) {
+    const safeDuration = Math.max(1, durationMs ?? 1);
+    const safeRemaining = Math.max(0, Math.min(safeDuration, remainingMs ?? 0));
+    const ratio = safeRemaining / safeDuration;
+    const trackX = cfgTimer.x - 78;
+    const trackY = cfgTimer.y - 8;
+    const trackWidth = 156;
+
+    timerTrack.clear();
+    timerTrack.fillStyle(cfgTimer.trackColor, 1);
+    timerTrack.fillRoundedRect(trackX, trackY, trackWidth, 16, 8);
+
+    timerFill.clear();
+    const fillColor = ratio <= 0.25
+      ? cfgTimer.dangerColor
+      : ratio <= 0.5
+        ? cfgTimer.warningColor
+        : cfgTimer.fillColor;
+    timerFill.fillStyle(fillColor, 1);
+    timerFill.fillRoundedRect(trackX, trackY, trackWidth * ratio, 16, 8);
+    if (ratio > 0) {
+      timerFill.fillStyle(0xffffff, 0.35);
+      timerFill.fillRoundedRect(trackX + 2, trackY + 2, Math.max(0, trackWidth * ratio - 4), 4, 2);
+    }
+    timerValue.setText(`${Math.ceil(safeRemaining / 1000)} วิ`);
+  }
+
+  renderTimer(5000, 5000);
+
+  // 6. Warning Speech Bubble (Replaced by centered warning mark above cat head)
   // Handled by UIManager to avoid duplicate warning marks
 
-  // 6. Bottom Instruction / Toast Banner
+  // 7. Bottom Instruction / Toast Banner
   const cfgBanner = {
     ...HUD_LAYOUT_CONFIG.instructionBanner,
     y: viewportHeight - 86,
@@ -286,7 +358,7 @@ export function buildCozyHUD(scene, callbacks = {}) {
 
   container.add([bannerBg, bannerText]);
 
-  // 7. Pause & Sound Button Controls
+  // 8. Pause & Sound Button Controls
   const cfgCtrl = HUD_LAYOUT_CONFIG.controls;
 
   // Pause button
@@ -345,6 +417,9 @@ export function buildCozyHUD(scene, callbacks = {}) {
     },
     setProgress(activeCount, totalCount = 4) {
       renderProgressSegments(activeCount, totalCount);
+    },
+    setTimer(remainingMs, durationMs) {
+      renderTimer(remainingMs, durationMs);
     },
     setWarning(_visible) {
       // Centered warning mark is handled directly above cat's head in UIManager

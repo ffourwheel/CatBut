@@ -154,7 +154,7 @@ export function createCatTableAssembly(scene, { useRealAssets = false, anchor = 
   const tableBack = scene.add.image(0, 0, ASSET_KEYS.tableBack).setOrigin(0.5, 0.5);
   tableBack.setName('tableBack').setDepth(ASSEMBLY_DEPTH.BACK);
   const tableFront = scene.add.image(0, 0, ASSET_KEYS.tableFront).setOrigin(0.5, 0.5);
-  tableFront.setName('tableFront').setDepth(ASSEMBLY_DEPTH.FRONT);
+  tableFront.setName('tableFront').setPosition(0, 212).setDepth(ASSEMBLY_DEPTH.FRONT);
   const catState = scene.add.image(0, 0, ASSET_KEYS.cat[CAT_STATES.HIDDEN]).setOrigin(0.5, 0.5);
   catState.setName('catState').setDepth(ASSEMBLY_DEPTH.MIDDLE);
 

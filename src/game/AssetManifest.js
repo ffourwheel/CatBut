@@ -21,6 +21,9 @@ export const ASSET_KEYS = Object.freeze({
     soundOn: 'sound_on',
     soundOff: 'sound_off',
     pause: 'pause_icon',
+    homeCard: 'home_card',
+    btnStartGame: 'btn_start_game',
+    btnStartGameHover: 'btn_start_game_hover',
   },
 });
 
@@ -51,6 +54,9 @@ export const ASSET_MANIFEST = Object.freeze({
   sound_on: '/assets/ui/sound_on.png',
   sound_off: '/assets/ui/sound_off.png',
   pause_icon: '/assets/ui/pause_icon.png',
+  home_card: '/assets/ui/home_card.png',
+  btn_start_game: '/assets/ui/btn_start_game.png',
+  btn_start_game_hover: '/assets/ui/btn_start_game_hover.png',
 });
 
 export function preloadContractAssets(scene, { useRealAssets = false } = {}) {

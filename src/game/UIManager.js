@@ -23,6 +23,8 @@ export class UIManager {
       activeCount: null,
       totalCount: null,
       muted: null,
+      timeRemaining: null,
+      timeDuration: null,
     };
     this.warningVisible = false;
 
@@ -34,6 +36,7 @@ export class UIManager {
     this.screens = new ScreenLayoutManager(scene, {
       onResume: () => callbacks.onResume?.(),
       onRestart: () => callbacks.onRestart?.(),
+      onStart: () => (callbacks.onStart ? callbacks.onStart() : callbacks.onRestart?.()),
       onHome: () => callbacks.onHome?.(),
       onTutorialComplete: () => callbacks.onTutorialComplete?.(),
       onTutorialReturn: () => callbacks.onTutorialReturn?.(),
@@ -71,6 +74,7 @@ export class UIManager {
   showStart() {
     this.hideWarningMark(true);
     this.show(GAME_SCREENS.START);
+    this.screens.playShowStartTransition?.();
   }
 
   showTutorial(returnTo = 'start') {
@@ -79,7 +83,7 @@ export class UIManager {
     this.screens.showTutorial(returnTo);
   }
 
-  updateStats({ score, combo, health, maxHealth, activeCount, totalCount, muted, catState }) {
+  updateStats({ score, combo, health, maxHealth, activeCount, totalCount, muted, catState, timeRemaining, timeDuration }) {
     if (this.lastStats.score !== score) this.hud.setScore(score);
     if (this.lastStats.combo !== combo) this.hud.setCombo(combo);
     if (this.lastStats.health !== health) this.hud.setHearts(health, maxHealth);
@@ -87,8 +91,20 @@ export class UIManager {
       this.hud.setProgress(activeCount, totalCount);
     }
     if (this.lastStats.muted !== muted) this.hud.setMuted(muted);
+    if (this.lastStats.timeRemaining !== timeRemaining || this.lastStats.timeDuration !== timeDuration) {
+      this.hud.setTimer(timeRemaining, timeDuration);
+    }
 
-    this.lastStats = { score, combo, health, activeCount, totalCount, muted };
+    this.lastStats = {
+      score,
+      combo,
+      health,
+      activeCount,
+      totalCount,
+      muted,
+      timeRemaining,
+      timeDuration,
+    };
   }
 
   setStatus(message, highlight = false) {

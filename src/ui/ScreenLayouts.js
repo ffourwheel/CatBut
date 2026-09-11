@@ -82,61 +82,139 @@ export class ScreenLayoutManager {
       ['game-over', this.buildGameOverScreen()],
     ];
     screens.forEach(([name, screen]) => {
-      screen.setY(this.screenOffsetY);
+      if (name !== 'start') {
+        screen.setY(this.screenOffsetY);
+      }
       this.screens.set(name, screen);
     });
   }
 
   buildStartScreen() {
     const screen = this.scene.add.container(0, 0).setDepth(UI_DEPTH.MODAL_OVERLAY).setVisible(false);
-    screen.add(createModalPanel(this.scene, 860, 780));
+    this.startScreenContainer = screen;
 
-    // Logo / Title
-    const title = this.scene.add.text(512, 260, COPY_THAI.app.title, {
-      fontFamily: UI_FONTS.family,
-      fontSize: `${UI_FONTS.sizes.display}px`,
-      color: UI_COLORS.textLight,
-      fontStyle: 'bold',
-      stroke: '#301f16',
-      strokeThickness: 8,
-    }).setOrigin(0.5);
+    const hasCardAsset = this.scene.textures.exists('home_card');
+    const hasBtnAsset = this.scene.textures.exists('btn_start_game');
 
-    // Subtitle
-    const subtitle = this.scene.add.text(512, 350, COPY_THAI.app.subtitle, {
-      fontFamily: UI_FONTS.family,
-      fontSize: `${UI_FONTS.sizes.h2}px`,
-      color: UI_COLORS.accentGoldHex,
-      fontStyle: 'bold',
-    }).setOrigin(0.5);
+    if (hasCardAsset && hasBtnAsset) {
+      // Home Card Image (Wood sign + Cat + Subtitle + 3 Rules Parchment)
+      const card = this.scene.add.image(512, 100, 'home_card')
+        .setOrigin(0.5, 0)
+        .setScale(0.63);
 
-    // Tagline / Description
-    const desc = this.scene.add.text(512, 440, COPY_THAI.screens.start.description, {
-      fontFamily: UI_FONTS.family,
-      fontSize: `${UI_FONTS.sizes.body}px`,
-      color: '#f8dfc1',
-      align: 'center',
-      lineSpacing: 10,
-    }).setOrigin(0.5);
+      // Start Game Button (Golden cat-eared button with sparkles)
+      const btnHoverKey = this.scene.textures.exists('btn_start_game_hover')
+        ? 'btn_start_game_hover'
+        : 'btn_start_game';
 
-    // Play Button
-    const playBtn = createCozyButton(this.scene, 512, 610, COPY_THAI.screens.start.playButton, () => {
-      this.showTutorial('start');
-    }, {
-      fontSize: 34,
-      bgColor: UI_COLORS.accentGold,
-      borderColor: 0xc48a24,
-      width: 260,
-      height: 74,
-    });
+      const baseBtnScale = 0.285;
+      const startBtn = this.scene.add.image(512, 818, 'btn_start_game')
+        .setOrigin(0.5, 0.5)
+        .setScale(baseBtnScale)
+        .setInteractive({ useHandCursor: true });
 
-    // Touch hint
-    const hint = this.scene.add.text(512, 715, COPY_THAI.screens.start.tutorialPrompt, {
-      fontFamily: UI_FONTS.family,
-      fontSize: `${UI_FONTS.sizes.caption}px`,
-      color: UI_COLORS.textMuted,
-    }).setOrigin(0.5);
+      // Breathing idle animation
+      const breathTween = this.scene.tweens.add({
+        targets: startBtn,
+        scaleX: baseBtnScale * 1.04,
+        scaleY: baseBtnScale * 1.04,
+        duration: 900,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
 
-    screen.add([title, subtitle, desc, playBtn, hint]);
+      startBtn.on('pointerover', () => {
+        breathTween.pause();
+        startBtn.setTexture(btnHoverKey);
+        startBtn.setScale(baseBtnScale * 1.05);
+      });
+
+      startBtn.on('pointerout', () => {
+        startBtn.setTexture('btn_start_game');
+        startBtn.setScale(baseBtnScale);
+        breathTween.resume();
+      });
+
+      startBtn.on('pointerdown', () => {
+        startBtn.setScale(baseBtnScale * 0.94);
+      });
+
+      startBtn.on('pointerup', () => {
+        startBtn.setScale(baseBtnScale * 1.05);
+        if (this.callbacks.onStart) {
+          this.callbacks.onStart();
+        } else if (this.callbacks.onRestart) {
+          this.callbacks.onRestart();
+        }
+      });
+
+      // Subtitle Divider: "— 🐾 แล้วมาดูสิ... คุณไหวแค่ไหน? —"
+      const subtitle = this.scene.add.text(512, 928, '— 🐾 แล้วมาดูสิ... คุณไหวแค่ไหน? —', {
+        fontFamily: UI_FONTS.family,
+        fontSize: '22px',
+        color: '#714626',
+        fontStyle: 'bold',
+        stroke: '#fff4dc',
+        strokeThickness: 4,
+      }).setOrigin(0.5);
+
+      screen.add([card, startBtn, subtitle]);
+    } else {
+      screen.add(createModalPanel(this.scene, 860, 780));
+
+      // Logo / Title
+      const title = this.scene.add.text(512, 260, COPY_THAI.app.title, {
+        fontFamily: UI_FONTS.family,
+        fontSize: `${UI_FONTS.sizes.display}px`,
+        color: UI_COLORS.textLight,
+        fontStyle: 'bold',
+        stroke: '#301f16',
+        strokeThickness: 8,
+      }).setOrigin(0.5);
+
+      // Subtitle
+      const subtitle = this.scene.add.text(512, 350, COPY_THAI.app.subtitle, {
+        fontFamily: UI_FONTS.family,
+        fontSize: `${UI_FONTS.sizes.h2}px`,
+        color: UI_COLORS.accentGoldHex,
+        fontStyle: 'bold',
+      }).setOrigin(0.5);
+
+      // Tagline / Description
+      const desc = this.scene.add.text(512, 440, COPY_THAI.screens.start.description, {
+        fontFamily: UI_FONTS.family,
+        fontSize: `${UI_FONTS.sizes.body}px`,
+        color: '#f8dfc1',
+        align: 'center',
+        lineSpacing: 10,
+      }).setOrigin(0.5);
+
+      // Play Button
+      const playBtn = createCozyButton(this.scene, 512, 610, COPY_THAI.screens.start.playButton, () => {
+        if (this.callbacks.onStart) {
+          this.callbacks.onStart();
+        } else if (this.callbacks.onRestart) {
+          this.callbacks.onRestart();
+        }
+      }, {
+        fontSize: 34,
+        bgColor: UI_COLORS.accentGold,
+        borderColor: 0xc48a24,
+        width: 260,
+        height: 74,
+      });
+
+      // Touch hint
+      const hint = this.scene.add.text(512, 715, COPY_THAI.screens.start.tutorialPrompt, {
+        fontFamily: UI_FONTS.family,
+        fontSize: `${UI_FONTS.sizes.caption}px`,
+        color: UI_COLORS.textMuted,
+      }).setOrigin(0.5);
+
+      screen.add([title, subtitle, desc, playBtn, hint]);
+    }
+
     return screen;
   }
 
@@ -419,5 +497,40 @@ export class ScreenLayoutManager {
 
   setGameOverStats(score) {
     this.overScoreLabel.setText(`คะแนนที่ได้ ${score.toLocaleString()}`);
+  }
+
+  playStartTransition(onComplete) {
+    if (!this.startScreenContainer) {
+      onComplete?.();
+      return;
+    }
+    this.scene.tweens.killTweensOf(this.startScreenContainer);
+    this.scene.tweens.add({
+      targets: this.startScreenContainer,
+      y: -140,
+      alpha: 0,
+      duration: 380,
+      ease: 'Cubic.easeIn',
+      onComplete: () => {
+        this.startScreenContainer.setVisible(false);
+        this.startScreenContainer.setY(0);
+        this.startScreenContainer.setAlpha(1);
+        onComplete?.();
+      },
+    });
+  }
+
+  playShowStartTransition() {
+    if (!this.startScreenContainer) return;
+    this.scene.tweens.killTweensOf(this.startScreenContainer);
+    this.startScreenContainer.setY(0);
+    this.startScreenContainer.setAlpha(0);
+    this.startScreenContainer.setVisible(true);
+    this.scene.tweens.add({
+      targets: this.startScreenContainer,
+      alpha: 1,
+      duration: 300,
+      ease: 'Sine.easeOut',
+    });
   }
 }
