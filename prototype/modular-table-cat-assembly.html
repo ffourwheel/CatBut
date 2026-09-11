@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CatKub — Modular Table + Cat Assembly Prototype</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #211813;
+      --panel: #30221b;
+      --panel-2: #3c2b21;
+      --border: #634939;
+      --text: #fff4e6;
+      --muted: #c9ad98;
+      --accent: #ffb85c;
+      --good: #77dca0;
+      --bad: #ff8585;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 10% 0%, #563a28 0, transparent 36%),
+        radial-gradient(circle at 100% 100%, #432b1f 0, transparent 40%),
+        var(--bg);
+      color: var(--text);
+      font: 16px/1.5 Mali, "Segoe UI", sans-serif;
+    }
+
+    main {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 28px 18px 44px;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 6px; font-size: clamp(1.55rem, 3vw, 2.35rem); }
+    h2 { margin-bottom: 12px; font-size: 1.2rem; }
+    h3 { margin-bottom: 6px; font-size: 1rem; }
+
+    .eyebrow {
+      margin-bottom: 5px;
+      color: var(--accent);
+      font-size: .8rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .intro {
+      margin-bottom: 20px;
+      color: var(--muted);
+      max-width: 900px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(340px, .95fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: color-mix(in srgb, var(--panel) 94%, transparent);
+      box-shadow: 0 16px 40px rgb(0 0 0 / 18%);
+      padding: 16px;
+    }
+
+    .viewer {
+      position: sticky;
+      top: 14px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1;
+      border: 1px solid #9a6a46;
+      border-radius: 14px;
+      background: #1d130e;
+      image-rendering: auto;
+    }
+
+    .canvas-caption {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: .87rem;
+    }
+
+    .view-mode-buttons {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .state-buttons, .walkthrough-buttons {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    button {
+      min-height: 42px;
+      border: 1px solid #7a5944;
+      border-radius: 10px;
+      background: var(--panel-2);
+      color: var(--text);
+      cursor: pointer;
+      font: inherit;
+      padding: 8px 10px;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+    }
+
+    button:hover { border-color: var(--accent); background: #4b3426; }
+    button:active { transform: translateY(1px); }
+    button.active { border-color: var(--accent); background: #604127; }
+    button:disabled { cursor: default; opacity: .5; }
+
+    .small-button { min-height: 36px; font-size: .9rem; }
+
+    .section { margin-top: 18px; }
+    .section:first-child { margin-top: 0; }
+
+    .state-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 14px;
+      margin: 0;
+    }
+
+    .state-grid div {
+      border-bottom: 1px solid #513a2d;
+      padding: 6px 0;
+    }
+
+    dt { color: var(--muted); font-size: .8rem; }
+    dd { margin: 0; font-weight: 700; }
+    .good { color: var(--good); }
+    .bad { color: var(--bad); }
+
+    .layers { display: grid; gap: 8px; }
+    .layer-row {
+      display: grid;
+      grid-template-columns: 82px 1fr auto;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #513a2d;
+      border-radius: 10px;
+      padding: 8px 10px;
+    }
+
+    .layer-row strong { font-size: .84rem; }
+    .layer-row code { color: #ffd596; font-size: .78rem; overflow-wrap: anywhere; }
+    .layer-depth { color: var(--muted); font-size: .78rem; }
+
+    .log {
+      display: grid;
+      gap: 5px;
+      max-height: 150px;
+      overflow: auto;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    .log li { border-left: 2px solid var(--border); padding-left: 8px; }
+
+    .scenario-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-bottom: 10px;
+    }
+
+    .scenario-description {
+      min-height: 52px;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+
+    .note {
+      border-left: 3px solid var(--accent);
+      margin-top: 14px;
+      padding-left: 10px;
+      color: var(--muted);
+      font-size: .87rem;
+    }
+
+    @media (max-width: 850px) {
+      main { padding-top: 18px; }
+      .layout { grid-template-columns: 1fr; }
+      .viewer { position: static; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">Prototype — throwaway assembly demo</div>
+    <h1>Modular Table + Cat Assembly</h1>
+    <p class="intro">
+      คำถามที่ Prototype นี้ตอบ: เมื่อเปลี่ยน Action ของแมวจาก HIDDEN ไปเป็น WARNING, WATCH,
+      ATTACK หรือ SABOTAGE เราสามารถเปลี่ยนเฉพาะ Middle Layer ได้หรือไม่ โดยโต๊ะและหลุมไม่กระโดด
+      และยังคงประกอบเป็นโต๊ะชิ้นเดียว?
+    </p>
+
+    <div class="layout">
+      <section class="card viewer">
+        <h2>ผลลัพธ์การประกอบ</h2>
+        <canvas id="assemblyCanvas" width="1024" height="1024" aria-label="ภาพประกอบโต๊ะและแมว"></canvas>
+        <div id="viewModeButtons" class="view-mode-buttons"></div>
+        <div class="canvas-caption">
+          <span>Anchor: Center of Hole (512, 512)</span>
+          <span id="assetMode">กำลังตรวจสอบ Asset…</span>
+        </div>
+      </section>
+
+      <section>
+        <div class="card">
+          <h2>Current State</h2>
+          <dl class="state-grid">
+            <div><dt>Cat Action</dt><dd id="currentState">HIDDEN</dd></div>
+            <div><dt>Middle Asset</dt><dd id="currentAsset">—</dd></div>
+            <div><dt>Anchor</dt><dd id="anchorValue">512, 512</dd></div>
+            <div><dt>Canvas</dt><dd id="canvasValue">1024 × 1024</dd></div>
+            <div><dt>Last Change</dt><dd id="lastChange">—</dd></div>
+            <div><dt>Invariant</dt><dd id="invariant" class="good">PASS</dd></div>
+          </dl>
+        </div>
+
+        <div class="card section">
+          <h2>เปลี่ยน Action ของแมว</h2>
+          <div id="stateButtons" class="state-buttons"></div>
+          <p class="note">ทุกปุ่มด้านบนเปลี่ยนเฉพาะ Texture ของ <b>catState</b> เท่านั้น ส่วน Table Back และ Table Front ใช้ Transform เดิมตลอด</p>
+        </div>
+
+        <div class="card section">
+          <h2>Layer Stack</h2>
+          <div id="layers" class="layers"></div>
+          <button id="checkButton" class="small-button section">ตรวจสอบ Anchor และ Transform ทั้งหมด</button>
+        </div>
+
+        <div class="card section">
+          <h2>Guided Walkthroughs</h2>
+          <div id="scenarioTabs" class="scenario-tabs"></div>
+          <p id="scenarioDescription" class="scenario-description"></p>
+          <div id="walkthroughButtons" class="walkthrough-buttons"></div>
+        </div>
+
+        <div class="card section">
+          <h2>Event Log</h2>
+          <ul id="eventLog" class="log"></ul>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    // Portable assembly model: this is the part intended to be lifted into the real game.
+    const CANVAS_SIZE = 1024;
+    const HOLE_ANCHOR = { x: 512, y: 512 };
+    const ASSET_ROOT = "../assets/";
+    const STATES = ["hidden", "warning", "peek", "watch", "attack", "sabotage", "hide"];
+    const STATE_LABELS = {
+      hidden: "ซ่อนตัว",
+      warning: "เตือน",
+      peek: "โผล่ดู",
+      watch: "จับตาดู",
+      attack: "โจมตี",
+      sabotage: "แกล้งปิดปุ่ม",
+      hide: "กลับเข้าหลุม"
+    };
+
+    const layers = {
+      tableBack: {
+        id: "tableBack", label: "BACK", asset: "table_back.png", depth: 10,
+        transform: { x: 512, y: 512, scaleX: 1, scaleY: 1, rotation: 0, originX: .5, originY: .5 }
+      },
+      catState: {
+        id: "catState", label: "MIDDLE", asset: "cat_hole_hidden.png", depth: 20,
+        transform: { x: 512, y: 512, scaleX: 1, scaleY: 1, rotation: 0, originX: .5, originY: .5 }
+      },
+      tableFront: {
+        id: "tableFront", label: "FRONT", asset: "table_front.png", depth: 30,
+        transform: { x: 512, y: 512, scaleX: 1, scaleY: 1, rotation: 0, originX: .5, originY: .5 }
+      }
+    };
+
+    const assets = new Map();
+    const model = {
+      currentState: "hidden",
+      lastChange: "เริ่มต้นด้วย cat_hole_hidden.png",
+      invariant: true,
+      log: [],
+      scenario: "happyPath",
+      scenarioStep: 0,
+      viewMode: "assembly"
+    };
+
+    const scenarios = {
+      happyPath: {
+        title: "เส้นทางปกติ",
+        description: "สลับ HIDDEN → WARNING → PEEK → WATCH แล้วดูว่า Layer โต๊ะไม่เปลี่ยน Transform",
+        steps: ["hidden", "warning", "peek", "watch"]
+      },
+      actionStates: {
+        title: "Action ที่ยื่นออกจาก Anchor",
+        description: "ตรวจ ATTACK และ SABOTAGE ซึ่งมีแขน/อุ้งเท้ายื่นออกได้ แต่รูและ Canvas ต้องอยู่ที่เดิม",
+        steps: ["attack", "sabotage", "hide"]
+      },
+      invariant: {
+        title: "ตรวจความนิ่งของ Assembly",
+        description: "วนครบทุก State แล้วตรวจว่าพิกัด, Scale, Rotation และ Origin ของทุก Layer ยังคงเดิม",
+        steps: [...STATES]
+      }
+    };
+
+    const canvas = document.getElementById("assemblyCanvas");
+    const ctx = canvas.getContext("2d");
+
+    function assetPath(name) {
+      return ASSET_ROOT + name;
+    }
+
+    function loadAssets() {
+      const names = ["table_back.png", "table_front.png", ...STATES.map(state => `cat_hole_${state}.png`)];
+      names.forEach(name => {
+        const image = new Image();
+        image.onload = () => { assets.set(name, { status: "loaded", image }); update(); };
+        image.onerror = () => { assets.set(name, { status: "missing", image: null }); update(); };
+        image.src = assetPath(name);
+      });
+    }
+
+    function snapshotTransforms() {
+      return JSON.stringify(Object.values(layers).map(layer => ({ id: layer.id, ...layer.transform })));
+    }
+
+    function log(message) {
+      model.log.unshift(message);
+      model.log = model.log.slice(0, 12);
+    }
+
+    function setState(nextState, source = "free play") {
+      if (!STATES.includes(nextState)) return;
+      const before = snapshotTransforms();
+      const previous = model.currentState.toUpperCase();
+      model.currentState = nextState;
+      layers.catState.asset = `cat_hole_${nextState}.png`;
+      const after = snapshotTransforms();
+      model.invariant = before === after;
+      model.lastChange = `${previous} → ${nextState.toUpperCase()} (${source})`;
+      log(`${model.lastChange} — ${model.invariant ? "Transform คงเดิม" : "พบการเปลี่ยน Transform"}`);
+      update();
+    }
+
+    function checkInvariants() {
+      const expected = { x: 512, y: 512, scaleX: 1, scaleY: 1, rotation: 0, originX: .5, originY: .5 };
+      const allMatch = Object.values(layers).every(layer => Object.keys(expected).every(key => layer.transform[key] === expected[key]));
+      model.invariant = allMatch;
+      model.lastChange = allMatch ? "ตรวจครบทุก Layer แล้ว: Transform คงเดิม" : "พบ Layer ที่ Transform ไม่ตรง Master Reference";
+      log(model.lastChange);
+      update();
+    }
+
+    function startScenario(id) {
+      model.scenario = id;
+      model.scenarioStep = 0;
+      setState(scenarios[id].steps[0], `เริ่ม Scenario: ${scenarios[id].title}`);
+    }
+
+    function nextScenarioStep() {
+      const scenario = scenarios[model.scenario];
+      const nextIndex = model.scenarioStep + 1;
+      if (nextIndex >= scenario.steps.length) {
+        checkInvariants();
+        return;
+      }
+      model.scenarioStep = nextIndex;
+      setState(scenario.steps[nextIndex], `Scenario Step ${nextIndex + 1}/${scenario.steps.length}`);
+    }
+
+    function drawWoodTable() {
+      const gradient = ctx.createRadialGradient(512, 420, 90, 512, 512, 530);
+      gradient.addColorStop(0, "#d99a54");
+      gradient.addColorStop(.72, "#a96332");
+      gradient.addColorStop(1, "#70401f");
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.ellipse(512, 535, 485, 430, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#efbd73";
+      ctx.lineWidth = 9;
+      ctx.stroke();
+      ctx.strokeStyle = "rgb(91 45 24 / 28%)";
+      ctx.lineWidth = 3;
+      for (let y = 160; y < 860; y += 42) {
+        ctx.beginPath();
+        ctx.moveTo(70, y);
+        ctx.bezierCurveTo(270, y - 15, 690, y + 20, 950, y - 4);
+        ctx.stroke();
+      }
+    }
+
+    function drawHole() {
+      const hole = ctx.createRadialGradient(512, 500, 45, 512, 512, 230);
+      hole.addColorStop(0, "#090705");
+      hole.addColorStop(.75, "#21140c");
+      hole.addColorStop(1, "#6a3b1f");
+      ctx.fillStyle = hole;
+      ctx.beginPath();
+      ctx.ellipse(512, 512, 220, 168, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#e2a462";
+      ctx.lineWidth = 12;
+      ctx.stroke();
+    }
+
+    function drawCatFallback(state) {
+      drawHole();
+      const hidden = state === "hidden" || state === "hide";
+      if (hidden) {
+        ctx.fillStyle = "#6e4935";
+        ctx.beginPath();
+        ctx.moveTo(425, 484); ctx.lineTo(462, 405); ctx.lineTo(503, 468);
+        ctx.lineTo(521, 468); ctx.lineTo(563, 405); ctx.lineTo(600, 484);
+        ctx.closePath(); ctx.fill();
+        return;
+      }
+
+      ctx.fillStyle = state === "attack" || state === "sabotage" ? "#a87958" : "#b58a68";
+      ctx.beginPath();
+      ctx.arc(512, 455, 122, Math.PI, Math.PI * 2);
+      ctx.lineTo(618, 550); ctx.lineTo(406, 550); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#f2c4aa";
+      ctx.beginPath(); ctx.moveTo(425, 444); ctx.lineTo(462, 393); ctx.lineTo(490, 457); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(534, 457); ctx.lineTo(562, 393); ctx.lineTo(599, 444); ctx.closePath(); ctx.fill();
+
+      const suspicious = state === "watch" || state === "attack" || state === "sabotage";
+      ctx.fillStyle = "#17100c";
+      ctx.beginPath(); ctx.ellipse(466, 470, 16, suspicious ? 9 : 13, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(558, 470, 16, suspicious ? 9 : 13, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#ef8f83";
+      ctx.beginPath(); ctx.arc(512, 500, 10, 0, Math.PI * 2); ctx.fill();
+
+      if (state === "peek" || state === "watch" || state === "attack" || state === "sabotage") {
+        ctx.fillStyle = "#f7d7c0";
+        ctx.beginPath(); ctx.ellipse(465, 541, 37, 22, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(559, 541, 37, 22, 0, 0, Math.PI * 2); ctx.fill();
+      }
+
+      if (state === "attack" || state === "sabotage") {
+        ctx.fillStyle = "#f7d7c0";
+        ctx.beginPath();
+        ctx.ellipse(state === "attack" ? 760 : 690, state === "attack" ? 620 : 592, 82, 40, -.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#7a4a31";
+        ctx.lineWidth = 5;
+        ctx.stroke();
+      }
+    }
+
+    function drawFallbackLayer(layer) {
+      if (layer.id === "tableBack") drawWoodTable();
+      if (layer.id === "catState") drawCatFallback(model.currentState);
+      if (layer.id === "tableFront") {
+        ctx.save();
+        ctx.fillStyle = "#b66e37";
+        ctx.beginPath();
+        ctx.moveTo(45, 624);
+        ctx.quadraticCurveTo(512, 820, 979, 624);
+        ctx.lineTo(952, 790);
+        ctx.quadraticCurveTo(512, 958, 72, 790);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = "#efbd73";
+        ctx.lineWidth = 9;
+        ctx.beginPath();
+        ctx.moveTo(45, 624);
+        ctx.quadraticCurveTo(512, 820, 979, 624);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    function drawLayerContent(layer) {
+      const loaded = assets.get(layer.asset);
+      if (!loaded || loaded.status !== "loaded") {
+        drawFallbackLayer(layer);
+        return;
+      }
+      ctx.drawImage(loaded.image, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    }
+
+    function applyLayerTransform(layer) {
+      const t = layer.transform;
+      ctx.translate(t.x, t.y);
+      ctx.rotate(t.rotation);
+      ctx.scale(t.scaleX, t.scaleY);
+      ctx.translate(-CANVAS_SIZE * t.originX, -CANVAS_SIZE * t.originY);
+    }
+
+    function drawLayer(layer) {
+      ctx.save();
+      applyLayerTransform(layer);
+      drawLayerContent(layer);
+      ctx.restore();
+    }
+
+    function drawLayerPreview(layer, centerX, centerY, scale) {
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.scale(scale, scale);
+      ctx.translate(-HOLE_ANCHOR.x, -HOLE_ANCHOR.y);
+      drawLayerContent(layer);
+      ctx.restore();
+    }
+
+    function drawCanvasText(text, x, y, color = "#fff4e6", size = 28) {
+      ctx.fillStyle = color;
+      ctx.font = `700 ${size}px Mali, Segoe UI, sans-serif`;
+      ctx.fillText(text, x, y);
+    }
+
+    function drawAnchorMarker(x, y, label) {
+      ctx.save();
+      ctx.strokeStyle = "#ffcf78";
+      ctx.fillStyle = "#ffcf78";
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(x - 28, y); ctx.lineTo(x + 28, y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, y - 28); ctx.lineTo(x, y + 28); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y, 12, 0, Math.PI * 2); ctx.stroke();
+      drawCanvasText(label, x + 36, y - 12, "#ffcf78", 22);
+      ctx.restore();
+    }
+
+    function drawAssemblyView() {
+      drawLayer(layers.tableBack);
+      drawLayer(layers.catState);
+      drawLayer(layers.tableFront);
+      ctx.fillStyle = "rgb(26 16 11 / 78%)";
+      ctx.fillRect(24, 24, 320, 62);
+      drawCanvasText("ASSEMBLY — 3 LAYERS", 46, 64, "#fff4e6", 24);
+      drawAnchorMarker(HOLE_ANCHOR.x, HOLE_ANCHOR.y, "ANCHOR");
+    }
+
+    function drawExplodedView() {
+      const cards = [
+        { layer: layers.tableBack, x: 260, y: 270, title: "BACK", color: "#8fc8ff" },
+        { layer: layers.catState, x: 764, y: 270, title: "MIDDLE — CAT STATE", color: "#ffcf78" },
+        { layer: layers.tableFront, x: 512, y: 778, title: "FRONT", color: "#9ef0b5" }
+      ];
+      ctx.fillStyle = "#15100d";
+      ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+      drawCanvasText("EXPLODED VIEW — แยกให้เห็นทีละ Layer", 38, 56, "#fff4e6", 27);
+      cards.forEach(card => {
+        ctx.fillStyle = "rgb(54 38 29 / 92%)";
+        ctx.strokeStyle = card.color;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.roundRect(card.x - 220, card.y - 190, 440, 390, 18);
+        ctx.fill(); ctx.stroke();
+        drawLayerPreview(card.layer, card.x, card.y + 18, .40);
+        drawCanvasText(card.title, card.x - 194, card.y - 145, card.color, 23);
+        drawCanvasText("Anchor 512,512", card.x - 194, card.y + 178, "#c9ad98", 18);
+      });
+      drawCanvasText("สลับ State แล้วดูเฉพาะกรอบ MIDDLE เปลี่ยน", 38, 972, "#c9ad98", 20);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+      ctx.fillStyle = "#1d130e";
+      ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+      if (model.viewMode === "exploded") drawExplodedView();
+      else drawAssemblyView();
+    }
+
+    function renderViewModes() {
+      const container = document.getElementById("viewModeButtons");
+      container.replaceChildren();
+      [
+        ["assembly", "ภาพรวม: โต๊ะชิ้นเดียว"],
+        ["exploded", "แยก Layer: ดูโครงสร้าง"]
+      ].forEach(([mode, label]) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = model.viewMode === mode ? "active small-button" : "small-button";
+        button.textContent = label;
+        button.addEventListener("click", () => { model.viewMode = mode; log(`เปลี่ยนมุมมองเป็น ${label}`); update(); });
+        container.appendChild(button);
+      });
+    }
+
+    function renderButtons() {
+      const container = document.getElementById("stateButtons");
+      container.innerHTML = "";
+      STATES.forEach(state => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = state === model.currentState ? "active" : "";
+        button.textContent = `${state.toUpperCase()} — ${STATE_LABELS[state]}`;
+        button.addEventListener("click", () => setState(state));
+        container.appendChild(button);
+      });
+    }
+
+    function renderLayers() {
+      const container = document.getElementById("layers");
+      container.innerHTML = "";
+      Object.values(layers).forEach(layer => {
+        const loaded = assets.get(layer.asset);
+        const status = loaded?.status === "loaded" ? "โหลดแล้ว" : "ใช้ Placeholder";
+        const row = document.createElement("div");
+        row.className = "layer-row";
+        row.innerHTML = `<strong>${layer.label}</strong><code>${layer.asset}</code><span class="layer-depth">Z ${layer.depth}<br>${status}</span>`;
+        container.appendChild(row);
+      });
+    }
+
+    function renderScenarios() {
+      const tabs = document.getElementById("scenarioTabs");
+      tabs.innerHTML = "";
+      Object.entries(scenarios).forEach(([id, scenario]) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = id === model.scenario ? "active small-button" : "small-button";
+        button.textContent = scenario.title;
+        button.addEventListener("click", () => startScenario(id));
+        tabs.appendChild(button);
+      });
+
+      const scenario = scenarios[model.scenario];
+      document.getElementById("scenarioDescription").textContent = scenario.description;
+      const stepButton = document.createElement("button");
+      stepButton.type = "button";
+      stepButton.textContent = model.scenarioStep + 1 < scenario.steps.length ? `ทำขั้นถัดไป: ${scenario.steps[model.scenarioStep + 1].toUpperCase()}` : "ตรวจสอบ Scenario";
+      stepButton.addEventListener("click", nextScenarioStep);
+      document.getElementById("walkthroughButtons").replaceChildren(stepButton);
+    }
+
+    function renderLog() {
+      const list = document.getElementById("eventLog");
+      list.replaceChildren(...model.log.map(entry => {
+        const item = document.createElement("li");
+        item.textContent = entry;
+        return item;
+      }));
+    }
+
+    function update() {
+      document.getElementById("currentState").textContent = model.currentState.toUpperCase();
+      document.getElementById("currentAsset").textContent = layers.catState.asset;
+      document.getElementById("lastChange").textContent = model.lastChange;
+      const invariant = document.getElementById("invariant");
+      invariant.textContent = model.invariant ? "PASS — ไม่ขยับ" : "FAIL — Transform เปลี่ยน";
+      invariant.className = model.invariant ? "good" : "bad";
+      const available = assets.size;
+      const loaded = [...assets.values()].filter(asset => asset.status === "loaded").length;
+      document.getElementById("assetMode").textContent = available === 0 ? "ใช้ Placeholder" : `Asset ${loaded}/${available} ไฟล์`;
+      renderButtons();
+      renderViewModes();
+      renderLayers();
+      renderScenarios();
+      renderLog();
+      draw();
+    }
+
+    document.getElementById("checkButton").addEventListener("click", checkInvariants);
+    log("เริ่มต้น Assembly: BACK → MIDDLE → FRONT");
+    update();
+    loadAssets();
+  </script>
+</body>
+</html>

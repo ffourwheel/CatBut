@@ -1,0 +1,67 @@
+# Cat Button Stealth
+
+เกมอาร์เคดแนว Stealth ที่ผู้เล่นเปิดปุ่มด้วยการกดค้าง ขณะสังเกตแมวซึ่งสามารถตรวจจับหรือแกล้งปิดปุ่มที่เปิดแล้วได้
+
+## Gameplay Domain
+
+**Button**:
+ปุ่มสีบนโต๊ะที่ผู้เล่นต้องกดค้างเพื่อเปลี่ยนจาก OFF เป็น ON
+_Avoid_: switch, light, target
+
+**Progress**:
+ความคืบหน้าของการกดค้างปุ่มหนึ่งปุ่ม ซึ่งจะลดลงทันทีแบบเส้นตรงเมื่อผู้เล่นปล่อยมือก่อนเปิดสำเร็จ และลดจาก 100% เป็น 0% ภายในประมาณ 1 วินาทีใน Prototype
+_Avoid_: charge, meter
+
+**Activated Button**:
+ปุ่มที่เปิดสำเร็จและอยู่ในสถานะ ON จนกว่าแมวจะ Sabotage
+_Avoid_: completed button, lit button
+
+**Cat Event**:
+หนึ่งรอบการกระทำของแมว ตั้งแต่เริ่ม Warning จนแมวกลับไป Hidden
+_Avoid_: cat turn, encounter
+
+**Warning**:
+ช่วงเตือนล่วงหน้าก่อนแมวเข้า WATCH โดยต้องให้ผู้เล่นมีเวลาตัดสินใจปล่อยปุ่ม
+_Avoid_: alert, notification
+
+**Watch**:
+สถานะที่แมวตรวจจับว่าผู้เล่นกำลังกดปุ่มอยู่ หากกำลังกดอยู่จะถูกโจมตีทันที
+_Avoid_: detect phase, look
+
+**Sabotage**:
+การที่แมวปิด Activated Button ได้ครั้งละหนึ่งปุ่ม โดยไม่แตะปุ่มที่กำลังกดค้าง และมี Cooldown ประมาณ 3 วินาที
+_Avoid_: undo, cat attack
+
+**Combo**:
+ตัวคูณคะแนนที่เพิ่มจากการเปิดปุ่มสำเร็จต่อเนื่อง สูงสุด x4 และรีเซ็ตเมื่อผู้เล่นถูกแมวโจมตี ทั้งการเปิดปุ่มใหม่และการ Reactivation เพิ่ม Combo
+_Avoid_: streak, chain
+
+**Stage**:
+รอบการเล่นหนึ่งรอบที่จบเมื่อผู้เล่นเปิดปุ่มครบหรือหัวใจหมด ใน Prototype จะมี Stage เดียวที่ใช้ค่าเริ่มต้น Hold 0.8 วินาที, Cat Interval 4–6 วินาที, Warning 0.8 วินาที, Watch 0.8 วินาที, Watch 60% และ Sabotage 40%
+_Avoid_: level, round
+
+**Stage Clear**:
+ผลลัพธ์เมื่อ Activated Button ครบทั้งสี่พร้อมกัน โดยหยุด Cat Event ทันทีและแสดงผลสรุปคะแนน
+_Avoid_: victory, win screen
+
+**Game Over**:
+ผลลัพธ์เมื่อหัวใจของผู้เล่นหมด และเปิดทางให้ Retry หรือกลับหน้าแรก
+_Avoid_: defeat, lose screen
+
+**Pointer Session**:
+การกดปุ่มหนึ่งครั้งตั้งแต่ Pointer Down จนถึง Pointer Up หรือ Pointer Up Outside โดย Prototype รองรับทีละหนึ่ง Pointer
+_Avoid_: touch session, input gesture
+
+**Reactivation**:
+การเปิดปุ่มที่ถูก Sabotage ไปแล้วกลับมาอีกครั้ง โดยคะแนนพื้นฐานลดลงตามจำนวนครั้งที่เปิดซ้ำเป็น 50, 40, 30, 20 และ 10 (ขั้นต่ำ 10) แล้วคูณด้วย Combo ปัจจุบัน และเพิ่ม Combo ได้สูงสุด x4
+_Avoid_: retry activation, repeat score
+
+## Player Experience
+
+**Prototype**:
+เวอร์ชันแรกที่เน้นทดสอบ Core Loop ได้แก่ การกดค้าง การหลบแมว การถูกโจมตี การ Sabotage คะแนน Combo การชนะ แพ้ Retry รวมถึง Start, Tutorial, Pause, Stage Clear และ Game Over
+_Avoid_: demo, alpha
+
+**Core Loop**:
+กดค้าง → สังเกต Warning → ปล่อยเพื่อหลบหรือเสี่ยงกดต่อ → เปิดปุ่ม → ทำซ้ำจนเปิดครบ
+_Avoid_: main loop, gameplay cycle
