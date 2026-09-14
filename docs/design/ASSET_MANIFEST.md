@@ -23,7 +23,7 @@ All assembly assets strictly adhere to the [CatKub Assembly Contract](file:///d:
 
 ## 2. Core Assembly Assets (Cat Table 3-Layer Stack)
 
-These 9 textures form the interactive centerpiece of CatKub. They are designed to be rendered within `catTableContainer` at coordinate `(512, 512)`. When switching cat states, **only** the texture of `catState` changes; transform coordinates (`x`, `y`, `scale`, `origin`) remain strictly unchanged.
+These 10 textures form the interactive centerpiece of CatKub. They are designed to be rendered within `catTableContainer` at coordinate `(512, 512)`. When switching cat states, **only** the texture of `catState` changes; the targeted sabotage animation uses the separate `sabotagePaw` overlay so the table and hole never rotate.
 
 | Asset Key | File Path | Dimensions | Origin | Depth | Role / Description | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -34,6 +34,7 @@ These 9 textures form the interactive centerpiece of CatKub. They are designed t
 | `cat_hole_watch` | `assets/cat_hole_watch.png` | `1024 × 1024` | `(0.5, 0.5)` | 20 | Cat fully raised, watchful glare directly at player | Verified |
 | `cat_hole_attack` | `assets/cat_hole_attack.png` | `1024 × 1024` | `(0.5, 0.5)` | 20 | Cat lunging forward with claws bared (strike state) | Verified |
 | `cat_hole_sabotage` | `assets/cat_hole_sabotage.png` | `1024 × 1024` | `(0.5, 0.5)` | 20 | Cat paw reaching outward to swipe and reset a button | Verified |
+| `sabotage_paw` | `assets/sabotage_paw.png` | `1254 × 1254` | `(0.29, 0.34)` | 35 | Standalone striped paw overlay derived from `cat_hole_sabotage.png`, rotated per target slot | Integrated |
 | `cat_hole_hide` | `assets/cat_hole_hide.png` | `1024 × 1024` | `(0.5, 0.5)` | 20 | Cat rapidly retracting down into hole with motion lines | Verified |
 | `table_front` | `assets/table_front.png` | `1024 × 1024` | `(0.5, 0.5)` | 30 | Front table edge, front wooden apron, front legs | Verified |
 
@@ -43,8 +44,11 @@ These 9 textures form the interactive centerpiece of CatKub. They are designed t
 catTableContainer (Anchor: 512, 512)
 ├── tableBack   → table_back.png        [Depth: 10]
 ├── catState    → cat_hole_[state].png  [Depth: 20]
+├── sabotagePaw → sabotage_paw.png      [Depth: 35]
 └── tableFront  → table_front.png       [Depth: 30]
 ```
+
+`cat_hole_sabotage.png` remains the master visual reference for the paw pose. Runtime uses `sabotage_paw.png` so only the paw can rotate toward `slot-1` through `slot-8`.
 
 ---
 

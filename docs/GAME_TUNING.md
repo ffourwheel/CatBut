@@ -21,7 +21,10 @@ export const ACTIVE_GAME_PRESET = 'normal';
 | `warningDuration` | ระยะเวลาเตือนก่อนแมวมอง | `700` |
 | `peekDuration` | ระยะเวลาแมวโผล่ให้เห็น | `900` |
 | `watchDuration` | ระยะเวลาที่แมวจ้อง | `1000` |
-| `watchProbability` | โอกาสที่แมวจะเลือกจ้อง (0–1) | `0.6` |
+| `watchProbability` | โอกาสที่แมวจะเลือกจ้อง (0–1) | `0.35` |
+| `sabotagePreviewDuration` | เวลาที่แมวเล็งปุ่มก่อนยื่นมือ (มิลลิวินาที) | `300` |
+| `sabotageReachDuration` | เวลาที่มือยื่นถึงปุ่ม (มิลลิวินาที) | `220` |
+| `sabotageHitDuration` | จังหวะที่สั่งปิดปุ่มหลังเริ่มยื่นมือ (มิลลิวินาที) | `180` |
 | `holdDuration` | เวลากดค้างเพื่อเปิดปุ่ม | `800` |
 | `buttonCountMin` / `buttonCountMax` | จำนวนปุ่มที่สุ่มในแต่ละรอบ | `4` ถึง `8` |
 | `startingHealth` | จำนวนหัวใจเริ่มต้น (สูงสุด 3 ตาม UI ปัจจุบัน) | `3` |

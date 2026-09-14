@@ -226,81 +226,207 @@ export class ScreenLayoutManager {
 
   buildTutorialScreen() {
     const screen = this.scene.add.container(0, 0).setDepth(UI_DEPTH.MODAL_OVERLAY).setVisible(false);
-    screen.add(createModalPanel(this.scene, 880, 840));
+    this.tutorialScreenContainer = screen;
+    screen.add(createModalPanel(this.scene, 880, 870));
 
-    const title = this.scene.add.text(512, 210, COPY_THAI.screens.tutorial.title, {
+    // 1. Header
+    const title = this.scene.add.text(512, 130, COPY_THAI.screens.tutorial.title ?? 'วิธีเล่น CatKub 🐱', {
       fontFamily: UI_FONTS.family,
-      fontSize: `${UI_FONTS.sizes.h2}px`,
-      color: UI_COLORS.accentGoldHex,
-      fontStyle: 'bold',
-    }).setOrigin(0.5);
-
-    // Step Number Badge (Pill)
-    this.tutStepBadge = this.scene.add.text(512, 280, 'ขั้นตอนที่ 1 / 3', {
-      fontFamily: UI_FONTS.family,
-      fontSize: `${UI_FONTS.sizes.caption}px`,
-      color: '#fff4dc',
-      backgroundColor: '#7a4e32',
-      padding: { left: 16, right: 16, top: 6, bottom: 6 },
-    }).setOrigin(0.5);
-
-    // Step Indicator Dots (●○○)
-    this.tutStepDots = this.scene.add.text(512, 315, '● ○ ○', {
-      fontFamily: UI_FONTS.family,
-      fontSize: '18px',
-      color: UI_COLORS.accentGoldHex,
-      letterSpacing: 4,
-    }).setOrigin(0.5);
-
-    // Step Heading — larger for readability
-    this.tutHeading = this.scene.add.text(512, 370, '', {
-      fontFamily: UI_FONTS.family,
-      fontSize: `${UI_FONTS.sizes.h2}px`,
+      fontSize: '38px',
       color: '#fff4dc',
       fontStyle: 'bold',
+      stroke: '#2b1b14',
+      strokeThickness: 5,
     }).setOrigin(0.5);
 
-    // Step Body — more line spacing, wider wrap
-    this.tutBody = this.scene.add.text(512, 480, '', {
+    const subtitle = this.scene.add.text(512, 175, COPY_THAI.screens.tutorial.subtitle ?? 'แอบเปิดปุ่มให้ครบ อย่าให้เจ้าเหมียวจับได้!', {
       fontFamily: UI_FONTS.family,
-      fontSize: `${UI_FONTS.sizes.bodyLarge}px`,
-      color: '#f8dfc1',
-      align: 'center',
-      wordWrap: { width: 720 },
-      lineSpacing: 16,
-    }).setOrigin(0.5);
-
-    // Step Hint Box — with background for emphasis
-    this.tutHintBg = this.scene.add.graphics();
-    this.tutHint = this.scene.add.text(512, 610, '', {
-      fontFamily: UI_FONTS.family,
-      fontSize: `${UI_FONTS.sizes.body}px`,
+      fontSize: '20px',
       color: UI_COLORS.accentGoldHex,
       fontStyle: 'bold',
     }).setOrigin(0.5);
 
-    // Skip Button
-    const skipBtn = createCozyButton(this.scene, 370, 740, COPY_THAI.screens.tutorial.skipButton, () => {
-      this.finishTutorial();
-    }, {
-      fontSize: 24,
-      width: 180,
-      height: 62,
+    // Decorative golden divider line
+    const divider = this.scene.add.graphics();
+    divider.lineStyle(2, UI_COLORS.accentGold, 0.45);
+    divider.lineBetween(512 - 200, 202, 512 + 200, 202);
+    divider.fillStyle(UI_COLORS.accentGold, 0.85);
+    divider.fillCircle(512, 202, 3.5);
+
+    // Close "✕" button at top-right
+    const closeBtn = this.scene.add.container(890, 128);
+    const closeBg = this.scene.add.circle(0, 0, 24, 0x422a1e).setStrokeStyle(2.5, UI_COLORS.panelBorder, 1);
+    const closeText = this.scene.add.text(0, 0, '✕', {
+      fontFamily: UI_FONTS.family,
+      fontSize: '22px',
+      color: '#fff4dc',
+      fontStyle: 'bold',
+    }).setOrigin(0.5);
+    closeBtn.add([closeBg, closeText]);
+    closeBtn.setSize(48, 48).setInteractive({ useHandCursor: true });
+    closeBtn.on('pointerdown', () => this.closeTutorial());
+    closeBtn.on('pointerover', () => closeBtn.setScale(1.1));
+    closeBtn.on('pointerout', () => closeBtn.setScale(1.0));
+
+    // 2. Rule Cards (Directly added to screen — 100% visible, no clipping!)
+    const cardsData = COPY_THAI.screens.tutorial.cards ?? [
+      {
+        icon: '👆',
+        title: '1. แตะค้างเพื่อเปิดปุ่ม',
+        desc: 'แตะปุ่มบนโต๊ะค้างไว้จนวงแหวนเต็มเพื่อเปิดไฟ เปิดให้ครบทุกปุ่ม',
+        tip: '💡 ปล่อยมือก่อน วงแหวนจะค่อย ๆ ลดลง',
+      },
+      {
+        icon: '👀',
+        title: '2. แมวโผล่ รีบปล่อยมือ!',
+        desc: 'เห็นหูแมวโผล่หรือเครื่องหมาย ❗ ให้รีบยกนิ้วทันที!',
+        tip: '⚠️ ถ้ายังกดค้างอยู่จะโดนตบ เสีย ♥ 1 ดวง + คอมโบรีเซ็ต',
+      },
+      {
+        icon: '🐾',
+        title: '3. ระวังอุ้งมือแมวป่วน!',
+        desc: 'เจ้าเหมียวจะแอบยื่นอุ้งมือมาปิดปุ่ม ต้องคอยเปิดใหม่ให้ติดครบ',
+        tip: '⭐ ทุกปุ่มต้องเปิดติดพร้อมกัน = ชนะทันที!',
+      },
+    ];
+
+    const cardYPositions = [268, 398, 528];
+    const cardColors = [
+      { iconBg: 0x422a1d, titleColor: '#ffcb5c', tipColor: '#ffdca8' },
+      { iconBg: 0x482420, titleColor: '#ff8a7a', tipColor: '#ffb3a8' },
+      { iconBg: 0x3f2a1e, titleColor: '#ffcb5c', tipColor: '#ffe399' },
+    ];
+
+    const cardElements = [];
+    cardsData.forEach((c, idx) => {
+      const cardY = cardYPositions[idx] ?? (268 + idx * 130);
+      const card = this.createTutorialCard(cardY, {
+        icon: c.icon,
+        iconBg: cardColors[idx]?.iconBg ?? 0x3c281e,
+        title: c.title,
+        titleColor: cardColors[idx]?.titleColor ?? '#ffcb5c',
+        desc: c.desc,
+        tip: c.tip,
+        tipColor: cardColors[idx]?.tipColor ?? '#ffdca8',
+      });
+      cardElements.push(card);
     });
 
-    // Next / Start Button
-    this.tutNextBtn = createCozyButton(this.scene, 654, 740, COPY_THAI.screens.tutorial.nextButton, () => {
-      this.advanceTutorial();
-    }, {
-      fontSize: 26,
-      bgColor: UI_COLORS.accentGold,
-      borderColor: 0xc48a24,
-      width: 210,
-      height: 62,
-    });
+    // Goal Banner below the 3 cards
+    const goalBanner = this.createGoalBanner(632, COPY_THAI.screens.tutorial.goal);
 
-    screen.add([title, this.tutStepBadge, this.tutStepDots, this.tutHeading, this.tutBody, this.tutHintBg, this.tutHint, skipBtn, this.tutNextBtn]);
+    // 3. Action Button at Bottom
+    this.tutConfirmBtn = createCozyButton(
+      this.scene,
+      512,
+      734,
+      COPY_THAI.screens.tutorial.confirmButton ?? 'เข้าใจแล้ว เริ่มเลย! 🎮',
+      () => this.handleConfirmTutorial(),
+      {
+        fontSize: 28,
+        bgColor: UI_COLORS.accentGold,
+        borderColor: 0xc48a24,
+        textColor: UI_COLORS.textPrimary,
+        width: 360,
+        height: 74,
+      }
+    );
+
+    screen.add([
+      title,
+      subtitle,
+      divider,
+      closeBtn,
+      ...cardElements,
+      goalBanner,
+      this.tutConfirmBtn,
+    ]);
     return screen;
+  }
+
+  createTutorialCard(cardY, { icon, iconBg, title, titleColor, desc, tip, tipColor }) {
+    const card = this.scene.add.container(512, cardY);
+    const cardW = 760;
+    const cardH = 116;
+
+    // Background panel with cozy border
+    const bg = this.scene.add.graphics();
+    bg.fillStyle(0x271912, 0.94);
+    bg.fillRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 20);
+    bg.lineStyle(2.5, UI_COLORS.panelBorder, 1);
+    bg.strokeRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 20);
+    bg.lineStyle(1.5, 0xffe2b8, 0.22);
+    bg.strokeRoundedRect(-cardW / 2 + 4, -cardH / 2 + 4, cardW - 8, cardH - 8, 16);
+
+    // Left Icon Badge
+    const iconCircle = this.scene.add.graphics();
+    iconCircle.fillStyle(iconBg, 1);
+    iconCircle.fillCircle(-312, 0, 32);
+    iconCircle.lineStyle(2.5, UI_COLORS.panelBorder, 1);
+    iconCircle.strokeCircle(-312, 0, 32);
+    iconCircle.lineStyle(1.5, 0xffe2b8, 0.35);
+    iconCircle.strokeCircle(-312, 0, 28);
+
+    const iconText = this.scene.add.text(-312, 0, icon, {
+      fontSize: '30px',
+    }).setOrigin(0.5);
+
+    // Title Text
+    const titleText = this.scene.add.text(-260, -31, title, {
+      fontFamily: UI_FONTS.family,
+      fontSize: '22px',
+      color: titleColor,
+      fontStyle: 'bold',
+    }).setOrigin(0, 0.5);
+
+    // Description Text
+    const descText = this.scene.add.text(-260, -4, desc, {
+      fontFamily: UI_FONTS.family,
+      fontSize: '17px',
+      color: '#fff4dc',
+    }).setOrigin(0, 0.5);
+
+    // Tip Badge
+    const tipText = this.scene.add.text(-250, 28, tip, {
+      fontFamily: UI_FONTS.family,
+      fontSize: '15px',
+      color: tipColor,
+      fontStyle: 'bold',
+    }).setOrigin(0, 0.5);
+
+    const tipBg = this.scene.add.graphics();
+    const tipW = Math.min(580, tipText.width + 20);
+    tipBg.fillStyle(0x19100a, 0.85);
+    tipBg.fillRoundedRect(-260, 16, tipW, 24, 12);
+    tipBg.lineStyle(1, 0x6e4732, 0.6);
+    tipBg.strokeRoundedRect(-260, 16, tipW, 24, 12);
+
+    card.add([bg, iconCircle, iconText, titleText, descText, tipBg, tipText]);
+    return card;
+  }
+
+  createGoalBanner(bannerY, goalText) {
+    const banner = this.scene.add.container(512, bannerY);
+    const w = 760;
+    const h = 48;
+
+    const bg = this.scene.add.graphics();
+    bg.fillStyle(0x1e120c, 0.95);
+    bg.fillRoundedRect(-w / 2, -h / 2, w, h, 24);
+    bg.lineStyle(2, UI_COLORS.accentGold, 0.85);
+    bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 24);
+    bg.lineStyle(1, 0xffe2b8, 0.2);
+    bg.strokeRoundedRect(-w / 2 + 3, -h / 2 + 3, w - 6, h - 6, 21);
+
+    const text = this.scene.add.text(0, 0, goalText ?? '🎯 เป้าหมาย: แอบเปิดปุ่มบนโต๊ะให้ครบ 100% เพื่อผ่านด่าน!', {
+      fontFamily: UI_FONTS.family,
+      fontSize: '17px',
+      color: '#ffcb5c',
+      fontStyle: 'bold',
+    }).setOrigin(0.5);
+
+    banner.add([bg, text]);
+    return banner;
   }
 
   buildPauseScreen() {
@@ -618,65 +744,107 @@ export class ScreenLayoutManager {
 
   buildGameOverScreen() {
     const screen = this.scene.add.container(0, 0).setDepth(UI_DEPTH.MODAL_OVERLAY).setVisible(false);
-    screen.add(createModalPanel(this.scene, 840, 800));
 
-    const title = this.scene.add.text(512, 240, COPY_THAI.screens.gameOver.title, {
+    // Dim overlay
+    const overlay = createDimOverlay(this.scene);
+
+    const hasPausePanel = this.scene.textures.exists('pause_panel');
+    let panel;
+    if (hasPausePanel) {
+      panel = this.scene.add.image(512, 512, 'pause_panel')
+        .setOrigin(0.5, 0.5)
+        .setDisplaySize(690, 941);
+    } else {
+      panel = createModalPanel(this.scene, 700, 880)[1];
+    }
+
+    // Title — warm red/coral tone
+    const title = this.scene.add.text(512, 220, COPY_THAI.screens.gameOver.title, {
       fontFamily: UI_FONTS.family,
-      fontSize: `${UI_FONTS.sizes.display}px`,
-      color: UI_COLORS.dangerCoralHex,
-      fontStyle: 'bold',
-      stroke: '#4a1e1e',
-      strokeThickness: 6,
-    }).setOrigin(0.5);
-
-    const subtitle = this.scene.add.text(512, 325, COPY_THAI.screens.gameOver.subtitle, {
-      fontFamily: UI_FONTS.family,
-      fontSize: `${UI_FONTS.sizes.body}px`,
-      color: '#f8dfc1',
-    }).setOrigin(0.5);
-
-    // Score section background
-    const scoreBg = this.scene.add.graphics();
-    scoreBg.fillStyle(0x5a3e32, 0.5);
-    scoreBg.fillRoundedRect(512 - 200, 370, 400, 80, 18);
-    scoreBg.lineStyle(2, UI_COLORS.accentGold, 0.3);
-    scoreBg.strokeRoundedRect(512 - 200, 370, 400, 80, 18);
-
-    this.overScoreLabel = this.scene.add.text(512, 410, 'คะแนนที่ได้ 320', {
-      fontFamily: UI_FONTS.family,
-      fontSize: `${UI_FONTS.sizes.h2}px`,
-      color: UI_COLORS.accentGoldHex,
+      fontSize: '46px',
+      color: '#b23b2b',
       fontStyle: 'bold',
     }).setOrigin(0.5);
 
-    // CheerUp — bigger font, cream color, multi-line
-    const cheerUp = this.scene.add.text(512, 500, COPY_THAI.screens.gameOver.cheerUp, {
+    // Empty hearts row (3 empty hearts)
+    const heartY = 300;
+    const heartSpacing = 72;
+    const heartElements = [];
+    for (let i = 0; i < 3; i++) {
+      const hx = 512 + (i - 1) * heartSpacing;
+      if (this.scene.textures.exists('heart_empty')) {
+        const heart = this.scene.add.image(hx, heartY, 'heart_empty').setScale(0.52);
+        heartElements.push(heart);
+      }
+    }
+    let heartsText = null;
+    if (heartElements.length === 0) {
+      heartsText = this.scene.add.text(512, heartY, '♡  ♡  ♡', {
+        fontFamily: UI_FONTS.family,
+        fontSize: '36px',
+        color: '#b23b2b',
+      }).setOrigin(0.5);
+    }
+
+    // Subtitle
+    const subtitle = this.scene.add.text(512, 380, COPY_THAI.screens.gameOver.subtitle, {
       fontFamily: UI_FONTS.family,
-      fontSize: `${UI_FONTS.sizes.body}px`,
-      color: '#f8dfc1',
+      fontSize: '22px',
+      color: UI_COLORS.textSecondary,
+    }).setOrigin(0.5);
+
+    // Divider
+    const divider = this.scene.add.graphics();
+    divider.lineStyle(2, 0xd9c4a8, 0.6);
+    divider.lineBetween(512 - 180, 435, 512 + 180, 435);
+
+    // Score
+    this.overScoreLabel = this.scene.add.text(512, 490, 'คะแนนที่ได้ 0', {
+      fontFamily: UI_FONTS.family,
+      fontSize: '42px',
+      color: UI_COLORS.textPrimary,
+      fontStyle: 'bold',
+    }).setOrigin(0.5);
+
+    // CheerUp message
+    const cheerUp = this.scene.add.text(512, 560, COPY_THAI.screens.gameOver.cheerUp, {
+      fontFamily: UI_FONTS.family,
+      fontSize: '20px',
+      color: '#8a6552',
       align: 'center',
-      lineSpacing: 10,
+      lineSpacing: 8,
     }).setOrigin(0.5);
 
-    const retryBtn = createCozyButton(this.scene, 512, 620, COPY_THAI.screens.gameOver.retryButton, () => {
+    // Retry button ("ลองใหม่อีกครั้ง")
+    const retryBtn = createCozyButton(this.scene, 512, 650, COPY_THAI.screens.gameOver.retryButton, () => {
       this.callbacks.onRestart?.();
     }, {
-      fontSize: 30,
+      fontSize: 28,
       bgColor: UI_COLORS.accentGold,
       borderColor: 0xc48a24,
-      width: 300,
-      height: 72,
+      textColor: UI_COLORS.textPrimary,
+      width: 360,
+      height: 84,
     });
 
-    const homeBtn = createCozyButton(this.scene, 512, 725, COPY_THAI.screens.gameOver.homeButton, () => {
+    // Home button ("หน้าแรก")
+    const homeBtn = createCozyButton(this.scene, 512, 750, COPY_THAI.screens.gameOver.homeButton, () => {
       this.callbacks.onHome?.();
     }, {
-      fontSize: 22,
-      width: 210,
-      height: 58,
+      fontSize: 26,
+      bgColor: UI_COLORS.creamSoft,
+      borderColor: UI_COLORS.woodDark,
+      textColor: UI_COLORS.textPrimary,
+      width: 300,
+      height: 74,
     });
 
-    screen.add([title, subtitle, scoreBg, this.overScoreLabel, cheerUp, retryBtn, homeBtn]);
+    const elements = [overlay, panel, title];
+    heartElements.forEach((h) => elements.push(h));
+    if (heartsText) elements.push(heartsText);
+    elements.push(subtitle, divider, this.overScoreLabel, cheerUp, retryBtn, homeBtn);
+
+    screen.add(elements);
     return screen;
   }
 
@@ -687,55 +855,55 @@ export class ScreenLayoutManager {
 
   showTutorial(returnTo = 'start') {
     this.tutorialReturnScreen = returnTo;
-    this.tutorialStep = 0;
-    this.renderTutorialStep();
+    const isPause = returnTo === 'pause';
+    const label = isPause
+      ? (COPY_THAI.screens.tutorial.returnButton ?? 'กลับไปเล่นต่อ 🐾')
+      : (COPY_THAI.screens.tutorial.confirmButton ?? 'เข้าใจแล้ว เริ่มเลย! 🎮');
+    const btnLabel = this.tutConfirmBtn?.getAt(1);
+    if (btnLabel && typeof btnLabel.setText === 'function') {
+      btnLabel.setText(label);
+    }
     this.show('tutorial');
   }
 
-  advanceTutorial() {
-    if (this.tutorialStep >= 2) {
-      this.finishTutorial();
-      return;
+  handleConfirmTutorial() {
+    if (this.tutorialReturnScreen === 'pause') {
+      if (this.callbacks.onResume) {
+        this.callbacks.onResume();
+      } else {
+        this.callbacks.onTutorialReturn?.();
+      }
+    } else {
+      if (this.callbacks.onStart) {
+        this.callbacks.onStart();
+      } else {
+        this.callbacks.onTutorialComplete?.();
+      }
     }
-    this.tutorialStep += 1;
-    this.renderTutorialStep();
   }
 
-  finishTutorial() {
+  closeTutorial() {
     if (this.tutorialReturnScreen === 'pause') {
       this.callbacks.onTutorialReturn?.();
     } else {
-      this.callbacks.onTutorialComplete?.();
+      if (this.callbacks.onHome) {
+        this.callbacks.onHome();
+      } else {
+        this.callbacks.onTutorialComplete?.();
+      }
     }
   }
 
+  finishTutorial() {
+    this.handleConfirmTutorial();
+  }
+
+  advanceTutorial() {
+    this.handleConfirmTutorial();
+  }
+
   renderTutorialStep() {
-    const step = COPY_THAI.screens.tutorial.steps[this.tutorialStep];
-    this.tutStepBadge.setText(`ขั้นตอนที่ ${this.tutorialStep + 1} / 3`);
-    this.tutHeading.setText(step.heading);
-    this.tutBody.setText(step.body);
-    this.tutHint.setText(`💡 ${step.hint}`);
-
-    // Update step indicator dots
-    const dots = [0, 1, 2].map(i => i === this.tutorialStep ? '●' : '○').join(' ');
-    this.tutStepDots.setText(dots);
-
-    // Draw hint background box
-    this.tutHintBg.clear();
-    const hintWidth = Math.max(360, this.tutHint.width + 48);
-    const hintHeight = 44;
-    this.tutHintBg.fillStyle(0x5a3e32, 0.7);
-    this.tutHintBg.fillRoundedRect(512 - hintWidth / 2, 610 - hintHeight / 2, hintWidth, hintHeight, hintHeight / 2);
-    this.tutHintBg.lineStyle(2, UI_COLORS.accentGold, 0.3);
-    this.tutHintBg.strokeRoundedRect(512 - hintWidth / 2, 610 - hintHeight / 2, hintWidth, hintHeight, hintHeight / 2);
-    
-    // Update button text on last step
-    const isLast = this.tutorialStep >= 2;
-    // Find label child of button container
-    const nextLabel = this.tutNextBtn.getAt(1);
-    if (nextLabel) {
-      nextLabel.setText(isLast ? COPY_THAI.screens.tutorial.startButton : COPY_THAI.screens.tutorial.nextButton);
-    }
+    // Single-page tutorial: all cards are rendered statically in buildTutorialScreen
   }
 
   setClearStats(score, maxCombo = 1) {

@@ -55,47 +55,57 @@ export const HUD_LAYOUT_CONFIG = Object.freeze({
   // Hearts Container (Below Score)
   heartsRow: {
     x: 20,
-    y: 274,
+    y: 216,
     width: 340,
     height: 112,
     radius: 48,
     bgColor: UI_COLORS.creamSoft,
     borderColor: UI_COLORS.woodDeep,
     shadowColor: UI_COLORS.woodDeep,
-    assetCenterY: 330,
+    assetCenterY: 272,
     assetHeight: 113,
-    startX: 146,
-    gap: 68,
-    yCenter: 330,
-    iconScale: 0.42,
+    startX: 172,
+    gap: 54,
+    yCenter: 272,
+    iconScale: 0.39,
   },
 
-  // 4-Segment Progress Bar (Right HUD Column)
+  // Objective / Progress Card (Right HUD Column)
   progressBar: {
-    x: 834,
-    y: 155,
-    width: 320,
-    height: 48,
-    radius: 24,
+    x: 830,
+    y: 159,
+    width: 340,
+    height: 78,
+    radius: 26,
     bgColor: UI_COLORS.panelBg,
     borderColor: UI_COLORS.panelBorder,
-    labelY: 155,
-    segmentWidth: 42,
-    segmentHeight: 22,
-    segmentGap: 8,
-    segmentRadius: 10,
-    segmentActiveColor: UI_COLORS.greenSuccess,
-    segmentInactiveColor: 0x5a3e32,
-    ratioLabelX: 630,
+    borderHighlight: 0xffe2b8,
+    labelX: 678,
+    labelY: 142,
+    badgeX: 954,
+    badgeY: 142,
+    badgeWidth: 62,
+    badgeHeight: 28,
+    badgeRadius: 14,
+    trackX: 678,
+    trackY: 175,
+    trackWidth: 304,
+    trackHeight: 14,
+    trackRadius: 7,
+    trackBgColor: 0x241711,
+    trackBorderColor: 0x5a3e32,
+    fillColor: UI_COLORS.greenSuccess,
+    fillGlowColor: 0x8ae4a8,
+    completeColor: UI_COLORS.accentGold,
   },
 
   // Combo countdown bar (Below Combo Pill)
   timerBar: {
-    x: 834,
-    y: 368,
-    width: 210,
-    height: 30,
-    radius: 15,
+    x: 830,
+    y: 366,
+    width: 250,
+    height: 38,
+    radius: 19,
     bgColor: 0x2b1d18,
     borderColor: UI_COLORS.woodDark,
     trackColor: 0x5a3e32,
@@ -103,21 +113,22 @@ export const HUD_LAYOUT_CONFIG = Object.freeze({
     warningColor: UI_COLORS.accentAmber,
     dangerColor: UI_COLORS.dangerCoral,
     labelOffsetX: -75,
-    valueOffsetX: 75,
-    trackOffsetX: -23,
-    trackWidth: 58,
+    valueOffsetX: 80,
+    trackOffsetX: -20,
+    trackWidth: 70,
   },
 
   // Bottom Floating Table Instruction Banner
   instructionBanner: {
     x: 512,
     y: 935,
-    width: 480,
-    height: 64,
-    radius: 32,
+    width: 560,
+    height: 74,
+    radius: 37,
     bgColor: 0x3d281e,
     borderColor: UI_COLORS.accentGold,
-    alpha: 0.92,
+    alpha: 0.94,
+    fontSize: 24,
   },
 
   // Cat Warning Bubble (Near Hole Top-Right)
@@ -129,13 +140,15 @@ export const HUD_LAYOUT_CONFIG = Object.freeze({
 
   // Controls (Pause & Sound buttons)
   controls: {
-    pauseX: 928,
-    pauseY: 64,
-    muteX: 992,
-    muteY: 64,
-    radius: 24,
+    pauseX: 876,
+    pauseY: 68,
+    muteX: 964,
+    muteY: 68,
+    radius: 36, // Diameter 72px (comfortable mobile touch size)
+    iconScale: 0.82,
     bgColor: UI_COLORS.panelBg,
-    borderColor: UI_COLORS.woodDark,
+    borderColor: UI_COLORS.panelBorder,
+    highlightColor: 0xffe2b8,
   },
 });
 
@@ -276,59 +289,112 @@ export function buildCozyHUD(scene, callbacks = {}) {
     heartIcons.push(hImg);
   }
 
-  // 4. 4-Segment Progress Bar
+  // 4. Objective & Dynamic Progress Card
   const cfgProg = HUD_LAYOUT_CONFIG.progressBar;
   const progContainer = scene.add.container(0, 0);
 
+  // Panel background & double border
   const progBg = scene.add.graphics();
-  progBg.fillStyle(cfgProg.bgColor, 0.88);
+  progBg.fillStyle(cfgProg.bgColor, 0.94);
   progBg.fillRoundedRect(cfgProg.x - cfgProg.width / 2, cfgProg.y - cfgProg.height / 2, cfgProg.width, cfgProg.height, cfgProg.radius);
-  progBg.lineStyle(3, cfgProg.borderColor, 0.8);
+  progBg.lineStyle(3.5, cfgProg.borderColor, 1);
   progBg.strokeRoundedRect(cfgProg.x - cfgProg.width / 2, cfgProg.y - cfgProg.height / 2, cfgProg.width, cfgProg.height, cfgProg.radius);
+  progBg.lineStyle(1.5, cfgProg.borderHighlight, 0.28);
+  progBg.strokeRoundedRect(cfgProg.x - cfgProg.width / 2 + 4, cfgProg.y - cfgProg.height / 2 + 4, cfgProg.width - 8, cfgProg.height - 8, cfgProg.radius - 4);
 
-  const progLabel = scene.add.text(cfgProg.x - 30, cfgProg.y, COPY_THAI.hud.progressLabel, {
+  // Objective title ("เปิดปุ่มให้ครบ")
+  const progLabel = scene.add.text(cfgProg.labelX, cfgProg.labelY, COPY_THAI.hud.progressLabel, {
     fontFamily: UI_FONTS.family,
-    fontSize: '17px',
+    fontSize: '21px',
     color: '#fff4dc',
     fontStyle: 'bold',
-  }).setOrigin(0.5);
+  }).setOrigin(0, 0.5);
 
-  const progSegments = [];
-  const startSegX = cfgProg.x + 38;
-  for (let i = 0; i < 4; i += 1) {
-    const sx = startSegX + i * (cfgProg.segmentWidth + cfgProg.segmentGap);
-    const seg = scene.add.graphics();
-    progSegments.push(seg);
-    progContainer.add(seg);
-  }
+  // Counter badge background
+  const progBadgeBg = scene.add.graphics();
+  progBadgeBg.fillStyle(0x271912, 1);
+  progBadgeBg.fillRoundedRect(
+    cfgProg.badgeX - cfgProg.badgeWidth / 2,
+    cfgProg.badgeY - cfgProg.badgeHeight / 2,
+    cfgProg.badgeWidth,
+    cfgProg.badgeHeight,
+    cfgProg.badgeRadius,
+  );
+  progBadgeBg.lineStyle(1.5, 0x6a4a3a, 1);
+  progBadgeBg.strokeRoundedRect(
+    cfgProg.badgeX - cfgProg.badgeWidth / 2,
+    cfgProg.badgeY - cfgProg.badgeHeight / 2,
+    cfgProg.badgeWidth,
+    cfgProg.badgeHeight,
+    cfgProg.badgeRadius,
+  );
 
-  const progRatio = scene.add.text(cfgProg.x + 120, cfgProg.y, '0/4', {
+  // Counter text ("0/6")
+  const progRatio = scene.add.text(cfgProg.badgeX, cfgProg.badgeY, '0/4', {
     fontFamily: UI_FONTS.family,
-    fontSize: '18px',
+    fontSize: '20px',
     color: '#ffcb5c',
     fontStyle: 'bold',
   }).setOrigin(0.5);
 
-  progContainer.add([progBg, progLabel, progRatio]);
+  // Progress gauge track and fill graphics
+  const progTrackGraphics = scene.add.graphics();
+  const progFillGraphics = scene.add.graphics();
+  const progDividersGraphics = scene.add.graphics();
+
+  // Add elements in strict back-to-front rendering order
+  progContainer.add([
+    progBg,
+    progTrackGraphics,
+    progFillGraphics,
+    progDividersGraphics,
+    progBadgeBg,
+    progLabel,
+    progRatio,
+  ]);
   container.add(progContainer);
 
-  // Function to redraw the 4 progress segments
+  // Function to redraw progress track, dynamic notches, and smooth fill
   function renderProgressSegments(completedCount = 0, totalCount = 4) {
     const safeTotal = Math.max(1, totalCount ?? 4);
     const safeCompleted = Math.min(safeTotal, Math.max(0, completedCount ?? 0));
     const progressRatio = safeCompleted / safeTotal;
-    progSegments.forEach((seg, idx) => {
-      seg.clear();
-      const sx = startSegX - 60 + idx * 28;
-      const sy = cfgProg.y - 8;
-      const isLit = idx < Math.ceil(progressRatio * progSegments.length);
-      seg.fillStyle(isLit ? cfgProg.segmentActiveColor : cfgProg.segmentInactiveColor, 1);
-      seg.fillRoundedRect(sx, sy, 22, 16, 6);
-      if (isLit) {
-        seg.fillStyle(0xffffff, 0.4);
-        seg.fillRoundedRect(sx + 2, sy + 2, 18, 5, 3);
+
+    const trackX = cfgProg.trackX;
+    const trackY = cfgProg.trackY - cfgProg.trackHeight / 2;
+    const trackW = cfgProg.trackWidth;
+    const trackH = cfgProg.trackHeight;
+
+    // 1. Draw track
+    progTrackGraphics.clear();
+    progTrackGraphics.fillStyle(cfgProg.trackBgColor, 1);
+    progTrackGraphics.fillRoundedRect(trackX, trackY, trackW, trackH, cfgProg.trackRadius);
+    progTrackGraphics.lineStyle(1.5, cfgProg.trackBorderColor, 0.8);
+    progTrackGraphics.strokeRoundedRect(trackX, trackY, trackW, trackH, cfgProg.trackRadius);
+
+    // 2. Draw active fill
+    progFillGraphics.clear();
+    if (safeCompleted > 0) {
+      const fillW = Math.max(cfgProg.trackRadius * 2, trackW * progressRatio);
+      const isComplete = safeCompleted >= safeTotal;
+      progFillGraphics.fillStyle(isComplete ? cfgProg.completeColor : cfgProg.fillColor, 1);
+      progFillGraphics.fillRoundedRect(trackX, trackY, fillW, trackH, cfgProg.trackRadius);
+
+      // Inner glossy shine
+      progFillGraphics.fillStyle(0xffffff, 0.35);
+      progFillGraphics.fillRoundedRect(trackX + 2, trackY + 2, Math.max(0, fillW - 4), Math.floor(trackH / 2) - 2, 3);
+    }
+
+    // 3. Draw segment divider notches if more than 1 button
+    progDividersGraphics.clear();
+    if (safeTotal > 1) {
+      for (let i = 1; i < safeTotal; i += 1) {
+        const dx = trackX + (trackW / safeTotal) * i;
+        progDividersGraphics.lineStyle(2, 0x1b110c, 0.7);
+        progDividersGraphics.lineBetween(dx, trackY + 2, dx, trackY + trackH - 2);
       }
-    });
+    }
+
     progRatio.setText(`${safeCompleted}/${safeTotal}`);
   }
   renderProgressSegments(0);
@@ -337,14 +403,16 @@ export function buildCozyHUD(scene, callbacks = {}) {
   const cfgTimer = HUD_LAYOUT_CONFIG.timerBar;
   const timerContainer = scene.add.container(0, 0);
   const timerBg = scene.add.graphics();
-  timerBg.fillStyle(cfgTimer.bgColor, 0.88);
+  timerBg.fillStyle(cfgTimer.bgColor, 0.92);
   timerBg.fillRoundedRect(cfgTimer.x - cfgTimer.width / 2, cfgTimer.y - cfgTimer.height / 2, cfgTimer.width, cfgTimer.height, cfgTimer.radius);
-  timerBg.lineStyle(3, cfgTimer.borderColor, 0.8);
+  timerBg.lineStyle(3, cfgTimer.borderColor, 0.9);
   timerBg.strokeRoundedRect(cfgTimer.x - cfgTimer.width / 2, cfgTimer.y - cfgTimer.height / 2, cfgTimer.width, cfgTimer.height, cfgTimer.radius);
+  timerBg.lineStyle(1.5, 0xffe2b8, 0.25);
+  timerBg.strokeRoundedRect(cfgTimer.x - cfgTimer.width / 2 + 3, cfgTimer.y - cfgTimer.height / 2 + 3, cfgTimer.width - 6, cfgTimer.height - 6, cfgTimer.radius - 3);
 
   const timerLabel = scene.add.text(cfgTimer.x + cfgTimer.labelOffsetX, cfgTimer.y, COPY_THAI.hud.comboTimerLabel, {
     fontFamily: UI_FONTS.family,
-    fontSize: '17px',
+    fontSize: '18px',
     color: UI_COLORS.textLight,
     fontStyle: 'bold',
   }).setOrigin(0.5);
@@ -353,7 +421,7 @@ export function buildCozyHUD(scene, callbacks = {}) {
   const timerFill = scene.add.graphics();
   const timerValue = scene.add.text(cfgTimer.x + cfgTimer.valueOffsetX, cfgTimer.y, '5 วิ', {
     fontFamily: UI_FONTS.family,
-    fontSize: '17px',
+    fontSize: '18px',
     color: UI_COLORS.textGold,
     fontStyle: 'bold',
   }).setOrigin(0.5);
@@ -366,12 +434,12 @@ export function buildCozyHUD(scene, callbacks = {}) {
     const safeRemaining = Math.max(0, Math.min(safeDuration, remainingMs ?? 0));
     const ratio = safeRemaining / safeDuration;
     const trackX = cfgTimer.x + cfgTimer.trackOffsetX;
-    const trackY = cfgTimer.y - 8;
+    const trackY = cfgTimer.y - 9;
     const trackWidth = cfgTimer.trackWidth;
 
     timerTrack.clear();
     timerTrack.fillStyle(cfgTimer.trackColor, 1);
-    timerTrack.fillRoundedRect(trackX, trackY, trackWidth, 16, 8);
+    timerTrack.fillRoundedRect(trackX, trackY, trackWidth, 18, 9);
 
     timerFill.clear();
     const fillColor = ratio <= 0.25
@@ -380,10 +448,10 @@ export function buildCozyHUD(scene, callbacks = {}) {
         ? cfgTimer.warningColor
         : cfgTimer.fillColor;
     timerFill.fillStyle(fillColor, 1);
-    timerFill.fillRoundedRect(trackX, trackY, trackWidth * ratio, 16, 8);
+    timerFill.fillRoundedRect(trackX, trackY, trackWidth * ratio, 18, 9);
     if (ratio > 0) {
       timerFill.fillStyle(0xffffff, 0.35);
-      timerFill.fillRoundedRect(trackX + 2, trackY + 2, Math.max(0, trackWidth * ratio - 4), 4, 2);
+      timerFill.fillRoundedRect(trackX + 2, trackY + 2, Math.max(0, trackWidth * ratio - 4), 5, 2);
     }
     timerValue.setText(`${Math.ceil(safeRemaining / 1000)} วิ`);
   }
@@ -396,17 +464,19 @@ export function buildCozyHUD(scene, callbacks = {}) {
   // 7. Bottom Instruction / Toast Banner
   const cfgBanner = {
     ...HUD_LAYOUT_CONFIG.instructionBanner,
-    y: viewportHeight - 86,
+    y: viewportHeight - 88,
   };
   const bannerBg = scene.add.graphics();
   bannerBg.fillStyle(cfgBanner.bgColor, cfgBanner.alpha);
   bannerBg.fillRoundedRect(cfgBanner.x - cfgBanner.width / 2, cfgBanner.y - cfgBanner.height / 2, cfgBanner.width, cfgBanner.height, cfgBanner.radius);
-  bannerBg.lineStyle(3, cfgBanner.borderColor, 0.9);
+  bannerBg.lineStyle(3.5, cfgBanner.borderColor, 0.95);
   bannerBg.strokeRoundedRect(cfgBanner.x - cfgBanner.width / 2, cfgBanner.y - cfgBanner.height / 2, cfgBanner.width, cfgBanner.height, cfgBanner.radius);
+  bannerBg.lineStyle(1.5, 0xffe2b8, 0.3);
+  bannerBg.strokeRoundedRect(cfgBanner.x - cfgBanner.width / 2 + 5, cfgBanner.y - cfgBanner.height / 2 + 5, cfgBanner.width - 10, cfgBanner.height - 10, cfgBanner.radius - 5);
 
   const bannerText = scene.add.text(cfgBanner.x, cfgBanner.y, COPY_THAI.instructions.promptHold, {
     fontFamily: UI_FONTS.family,
-    fontSize: '22px',
+    fontSize: `${cfgBanner.fontSize}px`,
     color: '#fff4dc',
     fontStyle: 'bold',
   }).setOrigin(0.5);
@@ -421,7 +491,7 @@ export function buildCozyHUD(scene, callbacks = {}) {
       cfgBanner.height,
       cfgBanner.radius,
     );
-    bannerBg.lineStyle(3, highlight ? UI_COLORS.dangerCoral : UI_COLORS.accentGold, 0.9);
+    bannerBg.lineStyle(3.5, highlight ? UI_COLORS.dangerCoral : UI_COLORS.accentGold, 0.95);
     bannerBg.strokeRoundedRect(
       cfgBanner.x - cfgBanner.width / 2,
       cfgBanner.y - cfgBanner.height / 2,
@@ -429,38 +499,58 @@ export function buildCozyHUD(scene, callbacks = {}) {
       cfgBanner.height,
       cfgBanner.radius,
     );
+    bannerBg.lineStyle(1.5, 0xffe2b8, 0.3);
+    bannerBg.strokeRoundedRect(
+      cfgBanner.x - cfgBanner.width / 2 + 5,
+      cfgBanner.y - cfgBanner.height / 2 + 5,
+      cfgBanner.width - 10,
+      cfgBanner.height - 10,
+      cfgBanner.radius - 5,
+    );
   }
 
   renderBanner();
 
   container.add([bannerBg, bannerText]);
 
-  // 8. Pause & Sound Button Controls
+  // 8. Pause & Sound Button Controls (Touch-friendly 72px buttons)
   const cfgCtrl = HUD_LAYOUT_CONFIG.controls;
 
   // Pause button
   const pauseBtn = scene.add.container(cfgCtrl.pauseX, cfgCtrl.pauseY);
-  const pauseBg = scene.add.circle(0, 0, cfgCtrl.radius, cfgCtrl.bgColor).setStrokeStyle(3, cfgCtrl.borderColor, 1);
+  const pauseBg = scene.add.circle(0, 0, cfgCtrl.radius, cfgCtrl.bgColor)
+    .setStrokeStyle(3.5, cfgCtrl.borderColor, 1);
+  const pauseHighlight = scene.add.circle(0, 0, cfgCtrl.radius - 4)
+    .setStrokeStyle(1.5, cfgCtrl.highlightColor, 0.35);
   const pauseIcon = scene.textures.exists('pause_icon')
-    ? scene.add.image(0, 0, 'pause_icon').setScale(0.55)
-    : scene.add.text(0, 0, '⏸', { fontSize: '20px', color: '#fff4dc' }).setOrigin(0.5);
-  pauseBtn.add([pauseBg, pauseIcon]);
+    ? scene.add.image(0, 0, 'pause_icon').setScale(cfgCtrl.iconScale)
+    : scene.add.text(0, 0, '⏸', { fontSize: '28px', color: '#fff4dc' }).setOrigin(0.5);
+  pauseBtn.add([pauseBg, pauseHighlight, pauseIcon]);
   pauseBtn.setSize(cfgCtrl.radius * 2, cfgCtrl.radius * 2).setInteractive({ useHandCursor: true });
-  pauseBtn.on('pointerdown', () => callbacks.onPause?.());
-  pauseBtn.on('pointerover', () => pauseBtn.setScale(1.08));
-  pauseBtn.on('pointerout', () => pauseBtn.setScale(1.0));
+  pauseBtn.on('pointerdown', () => {
+    scene.tweens.add({ targets: pauseBtn, scale: 0.92, duration: 80, yoyo: true });
+    callbacks.onPause?.();
+  });
+  pauseBtn.on('pointerover', () => scene.tweens.add({ targets: pauseBtn, scale: 1.08, duration: 120 }));
+  pauseBtn.on('pointerout', () => scene.tweens.add({ targets: pauseBtn, scale: 1.0, duration: 120 }));
 
   // Sound button
   const soundBtn = scene.add.container(cfgCtrl.muteX, cfgCtrl.muteY);
-  const soundBg = scene.add.circle(0, 0, cfgCtrl.radius, cfgCtrl.bgColor).setStrokeStyle(3, cfgCtrl.borderColor, 1);
+  const soundBg = scene.add.circle(0, 0, cfgCtrl.radius, cfgCtrl.bgColor)
+    .setStrokeStyle(3.5, cfgCtrl.borderColor, 1);
+  const soundHighlight = scene.add.circle(0, 0, cfgCtrl.radius - 4)
+    .setStrokeStyle(1.5, cfgCtrl.highlightColor, 0.35);
   const soundIcon = scene.textures.exists('sound_on')
-    ? scene.add.image(0, 0, 'sound_on').setScale(0.55)
-    : scene.add.text(0, 0, '🔊', { fontSize: '20px', color: '#fff4dc' }).setOrigin(0.5);
-  soundBtn.add([soundBg, soundIcon]);
+    ? scene.add.image(0, 0, 'sound_on').setScale(cfgCtrl.iconScale)
+    : scene.add.text(0, 0, '🔊', { fontSize: '28px', color: '#fff4dc' }).setOrigin(0.5);
+  soundBtn.add([soundBg, soundHighlight, soundIcon]);
   soundBtn.setSize(cfgCtrl.radius * 2, cfgCtrl.radius * 2).setInteractive({ useHandCursor: true });
-  soundBtn.on('pointerdown', () => callbacks.onMute?.());
-  soundBtn.on('pointerover', () => soundBtn.setScale(1.08));
-  soundBtn.on('pointerout', () => soundBtn.setScale(1.0));
+  soundBtn.on('pointerdown', () => {
+    scene.tweens.add({ targets: soundBtn, scale: 0.92, duration: 80, yoyo: true });
+    callbacks.onMute?.();
+  });
+  soundBtn.on('pointerover', () => scene.tweens.add({ targets: soundBtn, scale: 1.08, duration: 120 }));
+  soundBtn.on('pointerout', () => scene.tweens.add({ targets: soundBtn, scale: 1.0, duration: 120 }));
 
   container.add([pauseBtn, soundBtn]);
 
@@ -492,6 +582,7 @@ export function buildCozyHUD(scene, callbacks = {}) {
         const isFull = idx < health;
         if (scene.textures.exists('heart_full') && scene.textures.exists('heart_empty')) {
           hImg.setTexture(isFull ? 'heart_full' : 'heart_empty');
+          hImg.setScale(cfgHearts.iconScale);
         } else {
           hImg.setText(isFull ? '♥' : '♡');
           hImg.setColor(isFull ? '#f45b69' : '#7b5b50');
@@ -514,6 +605,7 @@ export function buildCozyHUD(scene, callbacks = {}) {
     setMuted(muted) {
       if (scene.textures.exists('sound_on') && scene.textures.exists('sound_off')) {
         soundIcon.setTexture(muted ? 'sound_off' : 'sound_on');
+        soundIcon.setScale(cfgCtrl.iconScale);
       } else {
         soundIcon.setText(muted ? '🔇' : '🔊');
       }

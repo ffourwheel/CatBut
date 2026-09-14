@@ -1,6 +1,12 @@
 import Phaser from 'phaser';
 import { ASSET_KEYS } from './AssetManifest.js';
-import { ASSEMBLY_DEPTH, CANVAS_SIZE, CAT_STATES, TABLE_ANCHOR } from './constants.js';
+import {
+  ASSEMBLY_DEPTH,
+  CANVAS_SIZE,
+  CAT_STATES,
+  SABOTAGE_PAW_ORIGIN,
+  TABLE_ANCHOR,
+} from './constants.js';
 
 const COLORS = {
   table: 0xf3dcc1,
@@ -144,9 +150,21 @@ function createCatTextures(scene) {
   });
 }
 
+function createSabotagePawTexture(scene) {
+  createTexture(scene, ASSET_KEYS.sabotagePaw, (graphics) => {
+    graphics.lineStyle(86, COLORS.cat, 1);
+    graphics.beginPath();
+    graphics.moveTo(405, 430);
+    graphics.lineTo(820, 820);
+    graphics.strokePath();
+    drawPaw(graphics, 820, 820, COLORS.cream);
+  });
+}
+
 export function ensurePlaceholderTextures(scene) {
   createTableTextures(scene);
   createCatTextures(scene);
+  createSabotagePawTexture(scene);
 }
 
 export function createCatTableAssembly(scene, { useRealAssets = false, anchor = TABLE_ANCHOR } = {}) {
@@ -170,17 +188,26 @@ export function createCatTableAssembly(scene, { useRealAssets = false, anchor = 
   catState.baseScale = CAT_HOLE_SCALE;
   catState.baseY = CAT_HOLE_OFFSET_Y;
   catState.setName('catState').setDepth(ASSEMBLY_DEPTH.MIDDLE);
+  const sabotagePaw = scene.add.image(0, CAT_HOLE_OFFSET_Y, ASSET_KEYS.sabotagePaw)
+    .setOrigin(SABOTAGE_PAW_ORIGIN.x, SABOTAGE_PAW_ORIGIN.y)
+    .setScale(0.44)
+    .setVisible(false);
+  sabotagePaw.setName('sabotagePaw').setDepth(ASSEMBLY_DEPTH.MIDDLE + 5);
 
-  container.add([tableBack, tableFront, catState]);
+  container.add([tableBack, catState, sabotagePaw, tableFront]);
   container.sort('depth');
 
   return {
     container,
     tableBack,
     catState,
+    sabotagePaw,
     tableFront,
     setCatState(state) {
-      const textureKey = state === CAT_STATES.WARNING ? ASSET_KEYS.cat[CAT_STATES.HIDDEN] : ASSET_KEYS.cat[state];
+      const textureState = state === CAT_STATES.SABOTAGE ? CAT_STATES.PEEK : state;
+      const textureKey = state === CAT_STATES.WARNING
+        ? ASSET_KEYS.cat[CAT_STATES.HIDDEN]
+        : ASSET_KEYS.cat[textureState];
       catState.setTexture(textureKey);
     },
   };

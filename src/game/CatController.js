@@ -14,6 +14,8 @@ export class CatController {
     this.eventResolved = false;
     this.safeRemaining = 0;
     this.cooldownRemaining = 0;
+    this.sabotagePhase = 'idle';
+    this.sabotageTargetId = null;
   }
 
   start() {
@@ -21,6 +23,8 @@ export class CatController {
     this.paused = false;
     this.safeRemaining = 0;
     this.cooldownRemaining = 0;
+    this.sabotagePhase = 'idle';
+    this.sabotageTargetId = null;
     this.eventResolved = false;
     this.setState(CAT_STATES.HIDDEN);
     this.scheduleNextEvent();
@@ -30,6 +34,8 @@ export class CatController {
     this.running = false;
     this.paused = false;
     this.setState(CAT_STATES.HIDDEN);
+    this.sabotagePhase = 'idle';
+    this.sabotageTargetId = null;
   }
 
   pause() {
@@ -77,7 +83,11 @@ export class CatController {
       case CAT_STATES.WATCH:
       case CAT_STATES.ATTACK:
       case CAT_STATES.SABOTAGE:
-        this.enterHide();
+        if (this.state === CAT_STATES.SABOTAGE && this.sabotagePhase === 'preview') {
+          this.enterSabotage(this.sabotageTargetId);
+        } else {
+          this.enterHide();
+        }
         break;
       case CAT_STATES.HIDE:
         this.finishEvent();
@@ -120,12 +130,12 @@ export class CatController {
     }
 
     if (event === CAT_EVENTS.SABOTAGE) {
-      const targetId = this.callbacks.getSabotageTarget?.();
-      if (targetId === null || targetId === undefined) {
+      const targetSlotId = this.callbacks.getSabotageTarget?.();
+      if (targetSlotId === null || targetSlotId === undefined) {
         this.enterWatch();
         return;
       }
-      this.enterSabotage(targetId);
+      this.enterSabotagePreview(targetSlotId);
       return;
     }
 
@@ -138,21 +148,34 @@ export class CatController {
     this.callbacks.onWatch?.();
   }
 
-  enterSabotage(targetId) {
+  enterSabotagePreview(targetSlotId) {
     this.eventResolved = true;
+    this.sabotagePhase = 'preview';
+    this.sabotageTargetId = targetSlotId;
+    this.setState(CAT_STATES.SABOTAGE);
+    this.phaseRemaining = this.config.sabotagePreviewDuration;
+    this.callbacks.onSabotagePreview?.(targetSlotId);
+  }
+
+  enterSabotage(targetSlotId) {
+    this.eventResolved = true;
+    this.sabotagePhase = 'active';
+    this.sabotageTargetId = targetSlotId;
     this.setState(CAT_STATES.SABOTAGE);
     this.phaseRemaining = this.config.sabotageDuration;
     this.cooldownRemaining = this.config.sabotageCooldown;
-    this.callbacks.onSabotage?.(targetId);
+    this.callbacks.onSabotage?.(targetSlotId);
   }
 
   enterHide() {
+    this.sabotagePhase = 'idle';
     this.setState(CAT_STATES.HIDE);
     this.phaseRemaining = this.config.hideDuration;
   }
 
   finishEvent() {
     this.setState(CAT_STATES.HIDDEN);
+    this.sabotageTargetId = null;
     this.scheduleNextEvent();
   }
 
@@ -206,7 +229,9 @@ export class CatController {
       [CAT_STATES.PEEK]: this.config.peekDuration,
       [CAT_STATES.WATCH]: this.config.watchDuration,
       [CAT_STATES.ATTACK]: this.config.attackRecovery,
-      [CAT_STATES.SABOTAGE]: this.config.sabotageDuration,
+      [CAT_STATES.SABOTAGE]: this.sabotagePhase === 'preview'
+        ? this.config.sabotagePreviewDuration
+        : this.config.sabotageDuration,
       [CAT_STATES.HIDE]: this.config.hideDuration,
     };
 

@@ -7,6 +7,7 @@ export const ASSET_KEYS = Object.freeze({
   backgroundForeground: 'in_background_overlay',
   tableBack: 'table_back',
   tableFront: 'table_front',
+  sabotagePaw: 'sabotage_paw',
   cat: Object.fromEntries(Object.values(CAT_STATES).map((state) => [state, `cat_hole_${state}`])),
   buttons: {
     off: 'button_off',
@@ -43,6 +44,7 @@ export const ASSET_MANIFEST = Object.freeze({
   in_background_overlay: '/assets/in_background_overlay.png',
   table_back: '/assets/table_back.png',
   table_front: '/assets/table_front.png',
+  sabotage_paw: '/assets/sabotage_paw.png',
   ...Object.fromEntries(
     Object.values(CAT_STATES).map((state) => [
       `cat_hole_${state}`,

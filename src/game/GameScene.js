@@ -2,7 +2,13 @@ import Phaser from 'phaser';
 import { createGameConfig, getRuntimeGameConfig } from '../config/gameConfig.js';
 import { ASSET_KEYS, preloadContractAssets } from './AssetManifest.js';
 import { createCatTableAssembly } from './PlaceholderArt.js';
-import { ASSEMBLY_DEPTH, CAT_STATES, GAME_SCREENS } from './constants.js';
+import {
+  ASSEMBLY_DEPTH,
+  CAT_STATES,
+  GAME_SCREENS,
+  SABOTAGE_PAW_DEFAULT_ANGLE,
+  SABOTAGE_PAW_REACH,
+} from './constants.js';
 import { AudioManager } from './AudioManager.js';
 import { ButtonManager } from './ButtonManager.js';
 import { CatController } from './CatController.js';
@@ -55,6 +61,8 @@ export class GameScene extends Phaser.Scene {
     this.sessionScreen = GAME_SCREENS.START;
     this.inputLockRemaining = 0;
     this.lastScoreEvent = null;
+    this.sabotagePawTween = null;
+    this.sabotageHitTimer = null;
 
     this.ui = new UIManager(this, {
       onPause: () => this.pauseStage(),
@@ -85,7 +93,8 @@ export class GameScene extends Phaser.Scene {
       onStateChange: (state) => this.handleCatState(state),
       onWatch: () => this.handleWatchStart(),
       onAttack: () => this.handleAttack(),
-      onSabotage: (buttonId) => this.handleSabotage(buttonId),
+      onSabotagePreview: (slotId) => this.handleSabotagePreview(slotId),
+      onSabotage: (slotId) => this.handleSabotage(slotId),
       getProgress: () => ({
         activeCount: this.buttons.getActivatedCount(),
         totalCount: this.buttons.getButtonCount(),
@@ -110,6 +119,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   beginStage() {
+    this.hideSabotagePaw(true);
+    this.buttons?.clearSabotageTarget();
     if (this.assembly?.container) {
       this.assembly.container.setY(this.boardCenterY);
     }
@@ -135,6 +146,7 @@ export class GameScene extends Phaser.Scene {
     this.buttons.cancelCurrent();
     this.buttons.setVisible(false);
     this.cat.pause();
+    this.sabotagePawTween?.pause();
     this.stage.pause();
     this.sessionScreen = GAME_SCREENS.PAUSE;
     this.ui.show(GAME_SCREENS.PAUSE);
@@ -144,6 +156,7 @@ export class GameScene extends Phaser.Scene {
     if (this.stage.status !== 'paused') return;
     this.stage.resume();
     this.cat.resume();
+    this.sabotagePawTween?.resume();
     this.cat.suppressFor(this.config.resumeSafeWindow);
     this.buttons.setVisible(true);
     this.sessionScreen = GAME_SCREENS.GAMEPLAY;
@@ -151,9 +164,16 @@ export class GameScene extends Phaser.Scene {
     this.ui.setStatus('ปลอดภัยชั่วครู่...');
   }
 
+  showPause() {
+    this.sessionScreen = GAME_SCREENS.PAUSE;
+    this.ui.show(GAME_SCREENS.PAUSE);
+  }
+
   showStart(immediate = false) {
     this.cat?.stop();
     this.stage.reset();
+    this.hideSabotagePaw(true);
+    this.buttons?.clearSabotageTarget();
     this.buttons?.reset();
     this.buttons?.setVisible(true);
     this.sessionScreen = GAME_SCREENS.START;
@@ -244,7 +264,9 @@ export class GameScene extends Phaser.Scene {
     } else if (state === CAT_STATES.WATCH) {
     } else if (state === CAT_STATES.ATTACK) {
     } else if (state === CAT_STATES.SABOTAGE) {
-      this.audio.play('sabotage');
+    } else if (state === CAT_STATES.HIDE || state === CAT_STATES.HIDDEN) {
+      this.hideSabotagePaw();
+      this.buttons.clearSabotageTarget();
     }
     this.refreshHud();
   }
@@ -264,11 +286,92 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  handleSabotage(buttonId) {
-    const button = this.buttons.buttons[buttonId];
-    this.buttons.sabotage(buttonId);
-    this.ui.onSabotage(button);
-    this.audio.play('sabotage');
+  handleSabotagePreview(slotId) {
+    const button = this.buttons.setSabotageTarget(slotId);
+    if (!button) return;
+    this.ui.setStatus('แมวกำลังเล็งปุ่มนี้!', true);
+    this.ui.onSabotagePreview?.(button);
+  }
+
+  handleSabotage(slotId) {
+    const button = this.buttons.getButtonBySlotId(slotId);
+    if (!button) return;
+
+    const paw = this.assembly.sabotagePaw;
+    const containerX = this.assembly.container.x;
+    const containerY = this.assembly.container.y;
+    const targetX = button.x - containerX;
+    const targetY = button.y - containerY;
+    const originX = 0;
+    const originY = this.assembly.catState.baseY ?? 0;
+    const targetAngle = Math.atan2(targetY - originY, targetX - originX);
+    const targetDistance = Math.hypot(targetX - originX, targetY - originY);
+    const targetScale = Math.max(0.3, Math.min(0.58, targetDistance / SABOTAGE_PAW_REACH));
+    let sabotageResolved = false;
+    const resolveSabotage = () => {
+      if (sabotageResolved) return;
+      sabotageResolved = true;
+      this.sabotageHitTimer = null;
+      if (!this.stage.isPlaying()) return;
+      const sabotaged = this.buttons.sabotage(slotId);
+      this.buttons.clearSabotageTarget();
+      if (sabotaged) {
+        this.ui.onSabotage(button);
+        this.audio.play('sabotage');
+      }
+    };
+
+    this.tweens.killTweensOf(paw);
+    this.sabotageHitTimer?.remove(false);
+    this.sabotageHitTimer = this.time.delayedCall(
+      this.config.sabotageHitDuration,
+      resolveSabotage,
+    );
+    paw
+      .setVisible(true)
+      .setAlpha(1)
+      .setPosition(originX, originY)
+      .setRotation(targetAngle - SABOTAGE_PAW_DEFAULT_ANGLE)
+      .setScale(0.02);
+
+    this.sabotagePawTween = this.tweens.add({
+      targets: paw,
+      scaleX: targetScale,
+      scaleY: targetScale,
+      duration: this.config.sabotageReachDuration,
+      ease: 'Quad.easeInOut',
+      onComplete: () => {
+        this.sabotagePawTween = null;
+        resolveSabotage();
+      },
+    });
+  }
+
+  hideSabotagePaw(immediate = false) {
+    const paw = this.assembly?.sabotagePaw;
+    if (!paw) return;
+    this.tweens.killTweensOf(paw);
+    this.sabotageHitTimer?.remove(false);
+    this.sabotageHitTimer = null;
+    this.sabotagePawTween = null;
+
+    if (immediate) {
+      paw.setVisible(false).setAlpha(0).setScale(0.02);
+      return;
+    }
+
+    paw.setVisible(true);
+    this.sabotagePawTween = this.tweens.add({
+      targets: paw,
+      scaleX: 0.02,
+      scaleY: 0.02,
+      alpha: 0,
+      duration: this.config.hideDuration,
+      ease: 'Quad.easeIn',
+      onComplete: () => {
+        paw.setVisible(false);
+      },
+    });
   }
 
   finishStage() {

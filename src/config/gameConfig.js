@@ -1,3 +1,5 @@
+import { BUTTON_SLOT_PRESETS } from '../game/constants.js';
+
 /**
  * Central game-tuning seam.
  *
@@ -15,11 +17,12 @@ export const DEFAULT_CONFIG = Object.freeze({
 
   // Player interaction
   holdDuration: 800,
-  decayDuration: 1000,
+  decayDuration: 2800,
   startingHealth: 3,
   buttonCount: 4,
   buttonCountMin: 4,
   buttonCountMax: 8,
+  buttonSetPresets: BUTTON_SLOT_PRESETS,
   resumeSafeWindow: 500,
 
   // Cat timing and behaviour
@@ -29,11 +32,14 @@ export const DEFAULT_CONFIG = Object.freeze({
   peekDuration: 900,
   watchDuration: 1000,
   hideDuration: 200,
-  sabotageDuration: 500,
-  sabotageCooldown: 3000,
+  sabotagePreviewDuration: 300,
+  sabotageDuration: 220,
+  sabotageReachDuration: 220,
+  sabotageHitDuration: 180,
+  sabotageCooldown: 1800,
   attackRecovery: 500,
-  watchProbability: 0.6,
-  catWatchProbabilityAtMaxProgress: 0.35,
+  watchProbability: 0.35,
+  catWatchProbabilityAtMaxProgress: 0.18,
   catIntervalProgressScaleMin: 0.55,
 
   // Score and combo
@@ -52,6 +58,8 @@ export const DEFAULT_CONFIG = Object.freeze({
     disableRandomness: false,
     forceHealth: null,
     forceButtonCount: null,
+    forceButtonSet: null,
+    forceSabotageSlot: null,
   }),
 });
 
@@ -63,7 +71,7 @@ export const GAME_PRESETS = Object.freeze({
   normal: Object.freeze({}),
   easy: Object.freeze({
     holdDuration: 650,
-    decayDuration: 1400,
+    decayDuration: 3500,
     catIntervalMin: 6500,
     catIntervalMax: 8000,
     warningDuration: 900,
@@ -74,7 +82,7 @@ export const GAME_PRESETS = Object.freeze({
   }),
   hard: Object.freeze({
     holdDuration: 1000,
-    decayDuration: 700,
+    decayDuration: 1800,
     catIntervalMin: 3200,
     catIntervalMax: 4300,
     warningDuration: 500,
@@ -115,7 +123,25 @@ function normalizeConfig(rawConfig) {
   config.peekDuration = clampInt(config.peekDuration, 100, 10000, DEFAULT_CONFIG.peekDuration);
   config.watchDuration = clampInt(config.watchDuration, 100, 10000, DEFAULT_CONFIG.watchDuration);
   config.hideDuration = clampInt(config.hideDuration, 50, 10000, DEFAULT_CONFIG.hideDuration);
+  config.sabotagePreviewDuration = clampInt(
+    config.sabotagePreviewDuration,
+    50,
+    10000,
+    DEFAULT_CONFIG.sabotagePreviewDuration,
+  );
   config.sabotageDuration = clampInt(config.sabotageDuration, 100, 10000, DEFAULT_CONFIG.sabotageDuration);
+  config.sabotageReachDuration = clampInt(
+    config.sabotageReachDuration,
+    100,
+    10000,
+    DEFAULT_CONFIG.sabotageReachDuration,
+  );
+  config.sabotageHitDuration = clampInt(
+    config.sabotageHitDuration,
+    50,
+    Math.min(config.sabotageReachDuration, Math.max(50, config.sabotageDuration - 10)),
+    DEFAULT_CONFIG.sabotageHitDuration,
+  );
   config.sabotageCooldown = clampInt(config.sabotageCooldown, 0, 60000, DEFAULT_CONFIG.sabotageCooldown);
   config.attackRecovery = clampInt(config.attackRecovery, 0, 10000, DEFAULT_CONFIG.attackRecovery);
   config.resumeSafeWindow = clampInt(config.resumeSafeWindow, 0, 10000, DEFAULT_CONFIG.resumeSafeWindow);

@@ -1,4 +1,9 @@
-import { ASSEMBLY_DEPTH, BUTTON_POSITIONS } from './constants.js';
+import {
+  ASSEMBLY_DEPTH,
+  BUTTON_SLOT_IDS,
+  BUTTON_SLOT_LAYOUT,
+  BUTTON_SLOT_PRESETS,
+} from './constants.js';
 import { ASSET_KEYS } from './AssetManifest.js';
 
 const BUTTON_COLORS = {
@@ -27,19 +32,22 @@ export class ButtonManager {
     this.buttons = [];
     this.heldButtonId = null;
     this.pointerId = null;
+    this.activeSlotIds = [];
     this.createButtons();
     this.bindPointerEvents();
   }
 
   createButtons() {
     const previousCount = this.buttons?.length || null;
-    const count = this.config.debug.forceButtonCount ?? this.randomButtonCount(previousCount);
+    const activeSlotIds = this.resolveActiveSlotIds(previousCount);
+    this.activeSlotIds = activeSlotIds;
     if (!this.layer) {
       this.layer = this.scene.add.container(0, 0).setDepth(ASSEMBLY_DEPTH.BUTTONS);
     }
 
-    for (let index = 0; index < count; index += 1) {
-      const basePosition = BUTTON_POSITIONS[index % BUTTON_POSITIONS.length];
+    activeSlotIds.forEach((slotId, index) => {
+      const basePosition = BUTTON_SLOT_LAYOUT.find((slot) => slot.id === slotId);
+      if (!basePosition) return;
       const position = { x: basePosition.x, y: basePosition.y + this.worldOffsetY };
       const usesTextures = this.scene.textures.exists(ASSET_KEYS.buttons.off);
       const visual = usesTextures
@@ -47,7 +55,8 @@ export class ButtonManager {
         : this.scene.add.graphics();
       visual.baseScale = 0.56;
       const progressRing = this.scene.add.graphics();
-      const hitTarget = this.scene.add.circle(position.x, position.y, 56, 0xffffff, 0.001)
+      const targetMarker = this.scene.add.graphics();
+      const hitTarget = this.scene.add.circle(position.x, position.y, 60, 0xffffff, 0.001)
         .setInteractive({ useHandCursor: true });
       const label = this.scene.add.text(position.x, position.y, String(index + 1), {
         color: '#4c3030',
@@ -59,11 +68,13 @@ export class ButtonManager {
 
       const button = {
         id: index,
+        slotId,
         x: position.x,
         y: position.y,
         radius: 46,
         visual,
         progressRing,
+        targetMarker,
         usesTextures,
         hitTarget,
         label,
@@ -71,15 +82,39 @@ export class ButtonManager {
         activated: false,
         activationCount: 0,
         reactivationCount: 0,
+        targeted: false,
       };
 
       hitTarget.on('pointerdown', (pointer) => {
         this.beginHold(index, pointer.id);
       });
-      this.layer.add([visual, progressRing, label, hitTarget]);
+      this.layer.add([targetMarker, visual, progressRing, label, hitTarget]);
       this.buttons.push(button);
       this.renderButton(button);
+    });
+  }
+
+  resolveActiveSlotIds(previousCount = null) {
+    const forcedSet = this.config.debug.forceButtonSet;
+    if (Array.isArray(forcedSet) && forcedSet.length > 0) {
+      return this.normalizeSlotIds(forcedSet);
     }
+
+    const configuredSet = this.config.buttonSet;
+    if (Array.isArray(configuredSet) && configuredSet.length > 0) {
+      return this.normalizeSlotIds(configuredSet);
+    }
+
+    const count = this.config.debug.forceButtonCount ?? this.randomButtonCount(previousCount);
+    const preset = this.config.buttonSetPresets?.[count] ?? BUTTON_SLOT_PRESETS[count];
+    return this.normalizeSlotIds(preset ?? BUTTON_SLOT_IDS.slice(0, count));
+  }
+
+  normalizeSlotIds(slotIds) {
+    const validSlotIds = new Set(BUTTON_SLOT_IDS);
+    return [...new Set(slotIds)]
+      .filter((slotId) => validSlotIds.has(slotId))
+      .slice(0, BUTTON_SLOT_IDS.length);
   }
 
   randomButtonCount(previousCount = null) {
@@ -161,11 +196,31 @@ export class ButtonManager {
     this.renderAll();
   }
 
-  sabotage(buttonId) {
-    const button = this.buttons[buttonId];
+  getButtonBySlotId(slotId) {
+    return this.buttons.find((button) => button.slotId === slotId) ?? null;
+  }
+
+  setSabotageTarget(slotId) {
+    this.buttons.forEach((button) => {
+      button.targeted = Boolean(slotId && button.slotId === slotId);
+    });
+    this.renderAll();
+    return this.getButtonBySlotId(slotId);
+  }
+
+  clearSabotageTarget() {
+    this.buttons.forEach((button) => {
+      button.targeted = false;
+    });
+    this.renderAll();
+  }
+
+  sabotage(slotId) {
+    const button = this.getButtonBySlotId(slotId);
     if (!button || !button.activated) return false;
     button.activated = false;
     button.progress = 0;
+    button.targeted = false;
     this.renderButton(button);
     return true;
   }
@@ -174,8 +229,14 @@ export class ButtonManager {
     const heldId = this.heldButtonId;
     const available = this.buttons.filter((button) => button.activated && button.id !== heldId);
     if (available.length === 0) return null;
+
+    const forcedSlotId = this.config.debug.forceSabotageSlot;
+    if (forcedSlotId && available.some((button) => button.slotId === forcedSlotId)) {
+      return forcedSlotId;
+    }
+
     const index = this.config.debug.disableRandomness ? 0 : Math.floor(Math.random() * available.length);
-    return available[index].id;
+    return available[index].slotId;
   }
 
   areAllActivated() {
@@ -215,6 +276,7 @@ export class ButtonManager {
       button.activated = false;
       button.activationCount = 0;
       button.reactivationCount = 0;
+      button.targeted = false;
     });
     this.renderAll();
   }
@@ -234,6 +296,18 @@ export class ButtonManager {
 
   renderButton(button) {
     const isHolding = button.id === this.heldButtonId;
+
+    const marker = button.targetMarker;
+    marker.clear();
+    marker.setVisible(button.targeted);
+    if (button.targeted) {
+      marker.fillStyle(0xffcb5c, 0.16);
+      marker.fillCircle(button.x, button.y, 78);
+      marker.lineStyle(10, 0xffcb5c, 1);
+      marker.strokeCircle(button.x, button.y, 76);
+      marker.lineStyle(4, 0xfff4dc, 0.8);
+      marker.strokeCircle(button.x, button.y, 86);
+    }
 
     if (button.usesTextures) {
       const textureKey = button.activated
