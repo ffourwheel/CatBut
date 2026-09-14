@@ -1,67 +1,85 @@
 /**
  * CatKub HUD Layout & Component Specifications
  * Visual Direction: Cozy Cat Café
- * Target Canvas: 1024 × 1024
+ * Target Canvas: 1024 × 1820 portrait
  */
 
 import { UI_COLORS, UI_FONTS, UI_SPACING, UI_DEPTH } from './UITokens.js';
 import { COPY_THAI } from './CopyThai.js';
 
 export const HUD_LAYOUT_CONFIG = Object.freeze({
-  // Score Pill (Top Left)
+  // Score plaque (Top Left)
   scorePill: {
-    x: 48,
-    y: 46,
-    width: 210,
-    height: 68,
-    radius: 34,
-    bgColor: UI_COLORS.beigePill,
-    borderColor: UI_COLORS.panelBorder,
-    starX: 84,
-    starY: 80,
-    labelX: 168,
-    labelY: 62,
-    valueX: 168,
-    valueY: 88,
+    x: 20,
+    y: 18,
+    width: 340,
+    height: 255,
+    assetCenterY: 145,
+    assetHeight: 255,
+    radius: 48,
+    bgColor: UI_COLORS.creamSoft,
+    borderColor: UI_COLORS.woodDeep,
+    shadowColor: UI_COLORS.woodDeep,
+    badgeBgColor: 0xf1c98d,
+    badgeBorderColor: UI_COLORS.woodDark,
+    badgeX: 102,
+    badgeY: 82,
+    badgeRadius: 50,
+    starX: 102,
+    starY: 82,
+    starScale: 0.48,
+    labelX: 232,
+    labelY: 65,
+    labelWidth: 120,
+    labelHeight: 30,
+    valueX: 232,
+    valueY: 160,
   },
 
-  // Combo Pill (Top Center)
+  // Combo Pill (Right HUD Column)
   comboPill: {
-    x: 512,
-    y: 72,
-    width: 220,
-    height: 72,
-    radius: 36,
+    x: 834,
+    y: 280,
+    width: 190,
+    height: 158,
+    radius: 32,
+    assetY: 280,
+    assetWidth: 190,
+    assetHeight: 158,
     bgColor: UI_COLORS.panelBg,
     borderColor: UI_COLORS.accentGold,
-    labelY: 56,
-    valueY: 86,
+    labelY: 52,
+    valueY: 84,
   },
 
-  // Hearts Container (Top Right)
+  // Hearts Container (Below Score)
   heartsRow: {
-    x: 770,
-    y: 46,
-    width: 206,
-    height: 68,
-    radius: 34,
-    bgColor: UI_COLORS.beigePill,
-    borderColor: UI_COLORS.panelBorder,
-    startX: 827,
-    gap: 46,
-    yCenter: 80,
+    x: 20,
+    y: 274,
+    width: 340,
+    height: 112,
+    radius: 48,
+    bgColor: UI_COLORS.creamSoft,
+    borderColor: UI_COLORS.woodDeep,
+    shadowColor: UI_COLORS.woodDeep,
+    assetCenterY: 330,
+    assetHeight: 113,
+    startX: 146,
+    gap: 68,
+    yCenter: 330,
+    iconScale: 0.42,
   },
 
-  // 4-Segment Progress Bar (Below Combo Pill)
+  // 4-Segment Progress Bar (Right HUD Column)
   progressBar: {
-    x: 512,
-    y: 154,
+    x: 834,
+    y: 155,
     width: 320,
     height: 48,
     radius: 24,
     bgColor: UI_COLORS.panelBg,
     borderColor: UI_COLORS.panelBorder,
-    labelY: 132,
+    labelY: 155,
     segmentWidth: 42,
     segmentHeight: 22,
     segmentGap: 8,
@@ -71,19 +89,23 @@ export const HUD_LAYOUT_CONFIG = Object.freeze({
     ratioLabelX: 630,
   },
 
-  // Cat event countdown bar (Below progress bar)
+  // Combo countdown bar (Below Combo Pill)
   timerBar: {
-    x: 512,
-    y: 214,
-    width: 320,
-    height: 44,
-    radius: 22,
-    bgColor: UI_COLORS.panelBg,
-    borderColor: UI_COLORS.panelBorder,
+    x: 834,
+    y: 368,
+    width: 210,
+    height: 30,
+    radius: 15,
+    bgColor: 0x2b1d18,
+    borderColor: UI_COLORS.woodDark,
     trackColor: 0x5a3e32,
     fillColor: UI_COLORS.greenSuccess,
     warningColor: UI_COLORS.accentAmber,
     dangerColor: UI_COLORS.dangerCoral,
+    labelOffsetX: -75,
+    valueOffsetX: 75,
+    trackOffsetX: -23,
+    trackWidth: 58,
   },
 
   // Bottom Floating Table Instruction Banner
@@ -107,10 +129,10 @@ export const HUD_LAYOUT_CONFIG = Object.freeze({
 
   // Controls (Pause & Sound buttons)
   controls: {
-    pauseX: 960,
-    pauseY: 145,
-    muteX: 960,
-    muteY: 205,
+    pauseX: 928,
+    pauseY: 64,
+    muteX: 992,
+    muteY: 64,
     radius: 24,
     bgColor: UI_COLORS.panelBg,
     borderColor: UI_COLORS.woodDark,
@@ -129,63 +151,118 @@ export function buildCozyHUD(scene, callbacks = {}) {
 
   // 1. Top Score Pill
   const cfgScore = HUD_LAYOUT_CONFIG.scorePill;
-  const scoreBg = scene.add.graphics();
-  scoreBg.fillStyle(cfgScore.bgColor, 1);
-  scoreBg.fillRoundedRect(cfgScore.x, cfgScore.y, cfgScore.width, cfgScore.height, cfgScore.radius);
-  scoreBg.lineStyle(4, cfgScore.borderColor, 1);
-  scoreBg.strokeRoundedRect(cfgScore.x, cfgScore.y, cfgScore.width, cfgScore.height, cfgScore.radius);
+  const hasScoreBar = scene.textures.exists('score_bar');
+  const scoreBg = hasScoreBar
+    ? scene.add.image(cfgScore.x + cfgScore.width / 2, cfgScore.assetCenterY, 'score_bar')
+      .setDisplaySize(cfgScore.width, cfgScore.assetHeight)
+    : scene.add.graphics();
+  if (!hasScoreBar) {
+    scoreBg.fillStyle(cfgScore.shadowColor, 1);
+    scoreBg.fillRoundedRect(cfgScore.x + 4, cfgScore.y + 6, cfgScore.width, cfgScore.height, cfgScore.radius);
+    scoreBg.fillStyle(cfgScore.bgColor, 1);
+    scoreBg.fillRoundedRect(cfgScore.x, cfgScore.y, cfgScore.width, cfgScore.height, cfgScore.radius);
+    scoreBg.lineStyle(6, cfgScore.borderColor, 1);
+    scoreBg.strokeRoundedRect(cfgScore.x, cfgScore.y, cfgScore.width, cfgScore.height, cfgScore.radius);
+    scoreBg.lineStyle(3, 0xffffff, 0.7);
+    scoreBg.strokeRoundedRect(cfgScore.x + 9, cfgScore.y + 9, cfgScore.width - 18, cfgScore.height - 18, cfgScore.radius - 9);
+  }
 
-  const starIcon = scene.textures.exists('star_icon')
-    ? scene.add.image(cfgScore.starX, cfgScore.starY, 'star_icon').setScale(0.44)
-    : scene.add.text(cfgScore.starX, cfgScore.starY, '★', { fontSize: '32px', color: '#ffcb5c' }).setOrigin(0.5);
+  const starIcon = !hasScoreBar && scene.textures.exists('star_icon')
+    ? scene.add.image(cfgScore.starX, cfgScore.starY, 'star_icon').setScale(cfgScore.starScale)
+    : (!hasScoreBar ? scene.add.text(cfgScore.starX, cfgScore.starY, '★', { fontSize: '32px', color: '#ffcb5c' }).setOrigin(0.5) : null);
 
-  const scoreLabel = scene.add.text(cfgScore.labelX, cfgScore.labelY, COPY_THAI.hud.scoreLabel, {
-    fontFamily: UI_FONTS.family,
-    fontSize: `${UI_FONTS.sizes.caption}px`,
-    color: UI_COLORS.textSecondary,
-    fontStyle: 'bold',
-  }).setOrigin(0.5);
+  let scoreLabelBg = null;
+  let scoreLabel = null;
+  if (!hasScoreBar) {
+    scoreLabelBg = scene.add.graphics();
+    scoreLabelBg.fillStyle(UI_COLORS.beigePill, 1);
+    scoreLabelBg.fillRoundedRect(
+      cfgScore.labelX - cfgScore.labelWidth / 2,
+      cfgScore.labelY - cfgScore.labelHeight / 2,
+      cfgScore.labelWidth,
+      cfgScore.labelHeight,
+      cfgScore.labelHeight / 2,
+    );
+
+    scoreLabel = scene.add.text(cfgScore.labelX, cfgScore.labelY, COPY_THAI.hud.scoreLabel, {
+      fontFamily: UI_FONTS.family,
+      fontSize: `${UI_FONTS.sizes.hudLabel}px`,
+      color: UI_COLORS.textPrimary,
+      fontStyle: 'bold',
+    }).setOrigin(0.5);
+  }
 
   const scoreValue = scene.add.text(cfgScore.valueX, cfgScore.valueY, '0', {
     fontFamily: UI_FONTS.family,
-    fontSize: `${UI_FONTS.sizes.hudValue}px`,
+    fontSize: '40px',
     color: UI_COLORS.textPrimary,
     fontStyle: 'bold',
   }).setOrigin(0.5);
 
-  container.add([scoreBg, starIcon, scoreLabel, scoreValue]);
+  container.add([scoreBg, starIcon, scoreLabelBg, scoreLabel, scoreValue].filter(Boolean));
 
   // 2. Center Combo Pill
   const cfgCombo = HUD_LAYOUT_CONFIG.comboPill;
-  const comboBg = scene.add.graphics();
-  comboBg.fillStyle(cfgCombo.bgColor, 0.94);
-  comboBg.fillRoundedRect(cfgCombo.x - cfgCombo.width / 2, cfgCombo.y - cfgCombo.height / 2, cfgCombo.width, cfgCombo.height, cfgCombo.radius);
-  comboBg.lineStyle(4, cfgCombo.borderColor, 1);
-  comboBg.strokeRoundedRect(cfgCombo.x - cfgCombo.width / 2, cfgCombo.y - cfgCombo.height / 2, cfgCombo.width, cfgCombo.height, cfgCombo.radius);
+  const comboHud = scene.add.container(0, 0).setVisible(false);
+  const comboAssetKeys = Object.freeze({
+    2: 'combo_x2',
+    3: 'combo_x3',
+    4: 'combo_x4',
+  });
+  const hasComboAssets = Object.values(comboAssetKeys).every((key) => scene.textures.exists(key));
+  const comboAsset = hasComboAssets
+    ? scene.add.image(cfgCombo.x, cfgCombo.assetY, comboAssetKeys[2])
+      .setDisplaySize(cfgCombo.assetWidth, cfgCombo.assetHeight)
+    : null;
 
-  const comboLabel = scene.add.text(cfgCombo.x, cfgCombo.labelY, COPY_THAI.hud.comboLabel, {
-    fontFamily: UI_FONTS.family,
-    fontSize: `${UI_FONTS.sizes.caption}px`,
-    color: UI_COLORS.textMuted,
-    fontStyle: 'bold',
-  }).setOrigin(0.5);
+  let comboBg = null;
+  let comboLabel = null;
+  let comboValue = null;
+  if (comboAsset) {
+    comboHud.add(comboAsset);
+  } else {
+    comboBg = scene.add.graphics();
+    comboBg.fillStyle(cfgCombo.bgColor, 0.94);
+    comboBg.fillRoundedRect(cfgCombo.x - cfgCombo.width / 2, cfgCombo.y - cfgCombo.height / 2, cfgCombo.width, cfgCombo.height, cfgCombo.radius);
+    comboBg.lineStyle(4, cfgCombo.borderColor, 1);
+    comboBg.strokeRoundedRect(cfgCombo.x - cfgCombo.width / 2, cfgCombo.y - cfgCombo.height / 2, cfgCombo.width, cfgCombo.height, cfgCombo.radius);
 
-  const comboValue = scene.add.text(cfgCombo.x, cfgCombo.valueY, 'x1', {
-    fontFamily: UI_FONTS.family,
-    fontSize: `${UI_FONTS.sizes.hudValue}px`,
-    color: UI_COLORS.textGold,
-    fontStyle: 'bold',
-  }).setOrigin(0.5);
+    comboLabel = scene.add.text(cfgCombo.x, cfgCombo.labelY, COPY_THAI.hud.comboLabel, {
+      fontFamily: UI_FONTS.family,
+      fontSize: `${UI_FONTS.sizes.caption}px`,
+      color: UI_COLORS.textMuted,
+      fontStyle: 'bold',
+    }).setOrigin(0.5);
 
-  container.add([comboBg, comboLabel, comboValue]);
+    comboValue = scene.add.text(cfgCombo.x, cfgCombo.valueY, 'x1', {
+      fontFamily: UI_FONTS.family,
+      fontSize: `${UI_FONTS.sizes.hudValue}px`,
+      color: UI_COLORS.textGold,
+      fontStyle: 'bold',
+    }).setOrigin(0.5);
+
+    comboHud.add([comboBg, comboLabel, comboValue]);
+  }
+  container.add(comboHud);
 
   // 3. Hearts Row
   const cfgHearts = HUD_LAYOUT_CONFIG.heartsRow;
-  const heartsBg = scene.add.graphics();
-  heartsBg.fillStyle(cfgHearts.bgColor, 1);
-  heartsBg.fillRoundedRect(cfgHearts.x, cfgHearts.y, cfgHearts.width, cfgHearts.height, cfgHearts.radius);
-  heartsBg.lineStyle(4, cfgHearts.borderColor, 1);
-  heartsBg.strokeRoundedRect(cfgHearts.x, cfgHearts.y, cfgHearts.width, cfgHearts.height, cfgHearts.radius);
+  const hasHealthBar = scene.textures.exists('health_bar');
+  const heartsBg = hasHealthBar
+    ? scene.add.image(cfgHearts.x + cfgHearts.width / 2, cfgHearts.assetCenterY, 'health_bar')
+      .setDisplaySize(cfgHearts.width, cfgHearts.assetHeight)
+    : scene.add.graphics();
+  if (!hasHealthBar) {
+    heartsBg.fillStyle(cfgHearts.shadowColor, 1);
+    heartsBg.fillRoundedRect(cfgHearts.x + 4, cfgHearts.y + 6, cfgHearts.width, cfgHearts.height, cfgHearts.radius);
+    heartsBg.fillStyle(cfgHearts.bgColor, 1);
+    heartsBg.fillRoundedRect(cfgHearts.x, cfgHearts.y, cfgHearts.width, cfgHearts.height, cfgHearts.radius);
+    heartsBg.lineStyle(6, cfgHearts.borderColor, 1);
+    heartsBg.strokeRoundedRect(cfgHearts.x, cfgHearts.y, cfgHearts.width, cfgHearts.height, cfgHearts.radius);
+    heartsBg.lineStyle(3, 0xffffff, 0.7);
+    heartsBg.strokeRoundedRect(cfgHearts.x + 9, cfgHearts.y + 9, cfgHearts.width - 18, cfgHearts.height - 18, cfgHearts.radius - 9);
+  }
+
   container.add(heartsBg);
 
   const heartIcons = [];
@@ -193,7 +270,7 @@ export function buildCozyHUD(scene, callbacks = {}) {
     const hx = cfgHearts.startX + i * cfgHearts.gap;
     const hy = cfgHearts.yCenter;
     const hImg = scene.textures.exists('heart_full')
-      ? scene.add.image(hx, hy, 'heart_full').setScale(0.38)
+      ? scene.add.image(hx, hy, 'heart_full').setScale(cfgHearts.iconScale)
       : scene.add.text(hx, hy, '♥', { fontSize: '32px', color: '#f45b69' }).setOrigin(0.5);
     container.add(hImg);
     heartIcons.push(hImg);
@@ -265,7 +342,7 @@ export function buildCozyHUD(scene, callbacks = {}) {
   timerBg.lineStyle(3, cfgTimer.borderColor, 0.8);
   timerBg.strokeRoundedRect(cfgTimer.x - cfgTimer.width / 2, cfgTimer.y - cfgTimer.height / 2, cfgTimer.width, cfgTimer.height, cfgTimer.radius);
 
-  const timerLabel = scene.add.text(cfgTimer.x - 125, cfgTimer.y, 'เวลา', {
+  const timerLabel = scene.add.text(cfgTimer.x + cfgTimer.labelOffsetX, cfgTimer.y, COPY_THAI.hud.comboTimerLabel, {
     fontFamily: UI_FONTS.family,
     fontSize: '17px',
     color: UI_COLORS.textLight,
@@ -274,7 +351,7 @@ export function buildCozyHUD(scene, callbacks = {}) {
 
   const timerTrack = scene.add.graphics();
   const timerFill = scene.add.graphics();
-  const timerValue = scene.add.text(cfgTimer.x + 122, cfgTimer.y, '5 วิ', {
+  const timerValue = scene.add.text(cfgTimer.x + cfgTimer.valueOffsetX, cfgTimer.y, '5 วิ', {
     fontFamily: UI_FONTS.family,
     fontSize: '17px',
     color: UI_COLORS.textGold,
@@ -282,15 +359,15 @@ export function buildCozyHUD(scene, callbacks = {}) {
   }).setOrigin(0.5);
 
   timerContainer.add([timerBg, timerTrack, timerFill, timerLabel, timerValue]);
-  container.add(timerContainer);
+  comboHud.add(timerContainer);
 
   function renderTimer(remainingMs = 0, durationMs = 1) {
     const safeDuration = Math.max(1, durationMs ?? 1);
     const safeRemaining = Math.max(0, Math.min(safeDuration, remainingMs ?? 0));
     const ratio = safeRemaining / safeDuration;
-    const trackX = cfgTimer.x - 78;
+    const trackX = cfgTimer.x + cfgTimer.trackOffsetX;
     const trackY = cfgTimer.y - 8;
-    const trackWidth = 156;
+    const trackWidth = cfgTimer.trackWidth;
 
     timerTrack.clear();
     timerTrack.fillStyle(cfgTimer.trackColor, 1);
@@ -393,16 +470,22 @@ export function buildCozyHUD(scene, callbacks = {}) {
       scoreValue.setText(String(score));
     },
     setCombo(combo) {
-      comboValue.setText(`x${combo}`);
-      comboValue.setColor(combo > 1 ? UI_COLORS.accentGoldHex : '#fff4dc');
-      if (combo > 1) {
-        scene.tweens.add({
-          targets: comboValue,
-          scale: 1.25,
-          duration: 100,
-          yoyo: true,
-        });
+      const normalizedCombo = Math.max(1, Math.min(4, Number(combo) || 1));
+      const comboVisible = normalizedCombo >= 2;
+      comboHud.setVisible(comboVisible);
+
+      if (comboAsset && comboVisible) {
+        comboAsset
+          .setTexture(comboAssetKeys[normalizedCombo] ?? comboAssetKeys[4])
+          .setScale(1)
+          .setDisplaySize(cfgCombo.assetWidth, cfgCombo.assetHeight);
       }
+
+      if (comboValue) {
+        comboValue.setText(`x${normalizedCombo}`);
+        comboValue.setColor(UI_COLORS.accentGoldHex);
+      }
+
     },
     setHearts(health, maxHealth = 3) {
       heartIcons.forEach((hImg, idx) => {
@@ -418,7 +501,7 @@ export function buildCozyHUD(scene, callbacks = {}) {
     setProgress(activeCount, totalCount = 4) {
       renderProgressSegments(activeCount, totalCount);
     },
-    setTimer(remainingMs, durationMs) {
+    setComboTimer(remainingMs, durationMs) {
       renderTimer(remainingMs, durationMs);
     },
     setWarning(_visible) {

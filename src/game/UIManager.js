@@ -23,8 +23,8 @@ export class UIManager {
       activeCount: null,
       totalCount: null,
       muted: null,
-      timeRemaining: null,
-      timeDuration: null,
+      comboTimeRemaining: null,
+      comboTimeDuration: null,
     };
     this.warningVisible = false;
 
@@ -38,6 +38,9 @@ export class UIManager {
       onRestart: () => callbacks.onRestart?.(),
       onStart: () => (callbacks.onStart ? callbacks.onStart() : callbacks.onRestart?.()),
       onHome: () => callbacks.onHome?.(),
+      onMute: () => callbacks.onMute?.(),
+      onDifficultyChange: (difficulty) => callbacks.onDifficultyChange?.(difficulty),
+      initialSettings: callbacks.initialSettings,
       onTutorialComplete: () => callbacks.onTutorialComplete?.(),
       onTutorialReturn: () => callbacks.onTutorialReturn?.(),
     });
@@ -83,16 +86,18 @@ export class UIManager {
     this.screens.showTutorial(returnTo);
   }
 
-  updateStats({ score, combo, health, maxHealth, activeCount, totalCount, muted, catState, timeRemaining, timeDuration }) {
+  updateStats({ score, combo, health, maxHealth, activeCount, totalCount, muted, catState, comboTimeRemaining, comboTimeDuration }) {
     if (this.lastStats.score !== score) this.hud.setScore(score);
     if (this.lastStats.combo !== combo) this.hud.setCombo(combo);
     if (this.lastStats.health !== health) this.hud.setHearts(health, maxHealth);
     if (this.lastStats.activeCount !== activeCount || this.lastStats.totalCount !== totalCount) {
       this.hud.setProgress(activeCount, totalCount);
     }
-    if (this.lastStats.muted !== muted) this.hud.setMuted(muted);
-    if (this.lastStats.timeRemaining !== timeRemaining || this.lastStats.timeDuration !== timeDuration) {
-      this.hud.setTimer(timeRemaining, timeDuration);
+    if (this.lastStats.muted !== muted) {
+      this.hud.setMuted(muted);
+    }
+    if (this.lastStats.comboTimeRemaining !== comboTimeRemaining || this.lastStats.comboTimeDuration !== comboTimeDuration) {
+      this.hud.setComboTimer(comboTimeRemaining, comboTimeDuration);
     }
 
     this.lastStats = {
@@ -102,8 +107,8 @@ export class UIManager {
       activeCount,
       totalCount,
       muted,
-      timeRemaining,
-      timeDuration,
+      comboTimeRemaining,
+      comboTimeDuration,
     };
   }
 
@@ -113,6 +118,10 @@ export class UIManager {
 
   setClearStats(score, maxCombo) {
     this.screens.setClearStats(score, maxCombo);
+  }
+
+  setDifficulty(difficulty) {
+    this.screens.setDifficulty?.(difficulty);
   }
 
   setGameOverStats(score) {

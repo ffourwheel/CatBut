@@ -1,20 +1,22 @@
 import Phaser from 'phaser';
-import { createGameConfig } from '../config/gameConfig.js';
+import { createGameConfig, getRuntimeGameConfig } from '../config/gameConfig.js';
 import { ASSET_KEYS, preloadContractAssets } from './AssetManifest.js';
 import { createCatTableAssembly } from './PlaceholderArt.js';
-import { CAT_STATES, GAME_SCREENS } from './constants.js';
+import { ASSEMBLY_DEPTH, CAT_STATES, GAME_SCREENS } from './constants.js';
 import { AudioManager } from './AudioManager.js';
 import { ButtonManager } from './ButtonManager.js';
 import { CatController } from './CatController.js';
 import { HealthManager } from './HealthManager.js';
 import { ScoreManager } from './ScoreManager.js';
 import { StageManager } from './StageManager.js';
+import { SettingsStore } from './SettingsStore.js';
 import { UIManager } from './UIManager.js';
 
 export class GameScene extends Phaser.Scene {
   constructor() {
     super('GameScene');
-    this.config = createGameConfig(globalThis.CATKUB_CONFIG ?? {});
+    this.settings = new SettingsStore();
+    this.config = getRuntimeGameConfig({ preset: this.settings.get('difficulty') });
   }
 
   preload() {
@@ -25,24 +27,27 @@ export class GameScene extends Phaser.Scene {
     this.preventBrowserScroll();
     this.boardOffsetY = Math.max(0, (this.scale.gameSize.height - this.config.canvasSize) / 2);
     this.boardCenterY = this.config.canvasSize / 2 + this.boardOffsetY;
-    this.homeTableOffset = 365;
+    this.homeTableOffset = 485;
     const boardCenterY = this.boardCenterY;
     this.add.rectangle(512, boardCenterY, 1024, 1024, 0xf3dcc1).setDepth(-10);
     this.background = this.add.image(512, boardCenterY, ASSET_KEYS.background)
       .setOrigin(0.5, 0.5)
       .setDepth(0);
-    const bgScale = Math.max(1024 / this.background.width, 1024 / this.background.height);
+    const worldWidth = this.scale.gameSize.width || 1024;
+    const worldHeight = this.scale.gameSize.height || this.config.canvasSize;
+    this.background.setPosition(worldWidth / 2, worldHeight / 2);
+    const bgScale = Math.max(worldWidth / this.background.width, worldHeight / this.background.height);
     this.background.setScale(bgScale);
     this.backgroundForeground = this.add.image(200, 1635, ASSET_KEYS.backgroundForeground)
       .setOrigin(0.5, 0.5)
       .setScale(0.48)
-      .setDepth(25);
+      .setDepth(ASSEMBLY_DEPTH.FOREGROUND);
     this.assembly = createCatTableAssembly(this, {
       useRealAssets: this.config.useRealAssets,
       anchor: { x: 512, y: boardCenterY },
     });
     this.zeroJumpReport = this.runZeroJumpVerification();
-    this.audio = new AudioManager();
+    this.audio = new AudioManager({ muted: this.settings.get('muted') });
     this.stage = new StageManager();
     this.score = new ScoreManager(this.config, () => this.refreshHud());
     this.health = new HealthManager(this.config.debug.forceHealth ?? this.config.startingHealth, () => this.refreshHud());
@@ -58,6 +63,8 @@ export class GameScene extends Phaser.Scene {
       onStart: () => this.startGameFromHome(),
       onHome: () => this.showStart(),
       onMute: () => this.toggleMute(),
+      onDifficultyChange: (difficulty) => this.setDifficulty(difficulty),
+      initialSettings: this.settings.snapshot(),
       onTutorialComplete: () => this.beginStage(),
       onTutorialReturn: () => this.showPause(),
       boardOffsetY: this.boardOffsetY,
@@ -79,6 +86,10 @@ export class GameScene extends Phaser.Scene {
       onWatch: () => this.handleWatchStart(),
       onAttack: () => this.handleAttack(),
       onSabotage: (buttonId) => this.handleSabotage(buttonId),
+      getProgress: () => ({
+        activeCount: this.buttons.getActivatedCount(),
+        totalCount: this.buttons.getButtonCount(),
+      }),
       getSabotageTarget: () => this.buttons.getSabotageTarget(),
     });
 
@@ -92,6 +103,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (!this.stage.isPlaying()) return;
+    this.score.update(delta);
     this.buttons.update(delta, true);
     this.cat.update(delta);
     this.refreshHud();
@@ -106,7 +118,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.score.reset();
     this.health.reset();
-    this.buttons.reset();
+    this.buttons.reset({ randomize: true });
     this.inputLockRemaining = 0;
     this.lastScoreEvent = null;
     this.stage.start();
@@ -288,16 +300,29 @@ export class GameScene extends Phaser.Scene {
   }
 
   toggleMute() {
-    this.audio.toggleMute();
+    this.settings.set('muted', this.audio.toggleMute());
     this.refreshHud();
+  }
+
+  setDifficulty(difficulty) {
+    if (!this.settings.set('difficulty', difficulty)) return;
+
+    const runtimeOverrides = globalThis.CATKUB_CONFIG && typeof globalThis.CATKUB_CONFIG === 'object'
+      ? globalThis.CATKUB_CONFIG
+      : {};
+    this.config = createGameConfig({ ...runtimeOverrides, preset: difficulty });
+
+    // Existing managers keep the same config interface, so the new preset is
+    // picked up without rebuilding the table or the current screen.
+    if (this.cat) this.cat.config = this.config;
+    if (this.buttons) this.buttons.config = this.config;
+    if (this.score) this.score.config = this.config;
+    this.ui?.setDifficulty?.(difficulty);
   }
 
   refreshHud() {
     if (!this.ui || !this.score || !this.health || !this.buttons) return;
-    const timerInfo = this.cat?.getTimerInfo() ?? {
-      remaining: this.config.catIntervalMax,
-      duration: this.config.catIntervalMax,
-    };
+    const comboTimerInfo = this.score.getComboTimerInfo();
     this.ui.updateStats({
       score: this.score.score,
       combo: this.score.combo,
@@ -307,8 +332,8 @@ export class GameScene extends Phaser.Scene {
       totalCount: this.buttons.getButtonCount(),
       muted: this.audio?.muted ?? false,
       catState: this.cat?.state ?? CAT_STATES.HIDDEN,
-      timeRemaining: timerInfo.remaining,
-      timeDuration: timerInfo.duration,
+      comboTimeRemaining: comboTimerInfo.remaining,
+      comboTimeDuration: comboTimerInfo.duration,
     });
   }
 

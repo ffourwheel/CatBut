@@ -16,6 +16,10 @@ const COLORS = {
   success: 0x67b887,
 };
 
+const TABLE_FRONT_SCALE_X = 0.97;
+const CAT_HOLE_SCALE = 1.1;
+const CAT_HOLE_OFFSET_Y = 30;
+
 function createTexture(scene, key, draw) {
   if (scene.textures.exists(key)) return;
 
@@ -151,11 +155,20 @@ export function createCatTableAssembly(scene, { useRealAssets = false, anchor = 
   const container = scene.add.container(anchor.x, anchor.y).setDepth(1);
   container.setName('catTableContainer');
 
-  const tableBack = scene.add.image(0, 0, ASSET_KEYS.tableBack).setOrigin(0.5, 0.5);
+  const tableBack = scene.add.image(0, -110, ASSET_KEYS.tableBack)
+    .setOrigin(0.5, 0.5)
+    .setScale(0.97);
   tableBack.setName('tableBack').setDepth(ASSEMBLY_DEPTH.BACK);
-  const tableFront = scene.add.image(0, 0, ASSET_KEYS.tableFront).setOrigin(0.5, 0.5);
-  tableFront.setName('tableFront').setPosition(0, 212).setDepth(ASSEMBLY_DEPTH.FRONT);
-  const catState = scene.add.image(0, 0, ASSET_KEYS.cat[CAT_STATES.HIDDEN]).setOrigin(0.5, 0.5);
+  const tableFront = scene.add.image(0, 0, ASSET_KEYS.tableFront)
+    .setOrigin(0.5, 0.5)
+    .setScale(TABLE_FRONT_SCALE_X, 1);
+  tableFront.setName('tableFront').setPosition(0, 210).setDepth(ASSEMBLY_DEPTH.FRONT);
+  const catState = scene.add.image(0, 0, ASSET_KEYS.cat[CAT_STATES.HIDDEN])
+    .setOrigin(0.5, 0.5)
+    .setScale(CAT_HOLE_SCALE)
+    .setPosition(0, CAT_HOLE_OFFSET_Y);
+  catState.baseScale = CAT_HOLE_SCALE;
+  catState.baseY = CAT_HOLE_OFFSET_Y;
   catState.setName('catState').setDepth(ASSEMBLY_DEPTH.MIDDLE);
 
   container.add([tableBack, tableFront, catState]);

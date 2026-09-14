@@ -1,4 +1,4 @@
-import { BUTTON_POSITIONS } from './constants.js';
+import { ASSEMBLY_DEPTH, BUTTON_POSITIONS } from './constants.js';
 import { ASSET_KEYS } from './AssetManifest.js';
 
 const BUTTON_COLORS = {
@@ -32,9 +32,11 @@ export class ButtonManager {
   }
 
   createButtons() {
-    const count = this.config.debug.forceButtonCount ?? this.randomButtonCount();
-    const layer = this.scene.add.container(0, 0).setDepth(40);
-    this.layer = layer;
+    const previousCount = this.buttons?.length || null;
+    const count = this.config.debug.forceButtonCount ?? this.randomButtonCount(previousCount);
+    if (!this.layer) {
+      this.layer = this.scene.add.container(0, 0).setDepth(ASSEMBLY_DEPTH.BUTTONS);
+    }
 
     for (let index = 0; index < count; index += 1) {
       const basePosition = BUTTON_POSITIONS[index % BUTTON_POSITIONS.length];
@@ -74,17 +76,22 @@ export class ButtonManager {
       hitTarget.on('pointerdown', (pointer) => {
         this.beginHold(index, pointer.id);
       });
-      layer.add([visual, progressRing, label, hitTarget]);
+      this.layer.add([visual, progressRing, label, hitTarget]);
       this.buttons.push(button);
       this.renderButton(button);
     }
   }
 
-  randomButtonCount() {
+  randomButtonCount(previousCount = null) {
     const min = Math.max(1, Math.floor(this.config.buttonCountMin ?? this.config.buttonCount ?? 4));
     const max = Math.max(min, Math.floor(this.config.buttonCountMax ?? min));
-    if (this.config.debug.disableRandomness) return min;
-    return min + Math.floor(Math.random() * (max - min + 1));
+    if (this.config.debug.disableRandomness || min === max) return min;
+
+    let count = min + Math.floor(Math.random() * (max - min + 1));
+    if (previousCount !== null && max > min && count === previousCount) {
+      count = min + Math.floor(Math.random() * (max - min + 1));
+    }
+    return count;
   }
 
   bindPointerEvents() {
@@ -187,7 +194,20 @@ export class ButtonManager {
     return this.heldButtonId !== null;
   }
 
-  reset() {
+  rebuildButtons() {
+    this.cancelCurrent();
+    if (this.layer) {
+      this.layer.removeAll(true);
+    }
+    this.buttons = [];
+    this.createButtons();
+  }
+
+  reset({ randomize = false } = {}) {
+    if (randomize) {
+      this.rebuildButtons();
+      return;
+    }
     this.heldButtonId = null;
     this.pointerId = null;
     this.buttons.forEach((button) => {

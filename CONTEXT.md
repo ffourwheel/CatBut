@@ -17,7 +17,7 @@ _Avoid_: button position, dynamic slot
 _Avoid_: disabled button, empty button
 
 **Stage Button Set**:
-ชุด Button ที่ใช้งานจริงใน Stage หนึ่ง Stage มีได้ 4–8 ปุ่ม และเลือกจาก Button Slot เดิมด้วยชุดตำแหน่งที่กำหนดล่วงหน้าแบบสมมาตร โดยไม่จัดเรียงตำแหน่งใหม่
+ชุด Button ที่ใช้งานจริงใน Stage หนึ่ง Stage มีได้ 4–8 ปุ่ม และเลือกจาก Button Slot เดิมด้วยชุดตำแหน่งที่กำหนดล่วงหน้า โดยจำนวนคู่ใช้ชุดสมมาตร ส่วนจำนวนคี่ใช้ชุดที่ออกแบบไว้ล่วงหน้าโดยไม่สุ่ม และไม่จัดเรียงตำแหน่งใหม่
 _Avoid_: active slots, button layout
 
 **Progress**:
@@ -41,16 +41,20 @@ _Avoid_: alert, notification
 _Avoid_: detect phase, look
 
 **Sabotage**:
-การที่แมวปิด Activated Button ใน Button Slot เป้าหมายครั้งละหนึ่งปุ่มต่อ Cat Event โดยไม่แตะปุ่มที่กำลังกดค้าง แล้วกลับไป Hidden พร้อมมี Cooldown ประมาณ 3 วินาที
+การที่แมวปิด Activated Button ใน Button Slot เป้าหมายครั้งละหนึ่งปุ่มต่อ Cat Event โดยไม่แตะปุ่มที่กำลังกดค้าง ผู้เล่นยังกดปุ่มอื่นต่อได้ระหว่างลำดับนี้ แล้วแมวจึงกลับไป Hidden พร้อมมี Cooldown ประมาณ 3 วินาที
 _Avoid_: undo, cat attack
 
 **Sabotage Target**:
-Button ที่แมวสุ่มเลือกจาก Activated Button ซึ่งไม่ใช่ปุ่มที่กำลังกดค้าง เพื่อปิดใน Cat Event ปัจจุบัน โดยอ้างอิง Button Slot ที่มีอยู่จริง
+Button ที่แมวสุ่มเลือกจาก Activated Button ซึ่งไม่ใช่ปุ่มที่กำลังกดค้าง เพื่อปิดใน Cat Event ปัจจุบัน โดยอ้างอิง Button Slot ที่มีอยู่จริงและจุดกึ่งกลางของ Button เป็นปลายทาง
 _Avoid_: cat target, sabotage position
 
 **Sabotage Preview**:
-การไฮไลต์ Sabotage Target ล่วงหน้าประมาณ 250–400 มิลลิวินาทีก่อนแมวปิดปุ่ม เพื่อให้ผู้เล่นอ่านเหตุการณ์ได้ทัน
+การไฮไลต์ Sabotage Target ล่วงหน้า 300 มิลลิวินาทีก่อน Sabotage Paw เคลื่อนที่ 220 มิลลิวินาทีไปยังกึ่งกลางปุ่ม แล้วแมวกลับเข้ารูภายในประมาณ 200 มิลลิวินาที เพื่อให้ผู้เล่นอ่านเหตุการณ์ได้ทัน
 _Avoid_: target warning, sabotage alert
+
+**Sabotage Paw**:
+เลเยอร์อุ้งเท้าที่อ้างอิงท่าจาก `cat_hole_sabotage.png` และหมุนตาม Button Slot เป้าหมาย โดยไม่หมุนฐานรูหรือโต๊ะ
+_Avoid_: rotating cat, rotating sabotage image
 
 **Combo**:
 ตัวคูณคะแนนที่เพิ่มจากการเปิดปุ่มสำเร็จต่อเนื่อง สูงสุด x4 และรีเซ็ตเมื่อผู้เล่นถูกแมวโจมตี ทั้งการเปิดปุ่มใหม่และการ Reactivation เพิ่ม Combo

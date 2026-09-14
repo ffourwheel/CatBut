@@ -1,4 +1,6 @@
 import { CAT_STATES } from './constants.js';
+import scoreBarUrl from '../../assets/ui/score_bar.png?url';
+import healthBarUrl from '../../assets/ui/health_bar.png?url';
 
 export const ASSET_KEYS = Object.freeze({
   background: 'background',
@@ -24,6 +26,15 @@ export const ASSET_KEYS = Object.freeze({
     homeCard: 'home_card',
     btnStartGame: 'btn_start_game',
     btnStartGameHover: 'btn_start_game_hover',
+    scoreBar: 'score_bar',
+    healthBar: 'health_bar',
+    comboX2: 'combo_x2',
+    comboX3: 'combo_x3',
+    comboX4: 'combo_x4',
+    pausePanel: 'pause_panel',
+    winCatPeek: 'win_cat_peek',
+    winPanelBg: 'win_panel_bg',
+    winStar: 'win_star',
   },
 });
 
@@ -57,6 +68,15 @@ export const ASSET_MANIFEST = Object.freeze({
   home_card: '/assets/ui/home_card.png',
   btn_start_game: '/assets/ui/btn_start_game.png',
   btn_start_game_hover: '/assets/ui/btn_start_game_hover.png',
+  score_bar: scoreBarUrl,
+  health_bar: healthBarUrl,
+  combo_x2: '/assets/ui/combo_x2.png',
+  combo_x3: '/assets/ui/combo_x3.png',
+  combo_x4: '/assets/ui/combo_x4.png',
+  pause_panel: '/assets/ui/pause_panel.png',
+  win_cat_peek: '/assets/ui/win_cat_peek.png',
+  win_panel_bg: '/assets/ui/win_panel_bg.png',
+  win_star: '/assets/ui/win_star.png',
 });
 
 export function preloadContractAssets(scene, { useRealAssets = false } = {}) {

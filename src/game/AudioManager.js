@@ -1,6 +1,6 @@
 export class AudioManager {
-  constructor() {
-    this.muted = false;
+  constructor({ muted = false } = {}) {
+    this.muted = muted === true;
   }
 
   toggleMute() {

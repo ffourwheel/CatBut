@@ -55,6 +55,11 @@ export class CatController {
 
     if (this.state === CAT_STATES.HIDDEN) {
       this.hiddenRemaining -= delta;
+      const pressureInterval = this.getProgressAdjustedInterval(this.config.catIntervalMax);
+      this.hiddenRemaining = Math.min(
+        this.hiddenRemaining,
+        Math.max(this.cooldownRemaining, pressureInterval),
+      );
       if (this.hiddenRemaining <= 0) this.enterWarning();
       return;
     }
@@ -111,7 +116,7 @@ export class CatController {
     let event = forced;
     if (!event) {
       const randomValue = this.config.debug.disableRandomness ? 0 : Math.random();
-      event = randomValue < this.config.watchProbability ? CAT_EVENTS.WATCH : CAT_EVENTS.SABOTAGE;
+      event = randomValue < this.getWatchProbability() ? CAT_EVENTS.WATCH : CAT_EVENTS.SABOTAGE;
     }
 
     if (event === CAT_EVENTS.SABOTAGE) {
@@ -155,9 +160,32 @@ export class CatController {
     const range = this.config.catIntervalMax - this.config.catIntervalMin;
     const random = this.config.debug.disableRandomness ? 0 : Math.random();
     const interval = this.config.catIntervalMin + Math.round(range * random);
-    this.hiddenDuration = Math.max(interval, this.cooldownRemaining);
+    this.hiddenDuration = Math.max(this.getProgressAdjustedInterval(interval), this.cooldownRemaining);
     this.hiddenRemaining = this.hiddenDuration;
     this.eventResolved = false;
+  }
+
+  getProgressPressure() {
+    const progress = this.callbacks.getProgress?.() ?? {};
+    const activeCount = Math.max(0, progress.activeCount ?? 0);
+    const totalCount = Math.max(0, progress.totalCount ?? 0);
+    const denominator = Math.max(1, totalCount - 1);
+    return Math.max(0, Math.min(1, activeCount / denominator));
+  }
+
+  getProgressAdjustedInterval(interval) {
+    const minimumScale = Math.max(0.1, Math.min(1, this.config.catIntervalProgressScaleMin ?? 1));
+    const scale = 1 - (1 - minimumScale) * this.getProgressPressure();
+    return Math.max(1, Math.round(interval * scale));
+  }
+
+  getWatchProbability() {
+    const baseProbability = Math.max(0, Math.min(1, this.config.watchProbability ?? 0.6));
+    const minimumProbability = Math.max(
+      0,
+      Math.min(baseProbability, this.config.catWatchProbabilityAtMaxProgress ?? baseProbability),
+    );
+    return baseProbability - (baseProbability - minimumProbability) * this.getProgressPressure();
   }
 
   setState(state) {
