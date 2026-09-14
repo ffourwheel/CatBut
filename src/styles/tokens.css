@@ -1,0 +1,64 @@
+/**
+ * CatKub Design Tokens — CSS Custom Properties
+ * Visual Direction: Cozy Cat Café
+ * Target Aspect Ratio: Portrait 9:16 (1080x1920 reference / 1024x1024 table)
+ */
+
+:root {
+  /* Color Palette — Cozy Cat Café */
+  --ck-color-wood-light: #f5debf;
+  --ck-color-wood-mid: #d99a54;
+  --ck-color-wood-dark: #8a5e43;
+  --ck-color-wood-deep: #4c3030;
+  
+  --ck-color-cream: #fff4dc;
+  --ck-color-cream-soft: #fff9ed;
+  --ck-color-beige-pill: #f8dfc1;
+  --ck-color-panel-bg: rgba(60, 43, 33, 0.94);
+  --ck-color-panel-border: #9a6a46;
+
+  /* Gameplay & Feedback Accents */
+  --ck-color-accent-gold: #ffcb5c;
+  --ck-color-accent-amber: #f7c948;
+  --ck-color-success-green: #67b887;
+  --ck-color-danger-coral: #e66b5d;
+  --ck-color-pink-heart: #f45b69;
+  --ck-color-pink-soft: #ffb8c6;
+  --ck-color-blue-subtle: #79a8d7;
+
+  /* Typography */
+  --ck-font-family: 'Mali', 'Trebuchet MS', 'Noto Sans Thai', cursive, sans-serif;
+  --ck-font-size-display: 64px;
+  --ck-font-size-h1: 44px;
+  --ck-font-size-h2: 32px;
+  --ck-font-size-h3: 26px;
+  --ck-font-size-body: 22px;
+  --ck-font-size-caption: 16px;
+  --ck-font-size-hud-value: 28px;
+  --ck-font-size-hud-label: 18px;
+
+  /* Spacing */
+  --ck-space-2xs: 4px;
+  --ck-space-xs: 8px;
+  --ck-space-sm: 12px;
+  --ck-space-md: 16px;
+  --ck-space-lg: 24px;
+  --ck-space-xl: 32px;
+  --ck-space-2xl: 48px;
+
+  /* Border Radius */
+  --ck-radius-sm: 8px;
+  --ck-radius-md: 16px;
+  --ck-radius-lg: 24px;
+  --ck-radius-pill: 999px;
+
+  /* Safe Area & Viewport (9:16 portrait target) */
+  --ck-safe-top: env(safe-area-inset-top, 24px);
+  --ck-safe-bottom: env(safe-area-inset-bottom, 34px);
+  --ck-safe-left: env(safe-area-inset-left, 16px);
+  --ck-safe-right: env(safe-area-inset-right, 16px);
+
+  /* Touch Targets (Mobile Ergonomics) */
+  --ck-min-touch-target: 48px;
+  --ck-button-padding-touch: 18px;
+}

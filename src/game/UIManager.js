@@ -1,191 +1,287 @@
+import Phaser from 'phaser';
+import { buildCozyHUD } from '../ui/HUDLayout.js';
+import { ScreenLayoutManager } from '../ui/ScreenLayouts.js';
+import { FEEDBACK_EFFECTS, FeedbackFX } from '../ui/FeedbackEffects.js';
+import { UI_DEPTH } from '../ui/UITokens.js';
 import { CAT_STATES, GAME_SCREENS } from './constants.js';
 
-const COLORS = {
-  ink: '#4c3030',
-  muted: '#7b5b50',
-  cream: '#fff4dc',
-  panel: 0x6b463c,
-  accent: 0xf2c14e,
-  green: 0x67b887,
-  red: 0xe66b5d,
-};
-
+/**
+ * AI-1 integration adapter for the AI-2 HUD, screen layouts, and feedback modules.
+ * Gameplay code talks to this small API so the visual modules remain replaceable.
+ */
 export class UIManager {
   constructor(scene, callbacks = {}) {
     this.scene = scene;
     this.callbacks = callbacks;
-    this.screens = new Map();
-    this.tutorialReturn = 'start';
-    this.createHud();
-    this.createScreens();
-  }
-
-  createHud() {
-    this.hud = this.scene.add.container(0, 0).setDepth(100);
-    this.scoreLabel = this.scene.add.text(54, 42, 'คะแนน 0', this.textStyle(30, COLORS.ink, true));
-    this.comboLabel = this.scene.add.text(54, 82, 'คอมโบ x1', this.textStyle(24, COLORS.muted));
-    this.heartsLabel = this.scene.add.text(54, 124, 'หัวใจ ♥♥♥', this.textStyle(25, COLORS.red, true));
-    this.progressLabel = this.scene.add.text(512, 930, 'กดค้างไว้', this.textStyle(24, COLORS.ink, true)).setOrigin(0.5);
-    this.statusLabel = this.scene.add.text(512, 178, '', this.textStyle(30, COLORS.ink, true)).setOrigin(0.5);
-    this.pauseButton = this.createTextButton(886, 56, 'พัก', () => this.callbacks.onPause?.(), 25);
-    this.muteButton = this.createTextButton(886, 102, 'เสียง', () => this.callbacks.onMute?.(), 22);
-    this.hud.add([this.scoreLabel, this.comboLabel, this.heartsLabel, this.progressLabel, this.statusLabel, this.pauseButton, this.muteButton]);
-  }
-
-  createScreens() {
-    this.screens.set(GAME_SCREENS.START, this.createStartScreen());
-    this.screens.set(GAME_SCREENS.TUTORIAL, this.createTutorialScreen());
-    this.screens.set(GAME_SCREENS.PAUSE, this.createPauseScreen());
-    this.screens.set(GAME_SCREENS.STAGE_CLEAR, this.createResultScreen(true));
-    this.screens.set(GAME_SCREENS.GAME_OVER, this.createResultScreen(false));
-  }
-
-  createStartScreen() {
-    const screen = this.createScreenContainer();
-    screen.add(this.panel());
-    screen.add(this.scene.add.text(512, 280, 'CatKub', this.textStyle(76, COLORS.cream, true)).setOrigin(0.5));
-    screen.add(this.scene.add.text(512, 370, 'กดปุ่มให้ครบ ระวังแมว!', this.textStyle(30, COLORS.cream)).setOrigin(0.5));
-    screen.add(this.scene.add.text(512, 460, 'เกมกดค้างแบบแอบ ๆ ในคาเฟ่แมว', this.textStyle(22, '#f8dfc1')).setOrigin(0.5));
-    screen.add(this.createTextButton(512, 620, 'เริ่มเกม', () => this.showTutorial('start'), 32, COLORS.accent));
-    screen.add(this.scene.add.text(512, 710, 'ใช้เมาส์หรือแตะปุ่มค้างไว้ให้เต็ม', this.textStyle(20, '#f8dfc1')).setOrigin(0.5));
-    return screen;
-  }
-
-  createTutorialScreen() {
-    const screen = this.createScreenContainer();
-    screen.add(this.panel());
-    this.tutorialTitle = this.scene.add.text(512, 270, 'วิธีเล่น', this.textStyle(54, COLORS.cream, true)).setOrigin(0.5);
-    this.tutorialBody = this.scene.add.text(512, 430, '', {
-      ...this.textStyle(28, COLORS.cream),
-      align: 'center',
-      wordWrap: { width: 660 },
-      lineSpacing: 12,
-    }).setOrigin(0.5);
-    screen.add([this.tutorialTitle, this.tutorialBody]);
-    screen.add(this.createTextButton(386, 700, 'ข้าม', () => this.finishTutorial(), 25));
-    this.tutorialNext = this.createTextButton(638, 700, 'ถัดไป', () => this.advanceTutorial(), 25, COLORS.accent);
-    screen.add(this.tutorialNext);
-    return screen;
-  }
-
-  createPauseScreen() {
-    const screen = this.createScreenContainer();
-    screen.add(this.panel());
-    screen.add(this.scene.add.text(512, 290, 'พักก่อนนะ', this.textStyle(54, COLORS.cream, true)).setOrigin(0.5));
-    screen.add(this.createTextButton(512, 470, 'เล่นต่อ', () => this.callbacks.onResume?.(), 30, COLORS.green));
-    screen.add(this.createTextButton(512, 570, 'ดูวิธีเล่น', () => this.showTutorial('pause'), 26));
-    screen.add(this.createTextButton(512, 670, 'เริ่มใหม่', () => this.callbacks.onRestart?.(), 26, COLORS.accent));
-    return screen;
-  }
-
-  createResultScreen(isClear) {
-    const screen = this.createScreenContainer();
-    screen.add(this.panel());
-    const title = this.scene.add.text(512, 285, isClear ? 'เปิดครบแล้ว!' : 'โดนจับแล้ว!', this.textStyle(58, COLORS.cream, true)).setOrigin(0.5);
-    const message = this.scene.add.text(512, 405, '', {
-      ...this.textStyle(28, COLORS.cream),
-      align: 'center',
-    }).setOrigin(0.5);
-    const retry = this.createTextButton(512, 610, 'เล่นอีกครั้ง', () => this.callbacks.onRestart?.(), 29, isClear ? COLORS.green : COLORS.accent);
-    const home = this.createTextButton(512, 720, 'หน้าแรก', () => this.callbacks.onHome?.(), 24);
-    screen.add([title, message, retry, home]);
-    screen.resultMessage = message;
-    return screen;
-  }
-
-  createScreenContainer() {
-    return this.scene.add.container(0, 0).setDepth(200).setVisible(false);
-  }
-
-  panel() {
-    return this.scene.add.rectangle(512, 512, 840, 760, COLORS.panel, 0.96).setStrokeStyle(8, 0xb57c56, 1);
-  }
-
-  createTextButton(x, y, text, onClick, fontSize = 28, background = null) {
-    const label = this.scene.add.text(x, y, text, {
-      ...this.textStyle(fontSize, COLORS.ink, true),
-      backgroundColor: background === null ? '#f8dfc1' : `#${background.toString(16).padStart(6, '0')}`,
-      padding: { left: 28, right: 28, top: 16, bottom: 16 },
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-    label.on('pointerdown', () => onClick());
-    label.on('pointerover', () => label.setScale(1.04));
-    label.on('pointerout', () => label.setScale(1));
-    return label;
-  }
-
-  textStyle(fontSize, color, bold = false) {
-    return {
-      color,
-      fontFamily: 'Trebuchet MS, Noto Sans Thai, sans-serif',
-      fontSize: `${fontSize}px`,
-      fontStyle: bold ? 'bold' : 'normal',
+    this.boardOffsetY = callbacks.boardOffsetY ?? 0;
+    this.viewportHeight = scene.scale.gameSize?.height ?? 1024;
+    this.currentScreen = GAME_SCREENS.START;
+    this.lastStats = {
+      score: null,
+      combo: null,
+      health: null,
+      activeCount: null,
+      totalCount: null,
+      muted: null,
+      comboTimeRemaining: null,
+      comboTimeDuration: null,
     };
+    this.warningVisible = false;
+
+    this.hud = buildCozyHUD(scene, {
+      onPause: () => callbacks.onPause?.(),
+      onMute: () => callbacks.onMute?.(),
+    });
+
+    this.screens = new ScreenLayoutManager(scene, {
+      onResume: () => callbacks.onResume?.(),
+      onRestart: () => callbacks.onRestart?.(),
+      onStart: () => (callbacks.onStart ? callbacks.onStart() : callbacks.onRestart?.()),
+      onHome: () => callbacks.onHome?.(),
+      onMute: () => callbacks.onMute?.(),
+      onDifficultyChange: (difficulty) => callbacks.onDifficultyChange?.(difficulty),
+      initialSettings: callbacks.initialSettings,
+      onTutorialComplete: () => callbacks.onTutorialComplete?.(),
+      onTutorialReturn: () => callbacks.onTutorialReturn?.(),
+    });
+
+    this.attackFlash = scene.add.rectangle(512, this.viewportHeight / 2, 1024, this.viewportHeight, FEEDBACK_EFFECTS.catAttack.flashColor, 0)
+      .setDepth(UI_DEPTH.CAT_FX + 1)
+      .setBlendMode(Phaser.BlendModes.SCREEN);
+
+    const warningKey = scene.textures.exists('warning_mark')
+      ? 'warning_mark'
+      : (scene.textures.exists('warning_bubble') ? 'warning_bubble' : 'warning_mark');
+
+    this.warningY = 355 + this.boardOffsetY;
+    this.warningMark = scene.add.image(515, this.warningY, warningKey)
+      .setOrigin(0.5, 0.5)
+      .setDepth(UI_DEPTH.CAT_FX)
+      .setScale(0)
+      .setAlpha(0)
+      .setVisible(false);
+    this.warningActive = false;
+
+    this.hud.setVisible(false);
+    this.screens.show('start');
   }
 
   show(screenName) {
-    this.screens.forEach((screen, name) => screen.setVisible(name === screenName));
+    this.currentScreen = screenName;
     const gameplay = screenName === GAME_SCREENS.GAMEPLAY;
+    if (!gameplay) this.hideWarningMark(true);
+    this.screens.show(gameplay ? '__gameplay' : screenName);
     this.hud.setVisible(gameplay);
-    this.pauseButton.setVisible(gameplay);
-    this.muteButton.setVisible(gameplay);
-    this.progressLabel.setVisible(gameplay);
-    this.statusLabel.setVisible(gameplay);
   }
 
   showStart() {
+    this.hideWarningMark(true);
     this.show(GAME_SCREENS.START);
+    this.screens.playShowStartTransition?.();
   }
 
   showTutorial(returnTo = 'start') {
-    this.tutorialReturn = returnTo;
-    this.tutorialStep = 0;
-    this.renderTutorialStep();
-    this.show(GAME_SCREENS.TUTORIAL);
+    this.currentScreen = GAME_SCREENS.TUTORIAL;
+    this.hud.setVisible(false);
+    this.screens.showTutorial(returnTo);
   }
 
-  advanceTutorial() {
-    if (this.tutorialStep >= 2) {
-      this.finishTutorial();
+  updateStats({ score, combo, health, maxHealth, activeCount, totalCount, muted, catState, comboTimeRemaining, comboTimeDuration }) {
+    if (this.lastStats.score !== score) this.hud.setScore(score);
+    if (this.lastStats.combo !== combo) this.hud.setCombo(combo);
+    if (this.lastStats.health !== health) this.hud.setHearts(health, maxHealth);
+    if (this.lastStats.activeCount !== activeCount || this.lastStats.totalCount !== totalCount) {
+      this.hud.setProgress(activeCount, totalCount);
+    }
+    if (this.lastStats.muted !== muted) {
+      this.hud.setMuted(muted);
+    }
+    if (this.lastStats.comboTimeRemaining !== comboTimeRemaining || this.lastStats.comboTimeDuration !== comboTimeDuration) {
+      this.hud.setComboTimer(comboTimeRemaining, comboTimeDuration);
+    }
+
+    this.lastStats = {
+      score,
+      combo,
+      health,
+      activeCount,
+      totalCount,
+      muted,
+      comboTimeRemaining,
+      comboTimeDuration,
+    };
+  }
+
+  setStatus(message, highlight = false) {
+    this.hud.setBanner(message, highlight);
+  }
+
+  setClearStats(score, maxCombo) {
+    this.screens.setClearStats(score, maxCombo);
+  }
+
+  setDifficulty(difficulty) {
+    this.screens.setDifficulty?.(difficulty);
+  }
+
+  setGameOverStats(score) {
+    this.screens.setGameOverStats(score);
+  }
+
+  onButtonHold(buttonVisual) {
+    this.scene.tweens.killTweensOf(buttonVisual);
+    const baseScale = buttonVisual.baseScale ?? 0.55;
+    this.scene.tweens.add({
+      targets: buttonVisual,
+      scaleX: baseScale * 0.9,
+      scaleY: baseScale * 0.9,
+      duration: 100,
+      ease: 'Sine.easeInOut',
+    });
+  }
+
+  onButtonRelease(buttonVisual) {
+    this.scene.tweens.killTweensOf(buttonVisual);
+    const baseScale = buttonVisual.baseScale ?? 0.55;
+    this.scene.tweens.add({
+      targets: buttonVisual,
+      scaleX: baseScale,
+      scaleY: baseScale,
+      duration: 140,
+      ease: 'Back.easeOut',
+    });
+  }
+
+  onButtonComplete(button, scoreEvent) {
+    FeedbackFX.triggerButtonPop(this.scene, button.visual);
+    FeedbackFX.triggerScoreFlyup(
+      this.scene,
+      button.x,
+      button.y,
+      `+${scoreEvent.points}`,
+      scoreEvent.isReactivation ? '#f7c948' : '#ffcb5c',
+    );
+  }
+
+  onSabotage(button) {
+    if (!button || !this.scene.textures.exists('cat_paw')) return;
+    const paw = this.scene.add.image(button.x, button.y - 24, 'cat_paw')
+      .setScale(0.35)
+      .setAlpha(0)
+      .setDepth(UI_DEPTH.BUTTON_FX);
+    this.scene.tweens.add({
+      targets: paw,
+      alpha: { from: 0, to: 1 },
+      scale: { from: 0.35, to: 0.95 },
+      angle: { from: -18, to: 8 },
+      duration: 220,
+      ease: 'Quad.easeInOut',
+      yoyo: true,
+      hold: 80,
+      onComplete: () => paw.destroy(),
+    });
+  }
+
+  showWarningMark() {
+    if (!this.warningMark || this.warningActive) return;
+    this.warningActive = true;
+    this.scene.tweens.killTweensOf(this.warningMark);
+
+    const textureWidth = this.warningMark.width || 380;
+    const baseScale = 190 / textureWidth;
+
+    this.warningMark
+      .setPosition(515, this.warningY + 7)
+      .setScale(0)
+      .setAlpha(0)
+      .setVisible(true);
+
+    this.scene.tweens.add({
+      targets: this.warningMark,
+      scaleX: baseScale * 1.15,
+      scaleY: baseScale * 1.15,
+      alpha: 1,
+      y: this.warningY,
+      duration: 180,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        if (!this.warningActive) return;
+        this.scene.tweens.add({
+          targets: this.warningMark,
+          scaleX: baseScale,
+          scaleY: baseScale,
+          y: this.warningY - 4,
+          duration: 250,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut',
+        });
+      },
+    });
+  }
+
+  hideWarningMark(immediate = false) {
+    if (!this.warningMark || (!this.warningActive && !this.warningMark.visible)) return;
+    this.warningActive = false;
+    this.scene.tweens.killTweensOf(this.warningMark);
+
+    if (immediate) {
+      this.warningMark.setScale(0).setAlpha(0).setVisible(false);
       return;
     }
-    this.tutorialStep += 1;
-    this.renderTutorialStep();
+
+    this.scene.tweens.add({
+      targets: this.warningMark,
+      scaleX: 0,
+      scaleY: 0,
+      alpha: 0,
+      y: this.warningY + 10,
+      duration: 120,
+      ease: 'Back.easeIn',
+      onComplete: () => {
+        this.warningMark.setVisible(false);
+      },
+    });
   }
 
-  finishTutorial() {
-    if (this.tutorialReturn === 'pause') this.callbacks.onTutorialReturn?.();
-    else this.callbacks.onTutorialComplete?.();
-  }
-
-  renderTutorialStep() {
-    const steps = [
-      'เลือกปุ่ม แล้วกดค้างไว้\nจนวงแหวนเต็มเพื่อเปิดปุ่ม',
-      'ถ้าเห็นแมวเริ่มโผล่\nปล่อยปุ่มเพื่อหลบสายตา',
-      'เปิดให้ครบทั้งสี่ก่อนหัวใจจะหมด\nแต่อย่าลืมระวังแมวแกล้งปิดปุ่ม',
-    ];
-    this.tutorialBody.setText(steps[this.tutorialStep]);
-    this.tutorialNext.setText(this.tutorialStep >= 2 ? 'เริ่มเล่น' : 'ถัดไป');
-  }
-
-  updateStats({ score, combo, health, maxHealth = 3, progress, muted, catState }) {
-    this.scoreLabel.setText(`คะแนน ${score}`);
-    this.comboLabel.setText(`คอมโบ x${combo}`);
-    this.heartsLabel.setText(`หัวใจ ${'♥'.repeat(health)}${'♡'.repeat(Math.max(0, maxHealth - health))}`);
-    this.progressLabel.setText(progress > 0 ? `กำลังเปิด ${Math.round(progress * 100)}%` : 'กดค้างไว้');
-    this.muteButton.setText(muted ? 'เสียงปิด' : 'เสียงเปิด');
-    if (catState === CAT_STATES.WARNING || catState === CAT_STATES.PEEK) {
-      this.statusLabel.setText('ระวัง! แมวกำลังมองมา');
-    } else if (catState === CAT_STATES.WATCH) {
-      this.statusLabel.setText('แมวกำลังจับตาดู!');
+  onCatState(state, catStateImage) {
+    if (state === CAT_STATES.WARNING) {
+      this.setStatus('ระวังนะ! แมวเริ่มได้ยิน!', true);
+      this.showWarningMark();
+      return;
     }
-  }
 
-  setStatus(message) {
-    this.statusLabel.setText(message);
-  }
+    this.hideWarningMark();
 
-  setResultMessage(screenName, message) {
-    const screen = this.screens.get(screenName);
-    screen?.resultMessage?.setText(message);
+    if (state === CAT_STATES.PEEK) {
+      this.setStatus('แมวเริ่มมองหา...', true);
+      return;
+    }
+
+    if (state === CAT_STATES.WATCH) {
+      this.setStatus('แมวจ้องอยู่! ปล่อยมือเดี๋ยวนี้!', true);
+      return;
+    }
+
+    if (state === CAT_STATES.ATTACK) {
+      this.setStatus('โดนแมวจับได้แล้ว!', true);
+      FeedbackFX.triggerScreenShake(this.scene);
+      this.scene.tweens.add({
+        targets: this.attackFlash,
+        alpha: { from: FEEDBACK_EFFECTS.catAttack.flashAlpha, to: 0 },
+        duration: FEEDBACK_EFFECTS.catAttack.flashDuration,
+        ease: 'Power2.easeOut',
+      });
+      return;
+    }
+
+    if (state === CAT_STATES.SABOTAGE) {
+      this.setStatus('แมวแอบปิดปุ่ม!', true);
+      return;
+    }
+
+    if (state === CAT_STATES.HIDE) {
+      this.setStatus('แมวมุดกลับแล้ว! ปลอดภัย!', false);
+    }
   }
 }

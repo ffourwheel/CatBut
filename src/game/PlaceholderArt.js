@@ -1,6 +1,12 @@
 import Phaser from 'phaser';
 import { ASSET_KEYS } from './AssetManifest.js';
-import { ASSEMBLY_DEPTH, CANVAS_SIZE, CAT_STATES, TABLE_ANCHOR } from './constants.js';
+import {
+  ASSEMBLY_DEPTH,
+  CANVAS_SIZE,
+  CAT_STATES,
+  SABOTAGE_PAW_ORIGIN,
+  TABLE_ANCHOR,
+} from './constants.js';
 
 const COLORS = {
   table: 0xf3dcc1,
@@ -15,6 +21,10 @@ const COLORS = {
   danger: 0xe66b5d,
   success: 0x67b887,
 };
+
+const TABLE_FRONT_SCALE_X = 0.97;
+const CAT_HOLE_SCALE = 1.1;
+const CAT_HOLE_OFFSET_Y = 30;
 
 function createTexture(scene, key, draw) {
   if (scene.textures.exists(key)) return;
@@ -97,11 +107,9 @@ function createCatTextures(scene) {
 
   createTexture(scene, ASSET_KEYS.cat[CAT_STATES.WARNING], (graphics) => {
     drawHole(graphics);
-    graphics.fillStyle(COLORS.warning, 0.9);
-    graphics.fillCircle(512, 350, 34);
-    drawCatHead(graphics, 495);
-    graphics.lineStyle(10, COLORS.warning, 1);
-    graphics.strokeCircle(512, 350, 54);
+    graphics.fillStyle(COLORS.cream, 0.45);
+    graphics.fillCircle(445, 420, 18);
+    graphics.fillCircle(575, 420, 18);
   });
 
   createTexture(scene, ASSET_KEYS.cat[CAT_STATES.PEEK], (graphics) => {
@@ -142,33 +150,65 @@ function createCatTextures(scene) {
   });
 }
 
+function createSabotagePawTexture(scene) {
+  createTexture(scene, ASSET_KEYS.sabotagePaw, (graphics) => {
+    graphics.lineStyle(86, COLORS.cat, 1);
+    graphics.beginPath();
+    graphics.moveTo(405, 430);
+    graphics.lineTo(820, 820);
+    graphics.strokePath();
+    drawPaw(graphics, 820, 820, COLORS.cream);
+  });
+}
+
 export function ensurePlaceholderTextures(scene) {
   createTableTextures(scene);
   createCatTextures(scene);
+  createSabotagePawTexture(scene);
 }
 
-export function createCatTableAssembly(scene, { useRealAssets = false } = {}) {
+export function createCatTableAssembly(scene, { useRealAssets = false, anchor = TABLE_ANCHOR } = {}) {
   if (!useRealAssets) ensurePlaceholderTextures(scene);
 
-  const container = scene.add.container(TABLE_ANCHOR.x, TABLE_ANCHOR.y).setDepth(1);
+  const container = scene.add.container(anchor.x, anchor.y).setDepth(1);
   container.setName('catTableContainer');
 
-  const tableBack = scene.add.image(0, 0, ASSET_KEYS.tableBack).setOrigin(0.5, 0.5);
+  const tableBack = scene.add.image(0, -110, ASSET_KEYS.tableBack)
+    .setOrigin(0.5, 0.5)
+    .setScale(0.97);
   tableBack.setName('tableBack').setDepth(ASSEMBLY_DEPTH.BACK);
-  const catState = scene.add.image(0, 0, ASSET_KEYS.cat[CAT_STATES.HIDDEN]).setOrigin(0.5, 0.5);
+  const tableFront = scene.add.image(0, 0, ASSET_KEYS.tableFront)
+    .setOrigin(0.5, 0.5)
+    .setScale(TABLE_FRONT_SCALE_X, 1);
+  tableFront.setName('tableFront').setPosition(0, 210).setDepth(ASSEMBLY_DEPTH.FRONT);
+  const catState = scene.add.image(0, 0, ASSET_KEYS.cat[CAT_STATES.HIDDEN])
+    .setOrigin(0.5, 0.5)
+    .setScale(CAT_HOLE_SCALE)
+    .setPosition(0, CAT_HOLE_OFFSET_Y);
+  catState.baseScale = CAT_HOLE_SCALE;
+  catState.baseY = CAT_HOLE_OFFSET_Y;
   catState.setName('catState').setDepth(ASSEMBLY_DEPTH.MIDDLE);
-  const tableFront = scene.add.image(0, 0, ASSET_KEYS.tableFront).setOrigin(0.5, 0.5);
-  tableFront.setName('tableFront').setDepth(ASSEMBLY_DEPTH.FRONT);
+  const sabotagePaw = scene.add.image(0, CAT_HOLE_OFFSET_Y, ASSET_KEYS.sabotagePaw)
+    .setOrigin(SABOTAGE_PAW_ORIGIN.x, SABOTAGE_PAW_ORIGIN.y)
+    .setScale(0.44)
+    .setVisible(false);
+  sabotagePaw.setName('sabotagePaw').setDepth(ASSEMBLY_DEPTH.MIDDLE + 5);
 
-  container.add([tableBack, catState, tableFront]);
+  container.add([tableBack, catState, sabotagePaw, tableFront]);
+  container.sort('depth');
 
   return {
     container,
     tableBack,
     catState,
+    sabotagePaw,
     tableFront,
     setCatState(state) {
-      catState.setTexture(ASSET_KEYS.cat[state]);
+      const textureState = state === CAT_STATES.SABOTAGE ? CAT_STATES.PEEK : state;
+      const textureKey = state === CAT_STATES.WARNING
+        ? ASSET_KEYS.cat[CAT_STATES.HIDDEN]
+        : ASSET_KEYS.cat[textureState];
+      catState.setTexture(textureKey);
     },
   };
 }
