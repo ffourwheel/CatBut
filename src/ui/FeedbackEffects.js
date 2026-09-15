@@ -5,15 +5,6 @@
  */
 
 export const FEEDBACK_EFFECTS = Object.freeze({
-  buttonHolding: {
-    scale: 1.06,
-    duration: 120,
-    ease: 'Sine.easeInOut',
-    glowColor: 0xfff4dc,
-    glowAlpha: 0.6,
-    ringPulsePeriod: 600, // ms per gentle pulse
-  },
-
   buttonActivated: {
     popScale: 1.22,
     popDuration: 180,

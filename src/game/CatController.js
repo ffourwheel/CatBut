@@ -16,6 +16,7 @@ export class CatController {
     this.cooldownRemaining = 0;
     this.sabotagePhase = 'idle';
     this.sabotageTargetId = null;
+    this.queuedSabotageSlotId = null;
   }
 
   start() {
@@ -25,6 +26,7 @@ export class CatController {
     this.cooldownRemaining = 0;
     this.sabotagePhase = 'idle';
     this.sabotageTargetId = null;
+    this.queuedSabotageSlotId = null;
     this.eventResolved = false;
     this.setState(CAT_STATES.HIDDEN);
     this.scheduleNextEvent();
@@ -36,6 +38,7 @@ export class CatController {
     this.setState(CAT_STATES.HIDDEN);
     this.sabotagePhase = 'idle';
     this.sabotageTargetId = null;
+    this.queuedSabotageSlotId = null;
   }
 
   pause() {
@@ -97,8 +100,26 @@ export class CatController {
     }
   }
 
-  onPlayerStartedHold() {
-    if (this.state === CAT_STATES.WATCH && !this.eventResolved) this.requestAttack();
+  onPlayerActivated(slotId) {
+    if (!this.running || this.paused) return false;
+
+    const targetSlotId = this.callbacks.getSabotageTarget?.(slotId);
+    if (targetSlotId === null || targetSlotId === undefined) return false;
+
+    const reactionProbability = Math.max(
+      0,
+      Math.min(1, this.config.tapReactionProbability ?? 0),
+    );
+    const randomValue = this.config.debug.disableRandomness ? 0 : Math.random();
+    if (randomValue >= reactionProbability) return false;
+
+    if (this.state === CAT_STATES.SABOTAGE || this.state === CAT_STATES.HIDE) {
+      this.queuedSabotageSlotId = targetSlotId;
+      return true;
+    }
+
+    this.enterSabotagePreview(targetSlotId);
+    return true;
   }
 
   requestAttack() {
@@ -176,6 +197,19 @@ export class CatController {
   finishEvent() {
     this.setState(CAT_STATES.HIDDEN);
     this.sabotageTargetId = null;
+
+    if (this.queuedSabotageSlotId !== null) {
+      const queuedTarget = this.queuedSabotageSlotId;
+      this.queuedSabotageSlotId = null;
+      const targetAvailable = this.callbacks.isSabotageTargetAvailable
+        ? this.callbacks.isSabotageTargetAvailable(queuedTarget)
+        : true;
+      if (targetAvailable) {
+        this.enterSabotagePreview(queuedTarget);
+        return;
+      }
+    }
+
     this.scheduleNextEvent();
   }
 

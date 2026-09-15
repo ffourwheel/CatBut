@@ -4,37 +4,28 @@ import {
   BUTTON_SLOT_LAYOUT,
   BUTTON_SLOT_PRESETS,
 } from './constants.js';
-import { ASSET_KEYS } from './AssetManifest.js';
+import { ASSET_KEYS } from './AssetKeys.js';
 
 const BUTTON_COLORS = {
   off: 0xd9a46f,
-  holding: 0xf2c14e,
   on: 0x67b887,
   outline: 0x704c42,
-  progress: 0xfff4dc,
 };
 
 export class ButtonManager {
   constructor(scene, config, {
-    canStartHold = () => true,
-    onComplete = () => {},
-    onHoldStart = () => {},
-    onHoldEnd = () => {},
+    canActivate = () => true,
+    onActivate = () => {},
     worldOffsetY = 0,
   } = {}) {
     this.scene = scene;
     this.config = config;
-    this.canStartHold = canStartHold;
-    this.onComplete = onComplete;
-    this.onHoldStart = onHoldStart;
-    this.onHoldEnd = onHoldEnd;
+    this.canActivate = canActivate;
+    this.onActivate = onActivate;
     this.worldOffsetY = worldOffsetY;
     this.buttons = [];
-    this.heldButtonId = null;
-    this.pointerId = null;
     this.activeSlotIds = [];
     this.createButtons();
-    this.bindPointerEvents();
   }
 
   createButtons() {
@@ -54,7 +45,6 @@ export class ButtonManager {
         ? this.scene.add.image(position.x, position.y, ASSET_KEYS.buttons.off).setOrigin(0.5, 0.5).setScale(0.56)
         : this.scene.add.graphics();
       visual.baseScale = 0.56;
-      const progressRing = this.scene.add.graphics();
       const targetMarker = this.scene.add.graphics();
       const hitTarget = this.scene.add.circle(position.x, position.y, 60, 0xffffff, 0.001)
         .setInteractive({ useHandCursor: true });
@@ -73,22 +63,20 @@ export class ButtonManager {
         y: position.y,
         radius: 46,
         visual,
-        progressRing,
         targetMarker,
         usesTextures,
         hitTarget,
         label,
-        progress: 0,
         activated: false,
         activationCount: 0,
         reactivationCount: 0,
         targeted: false,
       };
 
-      hitTarget.on('pointerdown', (pointer) => {
-        this.beginHold(index, pointer.id);
+      hitTarget.on('pointerdown', () => {
+        this.activateButton(index);
       });
-      this.layer.add([targetMarker, visual, progressRing, label, hitTarget]);
+      this.layer.add([targetMarker, visual, label, hitTarget]);
       this.buttons.push(button);
       this.renderButton(button);
     });
@@ -129,71 +117,22 @@ export class ButtonManager {
     return count;
   }
 
-  bindPointerEvents() {
-    this.scene.input.on('pointerup', (pointer) => this.endPointer(pointer.id));
-    this.scene.input.on('pointerupoutside', (pointer) => this.endPointer(pointer.id));
-    this.scene.input.on('pointercancel', (pointer) => this.endPointer(pointer.id));
-  }
-
-  beginHold(buttonId, pointerId) {
-    if (!this.canStartHold() || this.heldButtonId !== null || this.pointerId !== null) return false;
-
+  activateButton(buttonId) {
     const button = this.buttons[buttonId];
-    if (!button || button.activated) return false;
+    if (!button || button.activated || !this.canActivate(button)) return false;
 
-    this.heldButtonId = buttonId;
-    this.pointerId = pointerId;
-    this.onHoldStart(button);
+    const isReactivation = button.activationCount > 0;
+    const reactivationCount = button.reactivationCount;
+    button.activated = true;
+    button.activationCount += 1;
+    if (isReactivation) button.reactivationCount += 1;
+    this.renderButton(button);
+    this.onActivate({ button, isReactivation, reactivationCount });
     return true;
   }
 
-  endPointer(pointerId) {
-    if (this.pointerId !== pointerId) return;
-    const button = this.buttons[this.heldButtonId];
-    if (button) this.onHoldEnd(button);
-    this.heldButtonId = null;
-    this.pointerId = null;
-    this.renderAll();
-  }
-
-  cancelCurrent() {
-    const button = this.buttons[this.heldButtonId];
-    if (button) this.onHoldEnd(button);
-    this.heldButtonId = null;
-    this.pointerId = null;
-    this.renderAll();
-  }
-
-  update(delta, active = true) {
-    if (!active) return;
-
-    if (this.heldButtonId !== null) {
-      const button = this.buttons[this.heldButtonId];
-      if (!button || button.activated) {
-        this.cancelCurrent();
-        return;
-      }
-
-      button.progress = Math.min(1, button.progress + delta / this.config.holdDuration);
-      if (button.progress >= 1) {
-        const isReactivation = button.activationCount > 0;
-        const reactivationCount = button.reactivationCount;
-        button.activated = true;
-        button.activationCount += 1;
-        if (isReactivation) button.reactivationCount += 1;
-        this.onHoldEnd(button);
-        this.heldButtonId = null;
-        this.pointerId = null;
-        this.onComplete({ button, isReactivation, reactivationCount });
-      }
-    }
-
-    this.buttons.forEach((button) => {
-      if (!button.activated && button.id !== this.heldButtonId && button.progress > 0) {
-        button.progress = Math.max(0, button.progress - delta / this.config.decayDuration);
-      }
-    });
-    this.renderAll();
+  update(_delta, active = true) {
+    if (active) this.renderAll();
   }
 
   getButtonBySlotId(slotId) {
@@ -219,15 +158,15 @@ export class ButtonManager {
     const button = this.getButtonBySlotId(slotId);
     if (!button || !button.activated) return false;
     button.activated = false;
-    button.progress = 0;
     button.targeted = false;
     this.renderButton(button);
     return true;
   }
 
-  getSabotageTarget() {
-    const heldId = this.heldButtonId;
-    const available = this.buttons.filter((button) => button.activated && button.id !== heldId);
+  getSabotageTarget(excludeSlotId = null) {
+    const available = this.buttons.filter(
+      (button) => button.activated && button.slotId !== excludeSlotId,
+    );
     if (available.length === 0) return null;
 
     const forcedSlotId = this.config.debug.forceSabotageSlot;
@@ -237,6 +176,10 @@ export class ButtonManager {
 
     const index = this.config.debug.disableRandomness ? 0 : Math.floor(Math.random() * available.length);
     return available[index].slotId;
+  }
+
+  isActivated(slotId) {
+    return Boolean(this.getButtonBySlotId(slotId)?.activated);
   }
 
   areAllActivated() {
@@ -251,12 +194,7 @@ export class ButtonManager {
     return this.buttons.length;
   }
 
-  isHolding() {
-    return this.heldButtonId !== null;
-  }
-
   rebuildButtons() {
-    this.cancelCurrent();
     if (this.layer) {
       this.layer.removeAll(true);
     }
@@ -269,10 +207,7 @@ export class ButtonManager {
       this.rebuildButtons();
       return;
     }
-    this.heldButtonId = null;
-    this.pointerId = null;
     this.buttons.forEach((button) => {
-      button.progress = 0;
       button.activated = false;
       button.activationCount = 0;
       button.reactivationCount = 0;
@@ -285,18 +220,11 @@ export class ButtonManager {
     this.layer?.setVisible(visible);
   }
 
-  getProgress() {
-    if (this.heldButtonId === null) return 0;
-    return this.buttons[this.heldButtonId]?.progress ?? 0;
-  }
-
   renderAll() {
     this.buttons.forEach((button) => this.renderButton(button));
   }
 
   renderButton(button) {
-    const isHolding = button.id === this.heldButtonId;
-
     const marker = button.targetMarker;
     marker.clear();
     marker.setVisible(button.targeted);
@@ -314,26 +242,12 @@ export class ButtonManager {
         ? ASSET_KEYS.buttons.on
         : ASSET_KEYS.buttons.off;
       button.visual.setTexture(textureKey);
-
-      if (button.activated) {
-        button.visual.setAlpha(1.0);
-        button.visual.setScale(button.visual.baseScale * 1.05);
-      } else if (isHolding) {
-        button.visual.setAlpha(1.0);
-        button.visual.setScale(button.visual.baseScale * 0.94);
-      } else {
-        button.visual.setAlpha(1.0);
-        button.visual.setScale(button.visual.baseScale);
-      }
+      button.visual.setAlpha(1.0);
+      button.visual.setScale(button.visual.baseScale * (button.activated ? 1.05 : 1));
     } else {
-      const color = button.activated
-        ? BUTTON_COLORS.on
-        : isHolding
-          ? BUTTON_COLORS.holding
-          : BUTTON_COLORS.off;
       const graphics = button.visual;
       graphics.clear();
-      graphics.fillStyle(color, 1);
+      graphics.fillStyle(button.activated ? BUTTON_COLORS.on : BUTTON_COLORS.off, 1);
       graphics.fillCircle(button.x, button.y, button.radius);
       graphics.lineStyle(8, BUTTON_COLORS.outline, 1);
       graphics.strokeCircle(button.x, button.y, button.radius);
@@ -342,20 +256,6 @@ export class ButtonManager {
         graphics.fillStyle(0xffffff, 0.35);
         graphics.fillCircle(button.x - 14, button.y - 16, 8);
       }
-    }
-
-    const ring = button.progressRing;
-    ring.clear();
-    if (!button.activated && button.progress > 0) {
-      ring.lineStyle(8, 0x4caf50, 1.0);
-      ring.beginPath();
-      ring.arc(button.x, button.y, button.radius + 10, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * button.progress, false);
-      ring.strokePath();
-
-      ring.lineStyle(3, 0xffeb3b, 0.8);
-      ring.beginPath();
-      ring.arc(button.x, button.y, button.radius + 13, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * button.progress, false);
-      ring.strokePath();
     }
   }
 }

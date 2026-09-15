@@ -4,17 +4,17 @@
 
 ## 1. Game Overview
 
-CatKub เป็นเกม 2D Arcade Stealth สำหรับ Web ที่ผู้เล่นต้องกดค้างปุ่มไฟบนโต๊ะเพื่อเปิดให้ครบ ขณะเดียวกันแมวในรูตรงกลางจะคอยตรวจจับผู้เล่นหรือแกล้งปิดปุ่มที่เปิดแล้ว
+CatKub เป็นเกม 2D Arcade Stealth สำหรับ Web ที่ผู้เล่นต้องแตะปุ่มไฟบนโต๊ะเพื่อเปิดให้ครบ ขณะเดียวกันแมวในรูตรงกลางจะคอยตรวจจับผู้เล่นหรือแกล้งปิดปุ่มที่เปิดแล้ว
 
 Core Loop:
 
 ```text
-กดค้าง → สังเกต Warning → ปล่อยเพื่อหลบหรือเสี่ยงกดต่อ → เปิดปุ่ม → ทำซ้ำจนเปิดครบ
+แตะเปิดปุ่ม → อ่าน Cat Action ที่สุ่มออกมา → หลบ WATCH และรับมือ SABOTAGE → Reactivation เมื่อถูกปิด → ทำซ้ำจนเปิดครบ
 ```
 
 เป้าหมายของ Prototype คือทำให้ผู้เล่นรู้สึกว่า:
 
-> “กดต่ออีกนิดเพื่อเปิดปุ่ม หรือปล่อยตอนนี้ก่อนแมวจะเห็น?”
+> “แตะปุ่มต่อเลย หรือรอจังหวะแมวก่อนจะเสี่ยงแตะ?”
 
 ## 2. Source Materials
 
@@ -31,19 +31,21 @@ Core Loop:
 
 | Topic | Decision |
 |---|---|
-| Hold Progress | ต้องกดค้าง 0.8 วินาทีเพื่อเปิดปุ่ม |
-| Progress Decay | เมื่อปล่อยจะลดทันทีแบบเส้นตรง จาก 100% เป็น 0% ภายในประมาณ 1 วินาที |
-| Cat Warning | เตือนล่วงหน้า 0.6–0.8 วินาที ก่อนเข้า WATCH |
+| Tap Activation | แตะครั้งเดียวแล้วเปิดปุ่มทันที |
+| Autonomous Cat Action | แมวสุ่ม WATCH หรือ SABOTAGE จาก Timer ทุกประมาณ 1.5–3 วินาที |
+| Tap Pressure | การเปิดปุ่มมีโอกาส 25% ที่จะเร่ง SABOTAGE แต่ไม่เกิดทุกครั้ง |
+| Cat Warning | เตือนล่วงหน้าก่อนเข้า WATCH |
 | Cat Watch | เข้า WATCH แล้วตรวจจับทันที และโจมตีได้ครั้งเดียวต่อ Cat Event |
 | Cat Sabotage | ปิดได้เฉพาะปุ่มที่เป็น ON แล้ว ครั้งละ 1 ปุ่ม |
 | Sabotage Cooldown | ประมาณ 3 วินาที |
-| Cat Probability | WATCH 60% / SABOTAGE 40% ใน Stage 1 |
+| Cat Probability | WATCH 35% / SABOTAGE 65% ในค่าเริ่มต้น |
 | No Active Button | หากไม่มีปุ่ม ON ให้เลือก WATCH เสมอ |
 | Player Health | เริ่มต้น 3 Hearts |
-| Attack Recovery | ยกเลิก Pointer ปัจจุบัน, Progress ลดต่อ, ล็อก Input ประมาณ 0.5 วินาที |
+| Attack Recovery | ล็อก Input ประมาณ 0.5 วินาที |
 | Combo | เพิ่มจากการเปิดปุ่มใหม่ และรีเซ็ตเมื่อถูกโจมตี |
 | Combo Cap | สูงสุด x4 |
-| Reactivation | เปิดปุ่มที่ถูก Sabotage ซ้ำได้ +50 คะแนน แต่ไม่เพิ่ม Combo |
+| Reactivation | เปิดปุ่มที่ถูก Sabotage ซ้ำได้ โดยคะแนนลดตามจำนวนครั้งและยังเพิ่ม Combo |
+| Combo Duration | คอมโบหมดอายุหลังไม่มีการเปิดปุ่มสำเร็จ 2 วินาที |
 | Score | ปุ่มใหม่ +100 × Combo และ Stage Clear Bonus +1000 |
 | Win Priority | เปิดปุ่มสุดท้ายสำเร็จแล้วชนะทันที และหยุด Cat Event |
 | Stage Scope | Prototype มี Stage เดียวที่รองรับ Difficulty Config |
@@ -75,7 +77,7 @@ CatKub — กดปุ่มให้ครบ ระวังแมว!
 
 ข้อความหลัก:
 
-- `กดค้างไว้`
+- `แตะปุ่มให้ติดไฟ`
 - `ระวัง! แมวกำลังจับตาดูนะ`
 - `โดนจับแล้ว!`
 - `แมวแกล้งปิดปุ่ม!`
@@ -148,8 +150,8 @@ tableFront คงเดิม
 2. ตั้งค่า Responsive 9:16 และ Prevent Browser Scroll
 3. สร้าง `GameScene` และ `catTableContainer`
 4. โหลดและประกอบ Table Back / Cat State / Table Front
-5. สร้าง Button State และ Press-and-Hold
-6. ทำ Progress Decay และ Pointer Session
+5. สร้าง Button State และ Tap Activation
+6. ทำ Pointer Session แบบแตะแล้วจบผลทันที
 7. ทำ Cat State Machine และ Cat Event Scheduler
 8. ทำ WATCH, ATTACK, SABOTAGE และ Cooldown
 9. ทำ Health, Score, Combo และ Reactivation
@@ -182,7 +184,7 @@ AudioManager
 2. แยก Runtime Asset เป็น Table, Hole, Cat, Button, HUD และ FX
 3. ออกแบบ HUD: Score, Combo, Hearts และ Progress
 4. ออกแบบ Warning และ State Feedback ของแมว
-5. ออกแบบ Button Feedback: Holding, ON, Sabotage และ Complete
+5. ออกแบบ Button Feedback: Tap, ON, Sabotage และ Complete
 6. ออกแบบ Start, Tutorial, Pause, Stage Clear และ Game Over
 7. ทำ Thai Copy ด้วยฟอนต์ Mali
 8. กำหนด Mobile Hit Area ใหญ่กว่าภาพจริงประมาณ 15–25%
@@ -194,7 +196,7 @@ AudioManager
 
 | State | Visual | Audio |
 |---|---|---|
-| Holding | Progress, Glow, Scale | เสียงเติม |
+| Tap Activation | Pop, Glow, Score Text | เสียงแตะ/เสียงสำเร็จ |
 | Button Complete | Pop, Sparkle, Score Text | เสียงสำเร็จ |
 | Warning | หู/ตาแมว, Warning Icon, Glow | เสียงเตือนสั้น |
 | Watch | แมวจ้องชัดเจน | เสียงบรรยากาศ/เสียงค้าง |
@@ -251,10 +253,11 @@ assets/
 ## 9. Prototype Acceptance Criteria
 
 - เริ่มเกมได้
-- กดค้างเพื่อเปิดปุ่มได้
-- Progress ลดลงเมื่อปล่อย
+- แตะครั้งเดียวเพื่อเปิดปุ่มได้
+- แตะใน WATCH แล้วถูกโจมตีโดยไม่เปิดปุ่ม
+- แมวออก Cat Action เองจาก Timer และมี Tap Pressure เป็นบางครั้ง
 - แมว Warning ก่อน WATCH
-- ปล่อยเพื่อหลบได้
+- ชะลอการแตะเพื่อหลบ WATCH ได้
 - โดนแมวแล้วลดหัวใจเพียงครั้งเดียว
 - แมว Sabotage ปุ่ม ON ได้ครั้งละ 1 ปุ่ม
 - Score และ Combo แสดงตลอดเวลา
@@ -292,7 +295,7 @@ assets/
 | 2 | Gameplay Programmer | สร้าง Phaser/Vite, 9:16, `catTableContainer` และ 3-Layer Loader ด้วย Placeholder | UX/UI, Artist |
 | 3 | UX/UI Designer | ทำ Wireframe, HUD, Screen Flow, Warning Feedback และ Thai Copy | Programmer, Artist |
 | 4 | 2D Artist | ทำ `table_back`, `table_front`, `cat_hole_[state]` โดยอ้างอิง Anchor เดียวกัน | Programmer |
-| 5 | Gameplay Programmer | เชื่อม Press-and-Hold, Cat State Machine, Attack, Sabotage, Score และ Win/Lose | QA, Designer |
+| 5 | Gameplay Programmer | เชื่อม Tap Activation, Cat State Machine, Attack, Sabotage, Score และ Win/Lose | QA, Designer |
 | 6 | UI Programmer / UX/UI | นำ HUD, Tutorial, Pause, Clear และ Game Over เข้าเกมจริง | QA, Designer |
 | 7 | Sound Designer / Programmer | ใส่ Warning, Attack, Sabotage, Score และ Stage Clear SFX | QA |
 | 8 | QA / Playtester | ทดสอบ Mobile, Timing, Anchor, Layer Switching และความแฟร์ | Designer, Programmer |

@@ -128,30 +128,6 @@ export class UIManager {
     this.screens.setGameOverStats(score);
   }
 
-  onButtonHold(buttonVisual) {
-    this.scene.tweens.killTweensOf(buttonVisual);
-    const baseScale = buttonVisual.baseScale ?? 0.55;
-    this.scene.tweens.add({
-      targets: buttonVisual,
-      scaleX: baseScale * 0.9,
-      scaleY: baseScale * 0.9,
-      duration: 100,
-      ease: 'Sine.easeInOut',
-    });
-  }
-
-  onButtonRelease(buttonVisual) {
-    this.scene.tweens.killTweensOf(buttonVisual);
-    const baseScale = buttonVisual.baseScale ?? 0.55;
-    this.scene.tweens.add({
-      targets: buttonVisual,
-      scaleX: baseScale,
-      scaleY: baseScale,
-      duration: 140,
-      ease: 'Back.easeOut',
-    });
-  }
-
   onButtonComplete(button, scoreEvent) {
     FeedbackFX.triggerButtonPop(this.scene, button.visual);
     FeedbackFX.triggerScoreFlyup(
@@ -259,7 +235,7 @@ export class UIManager {
     }
 
     if (state === CAT_STATES.WATCH) {
-      this.setStatus('แมวจ้องอยู่! ปล่อยมือเดี๋ยวนี้!', true);
+      this.setStatus('แมวจ้องอยู่! อย่าแตะปุ่มตอนนี้!', true);
       return;
     }
 

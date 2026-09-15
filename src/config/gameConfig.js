@@ -16,8 +16,6 @@ export const DEFAULT_CONFIG = Object.freeze({
   useRealAssets: true,
 
   // Player interaction
-  holdDuration: 800,
-  decayDuration: 2800,
   startingHealth: 3,
   buttonCount: 4,
   buttonCountMin: 4,
@@ -26,8 +24,8 @@ export const DEFAULT_CONFIG = Object.freeze({
   resumeSafeWindow: 500,
 
   // Cat timing and behaviour
-  catIntervalMin: 5000,
-  catIntervalMax: 5000,
+  catIntervalMin: 1500,
+  catIntervalMax: 3000,
   warningDuration: 700,
   peekDuration: 900,
   watchDuration: 1000,
@@ -39,11 +37,12 @@ export const DEFAULT_CONFIG = Object.freeze({
   sabotageCooldown: 1800,
   attackRecovery: 500,
   watchProbability: 0.35,
+  tapReactionProbability: 0.25,
   catWatchProbabilityAtMaxProgress: 0.18,
   catIntervalProgressScaleMin: 0.55,
 
   // Score and combo
-  comboDuration: 5000,
+  comboDuration: 2000,
   comboStart: 1,
   comboMax: 4,
   newActivationScore: 100,
@@ -70,10 +69,8 @@ export const DEFAULT_CONFIG = Object.freeze({
 export const GAME_PRESETS = Object.freeze({
   normal: Object.freeze({}),
   easy: Object.freeze({
-    holdDuration: 650,
-    decayDuration: 3500,
-    catIntervalMin: 6500,
-    catIntervalMax: 8000,
+    catIntervalMin: 2200,
+    catIntervalMax: 3800,
     warningDuration: 900,
     peekDuration: 1100,
     watchDuration: 700,
@@ -81,10 +78,8 @@ export const GAME_PRESETS = Object.freeze({
     catWatchProbabilityAtMaxProgress: 0.2,
   }),
   hard: Object.freeze({
-    holdDuration: 1000,
-    decayDuration: 1800,
-    catIntervalMin: 3200,
-    catIntervalMax: 4300,
+    catIntervalMin: 1000,
+    catIntervalMax: 1800,
     warningDuration: 500,
     peekDuration: 600,
     watchDuration: 1200,
@@ -111,8 +106,6 @@ function normalizeConfig(rawConfig) {
   const config = { ...rawConfig };
 
   config.canvasSize = clampInt(config.canvasSize, 512, 4096, DEFAULT_CONFIG.canvasSize);
-  config.holdDuration = clampInt(config.holdDuration, 100, 10000, DEFAULT_CONFIG.holdDuration);
-  config.decayDuration = clampInt(config.decayDuration, 100, 10000, DEFAULT_CONFIG.decayDuration);
   config.startingHealth = clampInt(config.startingHealth, 1, 3, DEFAULT_CONFIG.startingHealth);
   config.catIntervalMin = clampInt(config.catIntervalMin, 500, 60000, DEFAULT_CONFIG.catIntervalMin);
   config.catIntervalMax = Math.max(
@@ -149,6 +142,12 @@ function normalizeConfig(rawConfig) {
   config.comboStart = clampInt(config.comboStart, 1, 4, DEFAULT_CONFIG.comboStart);
   config.comboMax = clampInt(config.comboMax, config.comboStart, 4, DEFAULT_CONFIG.comboMax);
   config.watchProbability = clamp(config.watchProbability, 0, 1, DEFAULT_CONFIG.watchProbability);
+  config.tapReactionProbability = clamp(
+    config.tapReactionProbability,
+    0,
+    1,
+    DEFAULT_CONFIG.tapReactionProbability,
+  );
   config.catWatchProbabilityAtMaxProgress = clamp(
     config.catWatchProbabilityAtMaxProgress,
     0,

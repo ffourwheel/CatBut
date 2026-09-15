@@ -38,7 +38,7 @@ Key tenets:
 
 | Token Name | Hex Code | RGB / RGBA | Role / Application |
 | :--- | :--- | :--- | :--- |
-| `color-active-matcha` | `#4CAF50` | `rgb(76, 175, 80)` | Button charging progress ring / active status |
+| `color-active-matcha` | `#4CAF50` | `rgb(76, 175, 80)` | Button activation glow / active status |
 | `color-caution-amber` | `#FF9800` | `rgb(255, 152, 0)` | Cat warning state / early release decay ring |
 | `color-danger-crimson`| `#F44336` | `rgb(244, 67, 54)` | Cat attack strike / lost hearts / game over |
 | `color-gold-star`     | `#FFD700` | `rgb(255, 215, 0)` | Completed button paw / combo badges / stage stars |

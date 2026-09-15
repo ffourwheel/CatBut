@@ -1,11 +1,11 @@
 # Cat Button Stealth
 
-เกมอาร์เคดแนว Stealth ที่ผู้เล่นเปิดปุ่มด้วยการกดค้าง ขณะสังเกตแมวซึ่งสามารถตรวจจับหรือแกล้งปิดปุ่มที่เปิดแล้วได้
+เกมอาร์เคดแนว Stealth ที่ผู้เล่นแตะเปิดปุ่มให้ติดทันที ขณะสังเกตแมวซึ่งสามารถตรวจจับหรือแกล้งปิดปุ่มที่เปิดแล้วได้
 
 ## Gameplay Domain
 
 **Button**:
-ปุ่มสีบนโต๊ะที่ผู้เล่นต้องกดค้างเพื่อเปลี่ยนจาก OFF เป็น ON
+ปุ่มสีบนโต๊ะที่ผู้เล่นแตะหนึ่งครั้งเพื่อเปลี่ยนจาก OFF เป็น ON ทันที หากยังไม่ถูกแมวปิด
 _Avoid_: switch, light, target
 
 **Button Slot**:
@@ -20,8 +20,8 @@ _Avoid_: disabled button, empty button
 ชุด Button ที่ใช้งานจริงใน Stage หนึ่ง Stage มีได้ 4–8 ปุ่ม และเลือกจาก Button Slot เดิมด้วยชุดตำแหน่งที่กำหนดล่วงหน้า โดยจำนวนคู่ใช้ชุดสมมาตร ส่วนจำนวนคี่ใช้ชุดที่ออกแบบไว้ล่วงหน้าโดยไม่สุ่ม และไม่จัดเรียงตำแหน่งใหม่
 _Avoid_: active slots, button layout
 
-**Progress**:
-ความคืบหน้าของการกดค้างปุ่มหนึ่งปุ่ม ซึ่งจะลดลงทันทีแบบเส้นตรงเมื่อผู้เล่นปล่อยมือก่อนเปิดสำเร็จ และลดจาก 100% เป็น 0% ภายในประมาณ 1 วินาทีใน Prototype
+**Stage Progress**:
+จำนวน Activated Button เทียบกับจำนวน Button ใน Stage Button Set เช่น 2/4 โดยไม่มีความคืบหน้าระหว่างการกดปุ่ม
 _Avoid_: charge, meter
 
 **Activated Button**:
@@ -29,24 +29,32 @@ _Avoid_: charge, meter
 _Avoid_: completed button, lit button
 
 **Cat Event**:
-หนึ่งรอบการกระทำของแมว ตั้งแต่เริ่ม Warning จนแมวกลับไป Hidden
+หนึ่งรอบการกระทำของแมวที่เริ่มจาก Timer แบบสุ่ม ตั้งแต่เริ่ม Warning จนแมวกลับไป Hidden โดย Cat Event จะสุ่มเลือก WATCH หรือ SABOTAGE
 _Avoid_: cat turn, encounter
 
+**Cat Action**:
+การกระทำจริงของแมวใน Cat Event ซึ่งมีเฉพาะ WATCH และ SABOTAGE ใน Prototype
+_Avoid_: cat move, random trick
+
 **Warning**:
-ช่วงเตือนล่วงหน้าก่อนแมวเข้า WATCH โดยต้องให้ผู้เล่นมีเวลาตัดสินใจปล่อยปุ่ม
+ช่วงเตือนล่วงหน้าก่อนแมวเข้า WATCH โดยต้องให้ผู้เล่นมีเวลาตัดสินใจว่าจะชะลอการแตะปุ่ม
 _Avoid_: alert, notification
 
 **Watch**:
-สถานะที่แมวตรวจจับว่าผู้เล่นกำลังกดปุ่มอยู่ หากกำลังกดอยู่จะถูกโจมตีทันที
+สถานะที่แมวตรวจจับการแตะปุ่ม หากผู้เล่นแตะในช่วงนี้จะถูกโจมตีทันทีและการแตะนั้นไม่เปิดปุ่ม
 _Avoid_: detect phase, look
 
 **Sabotage**:
-การที่แมวปิด Activated Button ใน Button Slot เป้าหมายครั้งละหนึ่งปุ่มต่อ Cat Event โดยไม่แตะปุ่มที่กำลังกดค้าง ผู้เล่นยังกดปุ่มอื่นต่อได้ระหว่างลำดับนี้ แล้วแมวจึงกลับไป Hidden พร้อมมี Cooldown ประมาณ 3 วินาที
+การที่แมวปิด Activated Button ใน Button Slot เป้าหมายครั้งละหนึ่งปุ่ม โดยเกิดจาก Cat Event ตามเวลาเป็นหลัก และมีโอกาสถูกเร่งจากการเปิดปุ่มสำเร็จบางครั้ง แมวจะเลือกปุ่มที่เปิดอยู่แบบสุ่ม และถ้า Action ถูกเร่งจากการแตะจะยกเว้นปุ่มที่เพิ่งแตะถ้าเป็นไปได้ ผู้เล่นยังแตะปุ่มอื่นต่อได้ระหว่างลำดับนี้ แล้วแมวจึงกลับไป Hidden พร้อมมี Cooldown สำหรับ Cat Event ตามเวลา
 _Avoid_: undo, cat attack
 
 **Sabotage Target**:
-Button ที่แมวสุ่มเลือกจาก Activated Button ซึ่งไม่ใช่ปุ่มที่กำลังกดค้าง เพื่อปิดใน Cat Event ปัจจุบัน โดยอ้างอิง Button Slot ที่มีอยู่จริงและจุดกึ่งกลางของ Button เป็นปลายทาง
+Button ที่แมวสุ่มเลือกจาก Activated Button เพื่อปิดใน Cat Event ปัจจุบัน โดยอ้างอิง Button Slot ที่มีอยู่จริงและจุดกึ่งกลางของ Button เป็นปลายทาง
 _Avoid_: cat target, sabotage position
+
+**Tap Pressure**:
+โอกาสที่การเปิด Button สำเร็จจะเร่ง Sabotage ของแมว โดยไม่เกิดทุกครั้งที่แตะ และถ้าแมวกำลังทำ Action อยู่จะรอคิวได้เพียงหนึ่ง Action
+_Avoid_: instant counter, guaranteed reaction
 
 **Sabotage Preview**:
 การไฮไลต์ Sabotage Target ล่วงหน้า 300 มิลลิวินาทีก่อน Sabotage Paw เคลื่อนที่ 220 มิลลิวินาทีไปยังกึ่งกลางปุ่ม แล้วแมวกลับเข้ารูภายในประมาณ 200 มิลลิวินาที เพื่อให้ผู้เล่นอ่านเหตุการณ์ได้ทัน
@@ -57,11 +65,11 @@ _Avoid_: target warning, sabotage alert
 _Avoid_: rotating cat, rotating sabotage image
 
 **Combo**:
-ตัวคูณคะแนนที่เพิ่มจากการเปิดปุ่มสำเร็จต่อเนื่อง สูงสุด x4 และรีเซ็ตเมื่อผู้เล่นถูกแมวโจมตี ทั้งการเปิดปุ่มใหม่และการ Reactivation เพิ่ม Combo
+ตัวคูณคะแนนที่เพิ่มจากการเปิดปุ่มสำเร็จต่อเนื่อง สูงสุด x4 และหมดอายุเมื่อไม่มีการเปิดปุ่มสำเร็จเป็นเวลา 2 วินาที รีเซ็ตทันทีเมื่อผู้เล่นถูกแมวโจมตี ทั้งการเปิดปุ่มใหม่และการ Reactivation เพิ่ม Combo
 _Avoid_: streak, chain
 
 **Stage**:
-รอบการเล่นหนึ่งรอบที่จบเมื่อผู้เล่นเปิด Stage Button Set ครบหรือหัวใจหมด โดยแต่ละ Stage ใช้ปุ่ม 4–8 ปุ่ม ใน Prototype จะมี Stage เดียวที่ใช้ค่าเริ่มต้น Hold 0.8 วินาที, Cat Interval 4–6 วินาที, Warning 0.8 วินาที, Watch 0.8 วินาที, Watch 60% และ Sabotage 40%
+รอบการเล่นหนึ่งรอบที่จบเมื่อผู้เล่นเปิด Stage Button Set ครบหรือหัวใจหมด โดยแต่ละ Stage ใช้ปุ่ม 4–8 ปุ่ม ผู้เล่นเปิดแต่ละปุ่มด้วยการแตะครั้งเดียว และ Cat Event เกิดถี่ขึ้นประมาณทุก 1.5–3 วินาทีในค่าปกติ
 _Avoid_: level, round
 
 **Stage Clear**:
@@ -73,7 +81,7 @@ _Avoid_: victory, win screen
 _Avoid_: defeat, lose screen
 
 **Pointer Session**:
-การกดปุ่มหนึ่งครั้งตั้งแต่ Pointer Down จนถึง Pointer Up หรือ Pointer Up Outside โดย Prototype รองรับทีละหนึ่ง Pointer
+การแตะหนึ่งครั้งที่เริ่มและจบผลลัพธ์ที่ Pointer Down ทันที โดย Prototype รองรับทีละหนึ่ง Pointer และ Pointer Up ไม่มีผลต่อสถานะปุ่ม
 _Avoid_: touch session, input gesture
 
 **Reactivation**:
@@ -83,9 +91,9 @@ _Avoid_: retry activation, repeat score
 ## Player Experience
 
 **Prototype**:
-เวอร์ชันแรกที่เน้นทดสอบ Core Loop ได้แก่ การกดค้าง การหลบแมว การถูกโจมตี การ Sabotage คะแนน Combo การชนะ แพ้ Retry รวมถึง Start, Tutorial, Pause, Stage Clear และ Game Over
+เวอร์ชันแรกที่เน้นทดสอบ Core Loop ได้แก่ การแตะเปิดปุ่ม การอ่านจังหวะแมว การถูกโจมตี การ Sabotage คะแนน Combo การชนะ แพ้ Retry รวมถึง Start, Tutorial, Pause, Stage Clear และ Game Over
 _Avoid_: demo, alpha
 
 **Core Loop**:
-กดค้าง → สังเกต Warning → ปล่อยเพื่อหลบหรือเสี่ยงกดต่อ → เปิดปุ่ม → ทำซ้ำจนเปิดครบ
+แตะเปิดปุ่ม → อ่าน Cat Action ที่สุ่มออกมา → หลบ WATCH และรับมือ SABOTAGE → Reactivation เมื่อถูกปิด → ทำซ้ำจนเปิดครบ
 _Avoid_: main loop, gameplay cycle

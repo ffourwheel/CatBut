@@ -1,43 +1,9 @@
 import { CAT_STATES } from './constants.js';
 import scoreBarUrl from '../../assets/ui/score_bar.png?url';
 import healthBarUrl from '../../assets/ui/health_bar.png?url';
+import { ASSET_KEYS } from './AssetKeys.js';
 
-export const ASSET_KEYS = Object.freeze({
-  background: 'background',
-  backgroundForeground: 'in_background_overlay',
-  tableBack: 'table_back',
-  tableFront: 'table_front',
-  sabotagePaw: 'sabotage_paw',
-  cat: Object.fromEntries(Object.values(CAT_STATES).map((state) => [state, `cat_hole_${state}`])),
-  buttons: {
-    off: 'button_off',
-    holding: 'button_off',
-    on: 'button_on',
-  },
-  ui: {
-    heartFull: 'heart_full',
-    heartEmpty: 'heart_empty',
-    star: 'star_icon',
-    catPaw: 'cat_paw',
-    warningBubble: 'warning_bubble',
-    warningMark: 'warning_mark',
-    soundOn: 'sound_on',
-    soundOff: 'sound_off',
-    pause: 'pause_icon',
-    homeCard: 'home_card',
-    btnStartGame: 'btn_start_game',
-    btnStartGameHover: 'btn_start_game_hover',
-    scoreBar: 'score_bar',
-    healthBar: 'health_bar',
-    comboX2: 'combo_x2',
-    comboX3: 'combo_x3',
-    comboX4: 'combo_x4',
-    pausePanel: 'pause_panel',
-    winCatPeek: 'win_cat_peek',
-    winPanelBg: 'win_panel_bg',
-    winStar: 'win_star',
-  },
-});
+export { ASSET_KEYS } from './AssetKeys.js';
 
 export const ASSET_MANIFEST = Object.freeze({
   background: '/assets/background.png',

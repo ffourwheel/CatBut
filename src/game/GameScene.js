@@ -79,19 +79,13 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.buttons = new ButtonManager(this, this.config, {
-      canStartHold: () => this.canStartHold(),
-      onHoldStart: (button) => {
-        this.ui.onButtonHold(button.visual);
-        this.cat?.onPlayerStartedHold();
-      },
-      onHoldEnd: (button) => this.ui.onButtonRelease(button.visual),
-      onComplete: (result) => this.handleButtonComplete(result),
+      canActivate: () => this.canActivateButton(),
+      onActivate: (result) => this.handleButtonComplete(result),
       worldOffsetY: this.boardOffsetY,
     });
 
     this.cat = new CatController(this, this.config, {
       onStateChange: (state) => this.handleCatState(state),
-      onWatch: () => this.handleWatchStart(),
       onAttack: () => this.handleAttack(),
       onSabotagePreview: (slotId) => this.handleSabotagePreview(slotId),
       onSabotage: (slotId) => this.handleSabotage(slotId),
@@ -99,7 +93,8 @@ export class GameScene extends Phaser.Scene {
         activeCount: this.buttons.getActivatedCount(),
         totalCount: this.buttons.getButtonCount(),
       }),
-      getSabotageTarget: () => this.buttons.getSabotageTarget(),
+      getSabotageTarget: (excludedSlotId) => this.buttons.getSabotageTarget(excludedSlotId),
+      isSabotageTargetAvailable: (slotId) => this.buttons.isActivated(slotId),
     });
 
     this.showStart(true);
@@ -143,7 +138,6 @@ export class GameScene extends Phaser.Scene {
 
   pauseStage() {
     if (!this.stage.isPlaying()) return;
-    this.buttons.cancelCurrent();
     this.buttons.setVisible(false);
     this.cat.pause();
     this.sabotagePawTween?.pause();
@@ -247,6 +241,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    this.cat.onPlayerActivated(button.slotId);
     this.refreshHud();
     this.tweens.add({
       targets: button.visual,
@@ -271,12 +266,7 @@ export class GameScene extends Phaser.Scene {
     this.refreshHud();
   }
 
-  handleWatchStart() {
-    if (this.buttons.isHolding()) this.cat.requestAttack();
-  }
-
   handleAttack() {
-    this.buttons.cancelCurrent();
     this.inputLockRemaining = this.config.attackRecovery;
     this.score.resetCombo();
     this.health.damage(1);
@@ -377,7 +367,6 @@ export class GameScene extends Phaser.Scene {
   finishStage() {
     if (!this.stage.isPlaying()) return;
     this.cat.stop();
-    this.buttons.cancelCurrent();
     this.buttons.setVisible(false);
     const bonus = this.score.addBonus(this.config.stageClearBonus);
     this.stage.clear();
@@ -390,7 +379,6 @@ export class GameScene extends Phaser.Scene {
   finishGameOver() {
     if (!this.stage.isPlaying()) return;
     this.cat.stop();
-    this.buttons.cancelCurrent();
     this.buttons.setVisible(false);
     this.stage.gameOver();
     this.sessionScreen = GAME_SCREENS.GAME_OVER;
@@ -398,8 +386,14 @@ export class GameScene extends Phaser.Scene {
     this.ui.show(GAME_SCREENS.GAME_OVER);
   }
 
-  canStartHold() {
-    return this.stage.isPlaying() && this.inputLockRemaining <= 0;
+  canActivateButton() {
+    if (!this.stage.isPlaying() || this.inputLockRemaining > 0) return false;
+    if (this.cat?.state === CAT_STATES.WATCH) {
+      this.cat.requestAttack();
+      return false;
+    }
+    if (this.cat?.state === CAT_STATES.ATTACK) return false;
+    return true;
   }
 
   toggleMute() {

@@ -474,7 +474,7 @@ export function buildCozyHUD(scene, callbacks = {}) {
   bannerBg.lineStyle(1.5, 0xffe2b8, 0.3);
   bannerBg.strokeRoundedRect(cfgBanner.x - cfgBanner.width / 2 + 5, cfgBanner.y - cfgBanner.height / 2 + 5, cfgBanner.width - 10, cfgBanner.height - 10, cfgBanner.radius - 5);
 
-  const bannerText = scene.add.text(cfgBanner.x, cfgBanner.y, COPY_THAI.instructions.promptHold, {
+  const bannerText = scene.add.text(cfgBanner.x, cfgBanner.y, COPY_THAI.instructions.promptTap, {
     fontFamily: UI_FONTS.family,
     fontSize: `${cfgBanner.fontSize}px`,
     color: '#fff4dc',
