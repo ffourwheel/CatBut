@@ -32,13 +32,14 @@ Core Loop:
 | Topic | Decision |
 |---|---|
 | Tap Activation | แตะครั้งเดียวแล้วเปิดปุ่มทันที |
-| Autonomous Cat Action | แมวสุ่ม WATCH หรือ SABOTAGE จาก Timer ทุกประมาณ 1.5–3 วินาที |
-| Tap Pressure | การเปิดปุ่มมีโอกาส 25% ที่จะเร่ง SABOTAGE แต่ไม่เกิดทุกครั้ง |
+| Autonomous Cat Action | แมวสุ่ม WATCH หรือ SABOTAGE จาก Timer ทุกประมาณ 0.9–1.6 วินาที |
+| Tap Pressure | การเปิดปุ่มมีโอกาส 40% ที่จะเร่ง SABOTAGE แต่ไม่เกิดทุกครั้ง |
+| Anti-Mash | แตะ 2 ครั้งภายใน 500ms จะเร่ง SABOTAGE แน่นอน และรอให้ Cat Action จบก่อนตัดสิน Stage Clear |
 | Cat Warning | เตือนล่วงหน้าก่อนเข้า WATCH |
 | Cat Watch | เข้า WATCH แล้วตรวจจับทันที และโจมตีได้ครั้งเดียวต่อ Cat Event |
 | Cat Sabotage | ปิดได้เฉพาะปุ่มที่เป็น ON แล้ว ครั้งละ 1 ปุ่ม |
 | Sabotage Cooldown | ประมาณ 3 วินาที |
-| Cat Probability | WATCH 35% / SABOTAGE 65% ในค่าเริ่มต้น |
+| Cat Probability | WATCH 50% ตอนเริ่ม และลดได้ถึง 35% / SABOTAGE 50–65% ตาม Stage Progress |
 | No Active Button | หากไม่มีปุ่ม ON ให้เลือก WATCH เสมอ |
 | Player Health | เริ่มต้น 3 Hearts |
 | Attack Recovery | ล็อก Input ประมาณ 0.5 วินาที |

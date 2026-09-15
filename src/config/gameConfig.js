@@ -24,22 +24,24 @@ export const DEFAULT_CONFIG = Object.freeze({
   resumeSafeWindow: 500,
 
   // Cat timing and behaviour
-  catIntervalMin: 1500,
-  catIntervalMax: 3000,
-  warningDuration: 700,
-  peekDuration: 900,
+  catIntervalMin: 900,
+  catIntervalMax: 1600,
+  warningDuration: 500,
+  peekDuration: 650,
   watchDuration: 1000,
   hideDuration: 200,
-  sabotagePreviewDuration: 300,
-  sabotageDuration: 220,
-  sabotageReachDuration: 220,
-  sabotageHitDuration: 180,
-  sabotageCooldown: 1800,
+  sabotagePreviewDuration: 250,
+  sabotageDuration: 200,
+  sabotageReachDuration: 180,
+  sabotageHitDuration: 140,
+  sabotageCooldown: 1000,
   attackRecovery: 500,
-  watchProbability: 0.35,
-  tapReactionProbability: 0.25,
-  catWatchProbabilityAtMaxProgress: 0.18,
-  catIntervalProgressScaleMin: 0.55,
+  watchProbability: 0.5,
+  tapReactionProbability: 0.4,
+  rapidTapThreshold: 2,
+  rapidTapWindow: 500,
+  catWatchProbabilityAtMaxProgress: 0.35,
+  catIntervalProgressScaleMin: 0.45,
 
   // Score and combo
   comboDuration: 2000,
@@ -148,6 +150,8 @@ function normalizeConfig(rawConfig) {
     1,
     DEFAULT_CONFIG.tapReactionProbability,
   );
+  config.rapidTapThreshold = clampInt(config.rapidTapThreshold, 2, 8, DEFAULT_CONFIG.rapidTapThreshold);
+  config.rapidTapWindow = clampInt(config.rapidTapWindow, 150, 2000, DEFAULT_CONFIG.rapidTapWindow);
   config.catWatchProbabilityAtMaxProgress = clamp(
     config.catWatchProbabilityAtMaxProgress,
     0,

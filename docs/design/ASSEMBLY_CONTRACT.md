@@ -10,14 +10,22 @@
 - Scale `(1, 1)`
 - Rotation `0`
 
+## Circular Table Layout
+
+- `tableBack` เป็นแผ่นโต๊ะกลมแบบ placeholder ศูนย์กลางเดียวกับ Hole มีรัศมีแนวนอนประมาณ `480 px` และแนวตั้งประมาณ `430 px` เพื่อเพิ่มพื้นที่ด้านซ้าย–ขวา
+- Hole เดิมยังอยู่ที่กึ่งกลาง `(512, 512)`
+- Button Slot มีตำแหน่งถาวร 8 จุดบนวงแหวนวงรี รัศมีแนวนอนประมาณ `335 px` และแนวตั้งประมาณ `310 px`
+- `slot-1` เริ่มที่ 12 นาฬิกา และ Slot ถัดไปเรียงตามเข็มนาฬิกาทีละ `45°`
+- Stage ยังคงเลือกใช้งาน 4–8 Slot จากตำแหน่งถาวรชุดนี้
+
 ## Layer Structure
 
 ```text
 catTableContainer
-├── tableBack  → table_back.png       → Depth 10
+├── tableBack  → generated circular placeholder → Depth 10
 ├── catState   → cat_hole_[state].png → Depth 20
 ├── sabotagePaw → sabotage paw layer  → Depth 25
-└── tableFront → table_front.png      → Depth 30
+└── tableFront → generated transparent placeholder → Depth 30
 ```
 
 Runtime object names ต้องเป็น `catTableContainer`, `tableBack`, `catState`, `sabotagePaw` และ `tableFront`

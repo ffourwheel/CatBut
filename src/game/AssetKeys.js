@@ -5,6 +5,8 @@ export const ASSET_KEYS = Object.freeze({
   backgroundForeground: 'in_background_overlay',
   tableBack: 'table_back',
   tableFront: 'table_front',
+  roundTableBack: 'table_round_back',
+  roundTableFront: 'table_round_front',
   sabotagePaw: 'sabotage_paw',
   cat: Object.fromEntries(Object.values(CAT_STATES).map((state) => [state, `cat_hole_${state}`])),
   buttons: {

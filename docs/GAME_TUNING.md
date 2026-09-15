@@ -17,7 +17,7 @@ export const ACTIVE_GAME_PRESET = 'normal';
 
 | ค่า | ความหมาย | ตัวอย่าง |
 | --- | --- | ---: |
-| `catIntervalMin` / `catIntervalMax` | ระยะเวลาที่แมวซ่อนก่อนเริ่ม Event แบบสุ่ม (มิลลิวินาที) | `1500` ถึง `3000` |
+| `catIntervalMin` / `catIntervalMax` | ระยะเวลาที่แมวซ่อนก่อนเริ่ม Event แบบสุ่ม (มิลลิวินาที) | `900` ถึง `1600` |
 | `warningDuration` | ระยะเวลาเตือนก่อนแมวมอง | `700` |
 | `peekDuration` | ระยะเวลาแมวโผล่ให้เห็น | `900` |
 | `watchDuration` | ระยะเวลาที่แมวจ้อง | `1000` |
@@ -25,7 +25,8 @@ export const ACTIVE_GAME_PRESET = 'normal';
 | `sabotagePreviewDuration` | เวลาที่แมวเล็งปุ่มก่อนยื่นมือ (มิลลิวินาที) | `300` |
 | `sabotageReachDuration` | เวลาที่มือยื่นถึงปุ่ม (มิลลิวินาที) | `220` |
 | `sabotageHitDuration` | จังหวะที่สั่งปิดปุ่มหลังเริ่มยื่นมือ (มิลลิวินาที) | `180` |
-| `tapReactionProbability` | โอกาสที่การเปิดปุ่มจะเร่ง SABOTAGE (0–1) | `0.25` |
+| `tapReactionProbability` | โอกาสที่การเปิดปุ่มจะเร่ง SABOTAGE (0–1) | `0.40` |
+| `rapidTapThreshold` / `rapidTapWindow` | จำนวนและช่วงเวลาที่แตะรัวจนแมวเร่ง SABOTAGE แน่นอน | `2` ครั้งใน `500` มิลลิวินาที |
 | `buttonCountMin` / `buttonCountMax` | จำนวนปุ่มที่สุ่มในแต่ละรอบ | `4` ถึง `8` |
 | `startingHealth` | จำนวนหัวใจเริ่มต้น (สูงสุด 3 ตาม UI ปัจจุบัน) | `3` |
 | `comboDuration` | อายุคอมโบหลังเปิดปุ่มสำเร็จ (มิลลิวินาที) | `2000` |

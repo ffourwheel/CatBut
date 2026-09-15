@@ -9,7 +9,7 @@
 _Avoid_: switch, light, target
 
 **Button Slot**:
-ตำแหน่งปุ่มถาวรบนโต๊ะจากชุดสูงสุด 8 ตำแหน่ง โดยระบุด้วย `slot-1` ถึง `slot-8` และไม่เปลี่ยนตำแหน่งระหว่าง Stage
+ตำแหน่งปุ่มถาวรรอบ Hole บนวงแหวนวงรีของแผ่นโต๊ะกลมจากชุดสูงสุด 8 ตำแหน่ง โดยระบุด้วย `slot-1` ถึง `slot-8`; `slot-1` อยู่ด้านบนและตำแหน่งถัดไปเรียงตามเข็มนาฬิกาทีละ 45° โดยไม่เปลี่ยนตำแหน่งระหว่าง Stage
 _Avoid_: button position, dynamic slot
 
 **Unused Slot**:
@@ -53,7 +53,7 @@ Button ที่แมวสุ่มเลือกจาก Activated Button �
 _Avoid_: cat target, sabotage position
 
 **Tap Pressure**:
-โอกาสที่การเปิด Button สำเร็จจะเร่ง Sabotage ของแมว โดยไม่เกิดทุกครั้งที่แตะ และถ้าแมวกำลังทำ Action อยู่จะรอคิวได้เพียงหนึ่ง Action
+โอกาสที่การเปิด Button สำเร็จจะเร่ง Sabotage ของแมว โดยปกติไม่เกิดทุกครั้งที่แตะ แต่การแตะ 2 ครั้งภายใน 500 มิลลิวินาทีจะเร่ง Sabotage แน่นอน ถ้าแมวกำลังทำ Action อยู่จะรอคิวได้เพียงหนึ่ง Action
 _Avoid_: instant counter, guaranteed reaction
 
 **Sabotage Preview**:
@@ -69,7 +69,7 @@ _Avoid_: rotating cat, rotating sabotage image
 _Avoid_: streak, chain
 
 **Stage**:
-รอบการเล่นหนึ่งรอบที่จบเมื่อผู้เล่นเปิด Stage Button Set ครบหรือหัวใจหมด โดยแต่ละ Stage ใช้ปุ่ม 4–8 ปุ่ม ผู้เล่นเปิดแต่ละปุ่มด้วยการแตะครั้งเดียว และ Cat Event เกิดถี่ขึ้นประมาณทุก 1.5–3 วินาทีในค่าปกติ
+รอบการเล่นหนึ่งรอบที่จบเมื่อผู้เล่นเปิด Stage Button Set ครบหรือหัวใจหมด โดยแต่ละ Stage ใช้ปุ่ม 4–8 ปุ่ม ผู้เล่นเปิดแต่ละปุ่มด้วยการแตะครั้งเดียว และ Cat Event เกิดถี่ขึ้นประมาณทุก 0.9–1.6 วินาทีในค่าปกติ การแตะรัวจะเร่ง Sabotage เพื่อกันการชนะด้วยการกดสุ่มเร็ว ๆ
 _Avoid_: level, round
 
 **Stage Clear**:

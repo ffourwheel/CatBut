@@ -17,6 +17,8 @@ export class CatController {
     this.sabotagePhase = 'idle';
     this.sabotageTargetId = null;
     this.queuedSabotageSlotId = null;
+    this.rapidTapCount = 0;
+    this.rapidTapRemaining = 0;
   }
 
   start() {
@@ -27,6 +29,8 @@ export class CatController {
     this.sabotagePhase = 'idle';
     this.sabotageTargetId = null;
     this.queuedSabotageSlotId = null;
+    this.rapidTapCount = 0;
+    this.rapidTapRemaining = 0;
     this.eventResolved = false;
     this.setState(CAT_STATES.HIDDEN);
     this.scheduleNextEvent();
@@ -39,6 +43,8 @@ export class CatController {
     this.sabotagePhase = 'idle';
     this.sabotageTargetId = null;
     this.queuedSabotageSlotId = null;
+    this.rapidTapCount = 0;
+    this.rapidTapRemaining = 0;
   }
 
   pause() {
@@ -55,6 +61,10 @@ export class CatController {
 
   update(delta) {
     if (!this.running || this.paused) return;
+    if (this.rapidTapRemaining > 0) {
+      this.rapidTapRemaining = Math.max(0, this.rapidTapRemaining - delta);
+      if (this.rapidTapRemaining === 0) this.rapidTapCount = 0;
+    }
     if (this.safeRemaining > 0) {
       this.safeRemaining = Math.max(0, this.safeRemaining - delta);
       return;
@@ -103,6 +113,7 @@ export class CatController {
   onPlayerActivated(slotId) {
     if (!this.running || this.paused) return false;
 
+    const rapidTap = this.recordRapidTap();
     const targetSlotId = this.callbacks.getSabotageTarget?.(slotId);
     if (targetSlotId === null || targetSlotId === undefined) return false;
 
@@ -111,7 +122,7 @@ export class CatController {
       Math.min(1, this.config.tapReactionProbability ?? 0),
     );
     const randomValue = this.config.debug.disableRandomness ? 0 : Math.random();
-    if (randomValue >= reactionProbability) return false;
+    if (!rapidTap && randomValue >= reactionProbability) return false;
 
     if (this.state === CAT_STATES.SABOTAGE || this.state === CAT_STATES.HIDE) {
       this.queuedSabotageSlotId = targetSlotId;
@@ -122,6 +133,20 @@ export class CatController {
     return true;
   }
 
+  recordRapidTap() {
+    if (this.rapidTapRemaining > 0) {
+      this.rapidTapCount += 1;
+    } else {
+      this.rapidTapCount = 1;
+    }
+    this.rapidTapRemaining = this.config.rapidTapWindow;
+
+    if (this.rapidTapCount < this.config.rapidTapThreshold) return false;
+    this.rapidTapCount = 0;
+    this.rapidTapRemaining = 0;
+    return true;
+  }
+
   requestAttack() {
     if (this.state !== CAT_STATES.WATCH || this.eventResolved) return false;
     this.eventResolved = true;
@@ -129,6 +154,10 @@ export class CatController {
     this.phaseRemaining = this.config.attackRecovery;
     this.callbacks.onAttack?.();
     return true;
+  }
+
+  hasActiveAction() {
+    return this.running && this.state !== CAT_STATES.HIDDEN;
   }
 
   enterWarning() {

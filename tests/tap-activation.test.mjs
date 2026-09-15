@@ -164,6 +164,24 @@ test('a tap does not always trigger a cat action', () => {
   assert.equal(cat.state, 'hidden');
 });
 
+test('two rapid taps force a sabotage reaction even when normal tap pressure misses', () => {
+  const config = createGameConfig({
+    tapReactionProbability: 0,
+    rapidTapThreshold: 2,
+    rapidTapWindow: 500,
+    debug: { disableRandomness: false },
+  });
+  const cat = new CatController(null, config, {
+    getSabotageTarget: () => 'slot-1',
+  });
+
+  cat.start();
+  assert.equal(cat.onPlayerActivated('slot-2'), false);
+  assert.equal(cat.onPlayerActivated('slot-3'), true);
+  assert.equal(cat.state, 'sabotage');
+  assert.equal(cat.sabotageTargetId, 'slot-1');
+});
+
 test('combo expires after two seconds without another activation', () => {
   const config = createGameConfig({ comboDuration: 2000 });
   const score = new ScoreManager(config);

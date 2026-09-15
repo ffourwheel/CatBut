@@ -33,19 +33,21 @@ export const GAME_SCREENS = Object.freeze({
   GAME_OVER: 'game-over',
 });
 
-// Slots follow the tabletop curve in four mirrored rows around the cat.
-// The inner lower rows keep the buttons visually grouped around the hole
-// instead of forcing every slot onto one oversized ellipse.
-const BUTTON_OFFSETS = Object.freeze([
-  { x: -280, y: -175 }, // Top-Left
-  { x: 280, y: -175 },  // Top-Right
-  { x: -345, y: -35 },  // Mid-Left
-  { x: 345, y: -35 },   // Mid-Right
-  { x: -310, y: 110 },  // Lower-Left
-  { x: 310, y: 110 },   // Lower-Right
-  { x: -225, y: 205 },  // Bottom-Left
-  { x: 225, y: 205 },   // Bottom-Right
-]);
+// Eight permanent slots form a circular ring around the cat hole.
+// slot-1 starts at 12 o'clock, then continues clockwise every 45 degrees.
+export const BUTTON_RING_RADIUS_X = 335;
+export const BUTTON_RING_RADIUS_Y = 310;
+export const BUTTON_SLOT_ANGLE_STEP = (Math.PI * 2) / 8;
+
+const BUTTON_OFFSETS = Object.freeze(
+  Array.from({ length: 8 }, (_, index) => {
+    const angle = -Math.PI / 2 + index * BUTTON_SLOT_ANGLE_STEP;
+    return {
+      x: Math.cos(angle) * BUTTON_RING_RADIUS_X,
+      y: Math.sin(angle) * BUTTON_RING_RADIUS_Y,
+    };
+  }),
+);
 
 export const BUTTON_POSITIONS = BUTTON_OFFSETS.map(({ x, y }) => ({
   x: TABLE_ANCHOR.x + x,
@@ -66,10 +68,10 @@ export const BUTTON_SLOT_LAYOUT = Object.freeze(
 // Presets keep mirrored pairs together for even counts. Odd counts are
 // authored explicitly so a stage never changes button positions unexpectedly.
 export const BUTTON_SLOT_PRESETS = Object.freeze({
-  4: Object.freeze(['slot-1', 'slot-2', 'slot-3', 'slot-4']),
-  5: Object.freeze(['slot-1', 'slot-2', 'slot-3', 'slot-4', 'slot-7']),
-  6: Object.freeze(['slot-1', 'slot-2', 'slot-3', 'slot-4', 'slot-7', 'slot-8']),
-  7: Object.freeze(['slot-1', 'slot-2', 'slot-3', 'slot-4', 'slot-5', 'slot-7', 'slot-8']),
+  4: Object.freeze(['slot-1', 'slot-3', 'slot-5', 'slot-7']),
+  5: Object.freeze(['slot-1', 'slot-2', 'slot-3', 'slot-5', 'slot-7']),
+  6: Object.freeze(['slot-1', 'slot-2', 'slot-3', 'slot-5', 'slot-6', 'slot-7']),
+  7: Object.freeze(['slot-1', 'slot-2', 'slot-3', 'slot-5', 'slot-6', 'slot-7', 'slot-8']),
   8: BUTTON_SLOT_IDS,
 });
 

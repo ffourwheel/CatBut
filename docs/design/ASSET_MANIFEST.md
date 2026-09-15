@@ -25,6 +25,8 @@ All assembly assets strictly adhere to the [CatKub Assembly Contract](file:///d:
 
 These 10 textures form the interactive centerpiece of CatKub. They are designed to be rendered within `catTableContainer` at coordinate `(512, 512)`. When switching cat states, **only** the texture of `catState` changes; the targeted sabotage animation uses the separate `sabotagePaw` overlay so the table and hole never rotate.
 
+> Interim layout note: the runtime currently uses a generated flat circular placeholder for `tableBack` with a slightly wider horizontal radius, plus a transparent `tableFront` layer. The supplied rectangular table textures remain available for a later visual pass.
+
 | Asset Key | File Path | Dimensions | Origin | Depth | Role / Description | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `table_back` | `assets/table_back.png` | `1024 × 1024` | `(0.5, 0.5)` | 10 | Wooden table surface, inner hole rim, rear table perspective | Verified |

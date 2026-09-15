@@ -22,9 +22,10 @@ const COLORS = {
   success: 0x67b887,
 };
 
-const TABLE_FRONT_SCALE_X = 0.97;
-const CAT_HOLE_SCALE = 1.1;
-const CAT_HOLE_OFFSET_Y = 30;
+const ROUND_TABLE_RADIUS_X = 480;
+const ROUND_TABLE_RADIUS_Y = 430;
+const CAT_HOLE_SCALE = 1;
+const CAT_HOLE_OFFSET_Y = 0;
 
 function createTexture(scene, key, draw) {
   if (scene.textures.exists(key)) return;
@@ -73,28 +74,34 @@ function drawPaw(graphics, x, y, color = COLORS.cat) {
 }
 
 function createTableTextures(scene) {
-  createTexture(scene, ASSET_KEYS.tableBack, (graphics) => {
+  createTexture(scene, ASSET_KEYS.roundTableBack, (graphics) => {
     graphics.fillStyle(COLORS.table, 1);
-    graphics.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-    graphics.fillStyle(0xe9c49e, 1);
-    graphics.fillRoundedRect(58, 58, 908, 908, 46);
+    graphics.fillEllipse(
+      TABLE_ANCHOR.x,
+      TABLE_ANCHOR.y,
+      ROUND_TABLE_RADIUS_X * 2,
+      ROUND_TABLE_RADIUS_Y * 2,
+    );
     graphics.lineStyle(18, COLORS.tableEdge, 1);
-    graphics.strokeRoundedRect(58, 58, 908, 908, 46);
+    graphics.strokeEllipse(
+      TABLE_ANCHOR.x,
+      TABLE_ANCHOR.y,
+      ROUND_TABLE_RADIUS_X * 2,
+      ROUND_TABLE_RADIUS_Y * 2,
+    );
     graphics.lineStyle(5, 0xfff1d7, 0.55);
-    graphics.strokeRoundedRect(90, 90, 844, 844, 34);
+    graphics.strokeEllipse(
+      TABLE_ANCHOR.x,
+      TABLE_ANCHOR.y,
+      (ROUND_TABLE_RADIUS_X - 22) * 2,
+      (ROUND_TABLE_RADIUS_Y - 22) * 2,
+    );
     drawHole(graphics);
   });
 
-  createTexture(scene, ASSET_KEYS.tableFront, (graphics) => {
-    graphics.fillStyle(0xa96f4f, 1);
-    graphics.fillRoundedRect(75, 790, 874, 190, 34);
-    graphics.lineStyle(14, COLORS.tableEdge, 1);
-    graphics.strokeRoundedRect(75, 790, 874, 190, 34);
-    graphics.fillStyle(0xd99c6e, 0.85);
-    graphics.fillRoundedRect(108, 830, 808, 94, 22);
-    graphics.fillStyle(0x8f5945, 0.8);
-    graphics.fillRoundedRect(438, 858, 148, 34, 17);
-  });
+  // Keep the contract's front layer object for depth and future polish,
+  // but leave it visually empty while the table is intentionally flat.
+  createTexture(scene, ASSET_KEYS.roundTableFront, () => {});
 }
 
 function createCatTextures(scene) {
@@ -168,19 +175,22 @@ export function ensurePlaceholderTextures(scene) {
 }
 
 export function createCatTableAssembly(scene, { useRealAssets = false, anchor = TABLE_ANCHOR } = {}) {
+  // The table is intentionally a generated circular placeholder for now.
+  // Cat state textures and the sabotage paw still use the selected asset set.
+  createTableTextures(scene);
   if (!useRealAssets) ensurePlaceholderTextures(scene);
 
   const container = scene.add.container(anchor.x, anchor.y).setDepth(1);
   container.setName('catTableContainer');
 
-  const tableBack = scene.add.image(0, -110, ASSET_KEYS.tableBack)
+  const tableBack = scene.add.image(0, 0, ASSET_KEYS.roundTableBack)
     .setOrigin(0.5, 0.5)
-    .setScale(0.97);
+    .setScale(1);
   tableBack.setName('tableBack').setDepth(ASSEMBLY_DEPTH.BACK);
-  const tableFront = scene.add.image(0, 0, ASSET_KEYS.tableFront)
+  const tableFront = scene.add.image(0, 0, ASSET_KEYS.roundTableFront)
     .setOrigin(0.5, 0.5)
-    .setScale(TABLE_FRONT_SCALE_X, 1);
-  tableFront.setName('tableFront').setPosition(0, 210).setDepth(ASSEMBLY_DEPTH.FRONT);
+    .setScale(1);
+  tableFront.setName('tableFront').setDepth(ASSEMBLY_DEPTH.FRONT);
   const catState = scene.add.image(0, 0, ASSET_KEYS.cat[CAT_STATES.HIDDEN])
     .setOrigin(0.5, 0.5)
     .setScale(CAT_HOLE_SCALE)
