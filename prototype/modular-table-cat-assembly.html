@@ -221,7 +221,7 @@
         <canvas id="assemblyCanvas" width="1024" height="1024" aria-label="ภาพประกอบโต๊ะและแมว"></canvas>
         <div id="viewModeButtons" class="view-mode-buttons"></div>
         <div class="canvas-caption">
-          <span>Anchor: Center of Hole (512, 512)</span>
+          <span>Anchor: Center of Hole (512, 452)</span>
           <span id="assetMode">กำลังตรวจสอบ Asset…</span>
         </div>
       </section>
@@ -232,7 +232,7 @@
           <dl class="state-grid">
             <div><dt>Cat Action</dt><dd id="currentState">HIDDEN</dd></div>
             <div><dt>Middle Asset</dt><dd id="currentAsset">—</dd></div>
-            <div><dt>Anchor</dt><dd id="anchorValue">512, 512</dd></div>
+            <div><dt>Hole Anchor</dt><dd id="anchorValue">512, 452</dd></div>
             <div><dt>Canvas</dt><dd id="canvasValue">1024 × 1024</dd></div>
             <div><dt>Last Change</dt><dd id="lastChange">—</dd></div>
             <div><dt>Invariant</dt><dd id="invariant" class="good">PASS</dd></div>
@@ -269,7 +269,64 @@
   <script>
     // Portable assembly model: this is the part intended to be lifted into the real game.
     const CANVAS_SIZE = 1024;
-    const HOLE_ANCHOR = { x: 512, y: 512 };
+    const ASSEMBLY_ANCHOR = { x: 512, y: 512 };
+    const HOLE_ANCHOR = { x: 512, y: 452 };
+    const TABLE_LAYER_GAP_Y = 185;
+    const TABLE_BACK_OFFSET_Y = -155;
+    const TABLE_FRONT_OFFSET_Y = TABLE_LAYER_GAP_Y;
+    const HOLE_CAT_OFFSET_Y = -20;
+    const HOLE_CAT_SCALE = 1.15;
+    // Keep the throwaway Preview self-contained so it can still be opened as
+    // a file:// document. The runtime contract lives in src/game/CatRig.js.
+    const CAT_RIG_BLOCKOUT_PARTS = Object.freeze([
+      { id: "catRoot", parentId: null, local: { x: 0, y: 0, rotation: 0 }, depth: 30, visual: { shape: "root" } },
+      { id: "shadow", parentId: "catRoot", local: { x: 0, y: 156, rotation: 0 }, depth: 10, visual: { shape: "ellipse", width: 260, height: 58 } },
+      { id: "body", parentId: "catRoot", local: { x: 0, y: 68, rotation: 0 }, depth: 30, visual: { shape: "ellipse", width: 210, height: 150 } },
+      { id: "head", parentId: "body", local: { x: 0, y: -70, rotation: 0 }, depth: 31, visual: { shape: "ellipse", width: 224, height: 174 } },
+      { id: "leftEar", parentId: "head", local: { x: -64, y: -102, rotation: -0.18 }, depth: 32, visual: { shape: "triangle", width: 64, height: 90 } },
+      { id: "rightEar", parentId: "head", local: { x: 64, y: -102, rotation: 0.18 }, depth: 32, visual: { shape: "triangle", width: 64, height: 90 } },
+      { id: "leftUpperArm", parentId: "catRoot", local: { x: -82, y: 36, rotation: -0.28 }, depth: 33, visual: { shape: "segment", length: 92, width: 34 } },
+      { id: "leftForearm", parentId: "leftUpperArm", local: { x: 0, y: 84, rotation: -0.16 }, depth: 34, visual: { shape: "segment", length: 92, width: 38 } },
+      { id: "leftPaw", parentId: "leftForearm", local: { x: 0, y: 78, rotation: 0 }, depth: 35, visual: { shape: "circle", radius: 42 } },
+      { id: "rightUpperArm", parentId: "catRoot", local: { x: 82, y: 36, rotation: 0.28 }, depth: 33, visual: { shape: "segment", length: 92, width: 34 } },
+      { id: "rightForearm", parentId: "rightUpperArm", local: { x: 0, y: 84, rotation: 0.16 }, depth: 34, visual: { shape: "segment", length: 92, width: 38 } },
+      { id: "rightPaw", parentId: "rightForearm", local: { x: 0, y: 78, rotation: 0 }, depth: 35, visual: { shape: "circle", radius: 42 } },
+      { id: "eyes", parentId: "head", local: { x: 0, y: -24, rotation: 0 }, depth: 36, visual: { shape: "eyes", spacing: 46, radius: 15 } },
+    ]);
+    const CAT_RIG_PARTS_BY_ID = new Map(CAT_RIG_BLOCKOUT_PARTS.map((part) => [part.id, part]));
+    function createCatRigBlockoutPose() {
+      const transforms = new Map(CAT_RIG_BLOCKOUT_PARTS.map(({ id, local }) => [id, { ...local, scaleX: 1, scaleY: 1 }]));
+      function getWorldTransform(id) {
+        const part = CAT_RIG_PARTS_BY_ID.get(id);
+        if (!part) return null;
+        const local = transforms.get(id);
+        if (!part.parentId) return { x: HOLE_ANCHOR.x + local.x, y: HOLE_ANCHOR.y + local.y, rotation: local.rotation, scaleX: local.scaleX, scaleY: local.scaleY };
+        const parent = getWorldTransform(part.parentId);
+        const cos = Math.cos(parent.rotation);
+        const sin = Math.sin(parent.rotation);
+        const scaledX = local.x * parent.scaleX;
+        const scaledY = local.y * parent.scaleY;
+        return {
+          x: parent.x + scaledX * cos - scaledY * sin,
+          y: parent.y + scaledX * sin + scaledY * cos,
+          rotation: parent.rotation + local.rotation,
+          scaleX: parent.scaleX * local.scaleX,
+          scaleY: parent.scaleY * local.scaleY,
+        };
+      }
+      return { getWorldTransform };
+    }
+    const BUTTON_RING_RADIUS = 300;
+    const BUTTON_SLOT_ANGLES = [225, 315, 180, 0, 135, 45, 270, 90];
+    const BUTTON_SLOT_LAYOUT = BUTTON_SLOT_ANGLES.map((angle, index) => {
+      const radians = angle * Math.PI / 180;
+      return {
+        id: `slot-${index + 1}`,
+        x: HOLE_ANCHOR.x + Math.round(Math.cos(radians) * BUTTON_RING_RADIUS * 1000) / 1000,
+        y: HOLE_ANCHOR.y + Math.round(Math.sin(radians) * BUTTON_RING_RADIUS * 1000) / 1000,
+        angle,
+      };
+    });
     const ASSET_ROOT = "../assets/";
     const STATES = ["hidden", "warning", "peek", "watch", "attack", "sabotage", "hide"];
     const STATE_LABELS = {
@@ -285,19 +342,31 @@
     const layers = {
       tableBack: {
         id: "tableBack", label: "BACK", asset: "table_back.png", depth: 10,
-        transform: { x: 512, y: 512, scaleX: 1, scaleY: 1, rotation: 0, originX: .5, originY: .5 }
+        transform: { x: ASSEMBLY_ANCHOR.x, y: ASSEMBLY_ANCHOR.y + TABLE_BACK_OFFSET_Y, scaleX: 1, scaleY: 1, rotation: 0, originX: .5, originY: .5 }
       },
       catState: {
         id: "catState", label: "MIDDLE", asset: "cat_hole_hidden.png", depth: 20,
-        transform: { x: 512, y: 512, scaleX: 1, scaleY: 1, rotation: 0, originX: .5, originY: .5 }
+        transform: { x: ASSEMBLY_ANCHOR.x, y: ASSEMBLY_ANCHOR.y + HOLE_CAT_OFFSET_Y, scaleX: HOLE_CAT_SCALE, scaleY: HOLE_CAT_SCALE, rotation: 0, originX: .5, originY: .5 }
       },
       tableFront: {
         id: "tableFront", label: "FRONT", asset: "table_front.png", depth: 30,
-        transform: { x: 512, y: 512, scaleX: 1, scaleY: 1, rotation: 0, originX: .5, originY: .5 }
+        transform: { x: ASSEMBLY_ANCHOR.x, y: ASSEMBLY_ANCHOR.y + TABLE_FRONT_OFFSET_Y, scaleX: 1, scaleY: 1, rotation: 0, originX: .5, originY: .5 }
       }
     };
 
     const assets = new Map();
+    const catRigBlockout = createCatRigBlockoutPose();
+    const BLOCKOUT_COLORS = {
+      root: "#ffcf78",
+      shadow: "#1a100b",
+      body: "#c98958",
+      head: "#e2a36e",
+      ear: "#f3c293",
+      limb: "#b66f4c",
+      paw: "#f7d7bd",
+      eye: "#241a17",
+      pivot: "#ffcf78",
+    };
     const model = {
       currentState: "hidden",
       lastChange: "เริ่มต้นด้วย cat_hole_hidden.png",
@@ -414,13 +483,13 @@
     }
 
     function drawHole() {
-      const hole = ctx.createRadialGradient(512, 500, 45, 512, 512, 230);
+      const hole = ctx.createRadialGradient(HOLE_ANCHOR.x, HOLE_ANCHOR.y - 12, 45, HOLE_ANCHOR.x, HOLE_ANCHOR.y, 230);
       hole.addColorStop(0, "#090705");
       hole.addColorStop(.75, "#21140c");
       hole.addColorStop(1, "#6a3b1f");
       ctx.fillStyle = hole;
       ctx.beginPath();
-      ctx.ellipse(512, 512, 220, 168, 0, 0, Math.PI * 2);
+      ctx.ellipse(HOLE_ANCHOR.x, HOLE_ANCHOR.y, 220, 168, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = "#e2a462";
       ctx.lineWidth = 12;
@@ -522,7 +591,7 @@
       ctx.save();
       ctx.translate(centerX, centerY);
       ctx.scale(scale, scale);
-      ctx.translate(-HOLE_ANCHOR.x, -HOLE_ANCHOR.y);
+      ctx.translate(-ASSEMBLY_ANCHOR.x, -ASSEMBLY_ANCHOR.y);
       drawLayerContent(layer);
       ctx.restore();
     }
@@ -545,10 +614,161 @@
       ctx.restore();
     }
 
+    function drawButtonSlotMarkers() {
+      ctx.save();
+      BUTTON_SLOT_LAYOUT.forEach(({ id, x, y }) => {
+        ctx.fillStyle = "rgb(255 203 92 / 18%)";
+        ctx.strokeStyle = "#ffcb5c";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(x, y, 54, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        drawCanvasText(id, x - 34, y + 8, "#fff4dc", 16);
+      });
+      ctx.restore();
+    }
+
+    function drawBlockoutPart(part) {
+      const transform = catRigBlockout.getWorldTransform(part.id);
+      if (!transform || part.id === "catRoot") return;
+
+      ctx.save();
+      ctx.translate(transform.x, transform.y);
+      ctx.rotate(transform.rotation);
+      ctx.scale(transform.scaleX, transform.scaleY);
+      const visual = part.visual;
+
+      if (visual.shape === "ellipse") {
+        ctx.fillStyle = BLOCKOUT_COLORS[part.id === "shadow" ? "shadow" : part.id];
+        ctx.beginPath();
+        ctx.ellipse(0, 0, visual.width / 2, visual.height / 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (visual.shape === "triangle") {
+        ctx.fillStyle = BLOCKOUT_COLORS.ear;
+        ctx.beginPath();
+        ctx.moveTo(0, -visual.height / 2);
+        ctx.lineTo(-visual.width / 2, visual.height / 2);
+        ctx.lineTo(visual.width / 2, visual.height / 2);
+        ctx.closePath();
+        ctx.fill();
+      } else if (visual.shape === "segment") {
+        ctx.fillStyle = BLOCKOUT_COLORS.limb;
+        ctx.beginPath();
+        ctx.roundRect(-visual.width / 2, 0, visual.width, visual.length, visual.width / 2);
+        ctx.fill();
+      } else if (visual.shape === "circle") {
+        ctx.fillStyle = BLOCKOUT_COLORS.paw;
+        ctx.beginPath();
+        ctx.arc(0, 0, visual.radius, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (visual.shape === "eyes") {
+        ctx.fillStyle = BLOCKOUT_COLORS.eye;
+        ctx.beginPath();
+        ctx.arc(-visual.spacing / 2, 0, visual.radius, 0, Math.PI * 2);
+        ctx.arc(visual.spacing / 2, 0, visual.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    function drawBlockoutPivots() {
+      ctx.save();
+      CAT_RIG_BLOCKOUT_PARTS.forEach((part) => {
+        const transform = catRigBlockout.getWorldTransform(part.id);
+        if (!transform) return;
+        ctx.fillStyle = BLOCKOUT_COLORS.pivot;
+        ctx.beginPath();
+        ctx.arc(transform.x, transform.y, part.id === "catRoot" ? 10 : 6, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.restore();
+    }
+
+    function drawBlockoutView() {
+      drawLayer(layers.tableBack);
+      [...CAT_RIG_BLOCKOUT_PARTS]
+        .sort((a, b) => a.depth - b.depth)
+        .forEach(drawBlockoutPart);
+      drawLayer(layers.tableFront);
+      drawBlockoutPivots();
+      drawButtonSlotMarkers();
+      ctx.fillStyle = "rgb(26 16 11 / 78%)";
+      ctx.fillRect(24, 24, 350, 62);
+      drawCanvasText("BLOCKOUT — PIVOTS + OCCLUSION", 46, 64, "#fff4e6", 24);
+      drawAnchorMarker(HOLE_ANCHOR.x, HOLE_ANCHOR.y, "HOLE ANCHOR");
+    }
+
+    function solvePreviewIK(shoulder, target, upperLength = 92, lowerLength = 92, bendDirection = 1) {
+      const dx = target.x - shoulder.x;
+      const dy = target.y - shoulder.y;
+      const rawDistance = Math.hypot(dx, dy);
+      const distance = Math.min(upperLength + lowerLength, Math.max(Math.abs(upperLength - lowerLength), rawDistance));
+      const targetAngle = rawDistance > 0.000001 ? Math.atan2(dy, dx) : 0;
+      const targetPoint = {
+        x: shoulder.x + Math.cos(targetAngle) * distance,
+        y: shoulder.y + Math.sin(targetAngle) * distance,
+      };
+      const cosine = Math.max(-1, Math.min(1, (
+        upperLength ** 2 + distance ** 2 - lowerLength ** 2
+      ) / (2 * upperLength * Math.max(distance, 0.000001))));
+      const upperAngle = targetAngle + (bendDirection < 0 ? -1 : 1) * Math.acos(cosine);
+      const elbow = {
+        x: shoulder.x + Math.cos(upperAngle) * upperLength,
+        y: shoulder.y + Math.sin(upperAngle) * upperLength,
+      };
+      return { elbow, paw: targetPoint };
+    }
+
+    function drawIKTargetsView() {
+      drawLayer(layers.tableBack);
+      ctx.save();
+      BUTTON_SLOT_LAYOUT.forEach(({ id, x, y }, index) => {
+        const localTarget = { x: x - HOLE_ANCHOR.x, y: y - HOLE_ANCHOR.y };
+        const side = localTarget.x < 0 ? "left" : "right";
+        const shoulder = { x: side === "left" ? -82 : 82, y: 36 };
+        const solution = solvePreviewIK(shoulder, localTarget, 92, 92, side === "left" ? -1 : 1);
+        const worldShoulder = { x: HOLE_ANCHOR.x + shoulder.x, y: HOLE_ANCHOR.y + shoulder.y };
+        const worldElbow = { x: HOLE_ANCHOR.x + solution.elbow.x, y: HOLE_ANCHOR.y + solution.elbow.y };
+        const worldPaw = { x: HOLE_ANCHOR.x + solution.paw.x, y: HOLE_ANCHOR.y + solution.paw.y };
+        const color = index % 2 === 0 ? "#ffcf78" : "#9ef0b5";
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 12;
+        ctx.beginPath(); ctx.moveTo(worldShoulder.x, worldShoulder.y); ctx.lineTo(worldElbow.x, worldElbow.y); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(worldElbow.x, worldElbow.y); ctx.lineTo(worldPaw.x, worldPaw.y); ctx.stroke();
+        ctx.beginPath(); ctx.arc(worldElbow.x, worldElbow.y, 12, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(worldPaw.x, worldPaw.y, 18, 0, Math.PI * 2); ctx.stroke();
+        drawCanvasText(id, x - 34, y + 8, "#fff4dc", 16);
+      });
+      ctx.restore();
+      drawLayer(layers.tableFront);
+      ctx.save();
+      BUTTON_SLOT_LAYOUT.forEach(({ id, x, y }) => {
+        ctx.strokeStyle = "#fff4dc";
+        ctx.fillStyle = "#ffcf78";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(x, y, 18, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        drawCanvasText(id, x - 34, y + 34, "#fff4dc", 16);
+      });
+      ctx.restore();
+      ctx.fillStyle = "rgb(26 16 11 / 78%)";
+      ctx.fillRect(24, 24, 300, 62);
+      drawCanvasText("IK TARGETS — 8 DIRECTIONS", 46, 64, "#fff4e6", 24);
+      drawAnchorMarker(HOLE_ANCHOR.x, HOLE_ANCHOR.y, "HOLE ANCHOR");
+    }
+
     function drawAssemblyView() {
       drawLayer(layers.tableBack);
       drawLayer(layers.catState);
       drawLayer(layers.tableFront);
+      drawButtonSlotMarkers();
       ctx.fillStyle = "rgb(26 16 11 / 78%)";
       ctx.fillRect(24, 24, 320, 62);
       drawCanvasText("ASSEMBLY — 3 LAYERS", 46, 64, "#fff4e6", 24);
@@ -573,7 +793,7 @@
         ctx.fill(); ctx.stroke();
         drawLayerPreview(card.layer, card.x, card.y + 18, .40);
         drawCanvasText(card.title, card.x - 194, card.y - 145, card.color, 23);
-        drawCanvasText("Anchor 512,512", card.x - 194, card.y + 178, "#c9ad98", 18);
+        drawCanvasText("Assembly 512,512 · Hole 512,452", card.x - 194, card.y + 178, "#c9ad98", 18);
       });
       drawCanvasText("สลับ State แล้วดูเฉพาะกรอบ MIDDLE เปลี่ยน", 38, 972, "#c9ad98", 20);
     }
@@ -583,6 +803,8 @@
       ctx.fillStyle = "#1d130e";
       ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
       if (model.viewMode === "exploded") drawExplodedView();
+      else if (model.viewMode === "blockout") drawBlockoutView();
+      else if (model.viewMode === "ik") drawIKTargetsView();
       else drawAssemblyView();
     }
 
@@ -590,8 +812,10 @@
       const container = document.getElementById("viewModeButtons");
       container.replaceChildren();
       [
-        ["assembly", "ภาพรวม: โต๊ะชิ้นเดียว"],
-        ["exploded", "แยก Layer: ดูโครงสร้าง"]
+            ["assembly", "ภาพรวม: โต๊ะชิ้นเดียว"],
+            ["blockout", "Blockout: Pivot + Occlusion"],
+            ["ik", "IK Targets: 8 ทิศ"],
+            ["exploded", "แยก Layer: ดูโครงสร้าง"]
       ].forEach(([mode, label]) => {
         const button = document.createElement("button");
         button.type = "button";

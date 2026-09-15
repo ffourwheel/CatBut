@@ -89,3 +89,29 @@ _Avoid_: demo, alpha
 **Core Loop**:
 กดค้าง → สังเกต Warning → ปล่อยเพื่อหลบหรือเสี่ยงกดต่อ → เปิดปุ่ม → ทำซ้ำจนเปิดครบ
 _Avoid_: main loop, gameplay cycle
+
+## Cat Animation Domain
+
+**Cat Animation**:
+การเปลี่ยนท่าทางของ Cat ตามเวลาอย่างต่อเนื่อง รวม Idle, State Transition, Action และ Micro Motion โดยไม่ใช้การสลับภาพ State เป็นกลไกหลักของการเคลื่อนไหว
+_Avoid_: sprite swap, cat state texture
+
+**Cat Rig**:
+โครงสร้างลำดับชั้นของ Layer ภาพ จุดหมุน และข้อต่อที่ใช้ควบคุม Cat Animation โดยมี Cat Root เป็นจุดอ้างอิงเดียวกับ Center of Hole
+_Avoid_: cat assembly, animated sprite
+
+**Animation Target**:
+จุดกึ่งกลางของ Button Slot หนึ่งใน 8 ตำแหน่งถาวรที่ Cat ต้องเคลื่อนไปหาใน Reach หรือ Sabotage
+_Avoid_: cat target, button position
+
+**Direction Pose**:
+ชุดท่าของหัว ใบหน้า และส่วนที่ต้องหันตามหนึ่งใน 8 ทิศของ Button Slot โดยเป็นภาพหรือ Layer ที่เตรียมไว้สำหรับทิศนั้น ไม่ใช่การหมุนภาพหน้าตรง 180 องศา
+_Avoid_: facing sprite, rotated cat
+
+**Reach**:
+การเคลื่อนไหวของแขนและ Paw จาก Cat Root ไปยัง Animation Target โดยใช้ 2-bone IK และข้อจำกัดของข้อต่อ
+_Avoid_: paw tween, cat swipe
+
+**Occlusion**:
+การบัง Layer ของ Cat ด้วย Hole Mask, Table Front หรือ Paw Layer เพื่อรักษาลำดับความลึกและทำให้ Cat ดูเหมือนยื่นออกจากรูจริง
+_Avoid_: clipping hack, z-index fix

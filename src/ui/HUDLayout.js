@@ -129,6 +129,14 @@ export const HUD_LAYOUT_CONFIG = Object.freeze({
     borderColor: UI_COLORS.accentGold,
     alpha: 0.94,
     fontSize: 24,
+    trackWidth: 480,
+    trackHeight: 14,
+    trackRadius: 7,
+    trackBgColor: 0x241711,
+    trackBorderColor: 0x5a3e32,
+    fillGreen: UI_COLORS.greenSuccess,
+    fillAmber: UI_COLORS.accentAmber,
+    fillGold: UI_COLORS.accentGold,
   },
 
   // Cat Warning Bubble (Near Hole Top-Right)
@@ -467,12 +475,8 @@ export function buildCozyHUD(scene, callbacks = {}) {
     y: viewportHeight - 88,
   };
   const bannerBg = scene.add.graphics();
-  bannerBg.fillStyle(cfgBanner.bgColor, cfgBanner.alpha);
-  bannerBg.fillRoundedRect(cfgBanner.x - cfgBanner.width / 2, cfgBanner.y - cfgBanner.height / 2, cfgBanner.width, cfgBanner.height, cfgBanner.radius);
-  bannerBg.lineStyle(3.5, cfgBanner.borderColor, 0.95);
-  bannerBg.strokeRoundedRect(cfgBanner.x - cfgBanner.width / 2, cfgBanner.y - cfgBanner.height / 2, cfgBanner.width, cfgBanner.height, cfgBanner.radius);
-  bannerBg.lineStyle(1.5, 0xffe2b8, 0.3);
-  bannerBg.strokeRoundedRect(cfgBanner.x - cfgBanner.width / 2 + 5, cfgBanner.y - cfgBanner.height / 2 + 5, cfgBanner.width - 10, cfgBanner.height - 10, cfgBanner.radius - 5);
+  const bannerTrack = scene.add.graphics();
+  const bannerFill = scene.add.graphics();
 
   const bannerText = scene.add.text(cfgBanner.x, cfgBanner.y, COPY_THAI.instructions.promptHold, {
     fontFamily: UI_FONTS.family,
@@ -480,6 +484,11 @@ export function buildCozyHUD(scene, callbacks = {}) {
     color: '#fff4dc',
     fontStyle: 'bold',
   }).setOrigin(0.5);
+
+  let currentBannerMsg = COPY_THAI.instructions.promptHold;
+  let isBannerHighlighted = false;
+  let currentHoldProgress = 0;
+  let isCurrentlyHolding = false;
 
   function renderBanner(highlight = false) {
     bannerBg.clear();
@@ -509,9 +518,76 @@ export function buildCozyHUD(scene, callbacks = {}) {
     );
   }
 
+  function renderHoldProgress(progress = 0, isHolding = false) {
+    const safeProgress = Math.max(0, Math.min(1, Number(progress) || 0));
+    currentHoldProgress = safeProgress;
+    isCurrentlyHolding = Boolean(isHolding);
+
+    if (safeProgress <= 0) {
+      bannerTrack.clear();
+      bannerFill.clear();
+      bannerText.setY(cfgBanner.y);
+      bannerText.setFontSize(`${cfgBanner.fontSize}px`);
+      bannerText.setColor('#fff4dc');
+      bannerText.setText(currentBannerMsg);
+      renderBanner(isBannerHighlighted);
+      return;
+    }
+
+    // While holding or decaying:
+    bannerText.setY(cfgBanner.y - 13);
+    bannerText.setFontSize('21px');
+    const percent = Math.round(safeProgress * 100);
+
+    if (isCurrentlyHolding) {
+      if (isBannerHighlighted) {
+        bannerText.setText(`⚠️ ระวังแมว! กำลังเปิด... ${percent}%`);
+        bannerText.setColor('#ff9b82');
+        renderBanner(true);
+      } else {
+        bannerText.setText(`⚡ กำลังเปิดปุ่ม... ${percent}%`);
+        bannerText.setColor('#ffe2b8');
+        renderBanner(false);
+      }
+    } else {
+      bannerText.setText(`⏳ วงแหวนกำลังลด... ${percent}%`);
+      bannerText.setColor('#f6c28b');
+      renderBanner(false);
+    }
+
+    const trackW = cfgBanner.trackWidth || 480;
+    const trackH = cfgBanner.trackHeight || 14;
+    const trackR = cfgBanner.trackRadius || 7;
+    const trackX = cfgBanner.x - trackW / 2;
+    const trackY = cfgBanner.y + 13 - trackH / 2;
+
+    bannerTrack.clear();
+    bannerTrack.fillStyle(cfgBanner.trackBgColor || 0x241711, 0.95);
+    bannerTrack.fillRoundedRect(trackX, trackY, trackW, trackH, trackR);
+    bannerTrack.lineStyle(1.5, cfgBanner.trackBorderColor || 0x5a3e32, 0.85);
+    bannerTrack.strokeRoundedRect(trackX, trackY, trackW, trackH, trackR);
+
+    bannerFill.clear();
+    const fillW = Math.max(0, Math.min(trackW, trackW * safeProgress));
+    if (fillW > 0) {
+      const fillColor = isCurrentlyHolding
+        ? (safeProgress >= 0.95 ? (cfgBanner.fillGold || UI_COLORS.accentGold) : (cfgBanner.fillGreen || UI_COLORS.greenSuccess))
+        : (cfgBanner.fillAmber || UI_COLORS.accentAmber);
+
+      bannerFill.fillStyle(fillColor, 1);
+      bannerFill.fillRoundedRect(trackX, trackY, fillW, trackH, Math.min(trackR, fillW / 2));
+
+      // Inner glossy shine
+      if (fillW > 6) {
+        bannerFill.fillStyle(0xffffff, 0.35);
+        bannerFill.fillRoundedRect(trackX + 2, trackY + 2, fillW - 4, Math.floor(trackH / 2) - 1, 2);
+      }
+    }
+  }
+
   renderBanner();
 
-  container.add([bannerBg, bannerText]);
+  container.add([bannerBg, bannerTrack, bannerFill, bannerText]);
 
   // 8. Pause & Sound Button Controls (Touch-friendly 72px buttons)
   const cfgCtrl = HUD_LAYOUT_CONFIG.controls;
@@ -599,8 +675,17 @@ export function buildCozyHUD(scene, callbacks = {}) {
       // Centered warning mark is handled directly above cat's head in UIManager
     },
     setBanner(message, highlight = false) {
-      bannerText.setText(message);
-      renderBanner(highlight);
+      currentBannerMsg = message;
+      isBannerHighlighted = highlight;
+      if (currentHoldProgress <= 0) {
+        bannerText.setText(message);
+        renderBanner(highlight);
+      } else {
+        renderHoldProgress(currentHoldProgress, isCurrentlyHolding);
+      }
+    },
+    setHoldProgress(progress, isHolding) {
+      renderHoldProgress(progress, isHolding);
     },
     setMuted(muted) {
       if (scene.textures.exists('sound_on') && scene.textures.exists('sound_off')) {

@@ -60,6 +60,8 @@ export const DEFAULT_CONFIG = Object.freeze({
     forceButtonCount: null,
     forceButtonSet: null,
     forceSabotageSlot: null,
+    showCatRigBlockout: false,
+    showRoundTableMockup: false,
   }),
 });
 
@@ -219,6 +221,12 @@ export function getRuntimeGameConfig(fallbackOverrides = {}) {
   const queryPreset = typeof globalThis.location?.search === 'string'
     ? new URLSearchParams(globalThis.location.search).get('preset')
     : null;
+  const queryRig = typeof globalThis.location?.search === 'string'
+    ? new URLSearchParams(globalThis.location.search).get('rig')
+    : null;
+  const queryTable = typeof globalThis.location?.search === 'string'
+    ? new URLSearchParams(globalThis.location.search).get('table')
+    : null;
   const runtimeOverrides = globalThis.CATKUB_CONFIG && typeof globalThis.CATKUB_CONFIG === 'object'
     ? globalThis.CATKUB_CONFIG
     : {};
@@ -226,6 +234,8 @@ export function getRuntimeGameConfig(fallbackOverrides = {}) {
   return createGameConfig({
     ...fallbackOverrides,
     ...(queryPreset ? { preset: queryPreset } : {}),
+    ...(queryRig === 'blockout' ? { debug: { showCatRigBlockout: true } } : {}),
+    ...(queryTable === 'round' ? { debug: { showRoundTableMockup: true } } : {}),
     ...runtimeOverrides,
   });
 }

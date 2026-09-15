@@ -8,10 +8,12 @@ import {
   GAME_SCREENS,
   SABOTAGE_PAW_DEFAULT_ANGLE,
   SABOTAGE_PAW_REACH,
+  TABLE_ASSEMBLY_ANCHOR,
 } from './constants.js';
 import { AudioManager } from './AudioManager.js';
 import { ButtonManager } from './ButtonManager.js';
 import { CatController } from './CatController.js';
+import { createSabotageReachPlan, sampleReachSquash } from './CatReach.js';
 import { HealthManager } from './HealthManager.js';
 import { ScoreManager } from './ScoreManager.js';
 import { StageManager } from './StageManager.js';
@@ -50,7 +52,9 @@ export class GameScene extends Phaser.Scene {
       .setDepth(ASSEMBLY_DEPTH.FOREGROUND);
     this.assembly = createCatTableAssembly(this, {
       useRealAssets: this.config.useRealAssets,
-      anchor: { x: 512, y: boardCenterY },
+      anchor: { x: TABLE_ASSEMBLY_ANCHOR.x, y: boardCenterY },
+      showRigBlockout: this.config.debug.showCatRigBlockout,
+      showRoundTableMockup: this.config.debug.showRoundTableMockup,
     });
     this.zeroJumpReport = this.runZeroJumpVerification();
     this.audio = new AudioManager({ muted: this.settings.get('muted') });
@@ -162,6 +166,7 @@ export class GameScene extends Phaser.Scene {
     this.sessionScreen = GAME_SCREENS.GAMEPLAY;
     this.ui.show(GAME_SCREENS.GAMEPLAY);
     this.ui.setStatus('ปลอดภัยชั่วครู่...');
+    this.refreshHud();
   }
 
   showPause() {
@@ -300,13 +305,13 @@ export class GameScene extends Phaser.Scene {
     const paw = this.assembly.sabotagePaw;
     const containerX = this.assembly.container.x;
     const containerY = this.assembly.container.y;
-    const targetX = button.x - containerX;
-    const targetY = button.y - containerY;
-    const originX = 0;
     const originY = this.assembly.catState.baseY ?? 0;
-    const targetAngle = Math.atan2(targetY - originY, targetX - originX);
-    const targetDistance = Math.hypot(targetX - originX, targetY - originY);
-    const targetScale = Math.max(0.3, Math.min(0.58, targetDistance / SABOTAGE_PAW_REACH));
+    const reachPlan = createSabotageReachPlan({
+      origin: { x: 0, y: originY },
+      target: { x: button.x - containerX, y: button.y - containerY },
+      pawReach: SABOTAGE_PAW_REACH,
+      defaultAngle: SABOTAGE_PAW_DEFAULT_ANGLE,
+    });
     let sabotageResolved = false;
     const resolveSabotage = () => {
       if (sabotageResolved) return;
@@ -330,16 +335,23 @@ export class GameScene extends Phaser.Scene {
     paw
       .setVisible(true)
       .setAlpha(1)
-      .setPosition(originX, originY)
-      .setRotation(targetAngle - SABOTAGE_PAW_DEFAULT_ANGLE)
+      .setPosition(0, originY)
+      .setRotation(reachPlan.rotation)
       .setScale(0.02);
 
     this.sabotagePawTween = this.tweens.add({
       targets: paw,
-      scaleX: targetScale,
-      scaleY: targetScale,
+      scaleX: reachPlan.targetScale,
+      scaleY: reachPlan.targetScale,
       duration: this.config.sabotageReachDuration,
       ease: 'Quad.easeInOut',
+      onUpdate: (tween) => {
+        const squash = sampleReachSquash(tween.progress);
+        paw.setScale(
+          reachPlan.targetScale * squash.scaleX,
+          reachPlan.targetScale * squash.scaleY,
+        );
+      },
       onComplete: () => {
         this.sabotagePawTween = null;
         resolveSabotage();
@@ -426,6 +438,7 @@ export class GameScene extends Phaser.Scene {
   refreshHud() {
     if (!this.ui || !this.score || !this.health || !this.buttons) return;
     const comboTimerInfo = this.score.getComboTimerInfo();
+    const holdProgressInfo = this.buttons.getActiveHoldProgress();
     this.ui.updateStats({
       score: this.score.score,
       combo: this.score.combo,
@@ -437,6 +450,8 @@ export class GameScene extends Phaser.Scene {
       catState: this.cat?.state ?? CAT_STATES.HIDDEN,
       comboTimeRemaining: comboTimerInfo.remaining,
       comboTimeDuration: comboTimerInfo.duration,
+      holdProgress: holdProgressInfo.progress,
+      isHolding: holdProgressInfo.isHolding,
     });
   }
 

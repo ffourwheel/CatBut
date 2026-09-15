@@ -25,6 +25,8 @@ export class UIManager {
       muted: null,
       comboTimeRemaining: null,
       comboTimeDuration: null,
+      holdProgress: null,
+      isHolding: null,
     };
     this.warningVisible = false;
 
@@ -86,7 +88,7 @@ export class UIManager {
     this.screens.showTutorial(returnTo);
   }
 
-  updateStats({ score, combo, health, maxHealth, activeCount, totalCount, muted, catState, comboTimeRemaining, comboTimeDuration }) {
+  updateStats({ score, combo, health, maxHealth, activeCount, totalCount, muted, catState, comboTimeRemaining, comboTimeDuration, holdProgress, isHolding }) {
     if (this.lastStats.score !== score) this.hud.setScore(score);
     if (this.lastStats.combo !== combo) this.hud.setCombo(combo);
     if (this.lastStats.health !== health) this.hud.setHearts(health, maxHealth);
@@ -99,6 +101,9 @@ export class UIManager {
     if (this.lastStats.comboTimeRemaining !== comboTimeRemaining || this.lastStats.comboTimeDuration !== comboTimeDuration) {
       this.hud.setComboTimer(comboTimeRemaining, comboTimeDuration);
     }
+    if (holdProgress !== undefined && (this.lastStats.holdProgress !== holdProgress || this.lastStats.isHolding !== isHolding)) {
+      this.hud.setHoldProgress(holdProgress, isHolding);
+    }
 
     this.lastStats = {
       score,
@@ -109,6 +114,8 @@ export class UIManager {
       muted,
       comboTimeRemaining,
       comboTimeDuration,
+      holdProgress,
+      isHolding,
     };
   }
 

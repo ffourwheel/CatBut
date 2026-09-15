@@ -4,7 +4,7 @@ import {
   BUTTON_SLOT_LAYOUT,
   BUTTON_SLOT_PRESETS,
 } from './constants.js';
-import { ASSET_KEYS } from './AssetManifest.js';
+import { ASSET_KEYS } from './AssetKeys.js';
 
 const BUTTON_COLORS = {
   off: 0xd9a46f,
@@ -285,9 +285,39 @@ export class ButtonManager {
     this.layer?.setVisible(visible);
   }
 
+  getActiveHoldProgress() {
+    if (this.heldButtonId !== null && this.buttons[this.heldButtonId]) {
+      return {
+        progress: this.buttons[this.heldButtonId].progress,
+        isHolding: true,
+        buttonId: this.heldButtonId,
+      };
+    }
+
+    let highestDecaying = null;
+    for (const b of this.buttons) {
+      if (!b.activated && b.progress > 0 && (!highestDecaying || b.progress > highestDecaying.progress)) {
+        highestDecaying = b;
+      }
+    }
+
+    if (highestDecaying) {
+      return {
+        progress: highestDecaying.progress,
+        isHolding: false,
+        buttonId: highestDecaying.id,
+      };
+    }
+
+    return {
+      progress: 0,
+      isHolding: false,
+      buttonId: null,
+    };
+  }
+
   getProgress() {
-    if (this.heldButtonId === null) return 0;
-    return this.buttons[this.heldButtonId]?.progress ?? 0;
+    return this.getActiveHoldProgress().progress;
   }
 
   renderAll() {

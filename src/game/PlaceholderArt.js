@@ -1,11 +1,18 @@
 import Phaser from 'phaser';
 import { ASSET_KEYS } from './AssetManifest.js';
+import { createCatRigRuntime } from './CatRigRuntime.js';
 import {
   ASSEMBLY_DEPTH,
   CANVAS_SIZE,
   CAT_STATES,
+  HOLE_CAT_OFFSET_Y,
+  HOLE_CAT_SCALE,
   SABOTAGE_PAW_ORIGIN,
   TABLE_ANCHOR,
+  TABLE_ASSEMBLY_ANCHOR,
+  TABLE_BACK_OFFSET_Y,
+  TABLE_FRONT_OFFSET_Y,
+  TABLE_HOLE_OFFSET_Y,
 } from './constants.js';
 
 const COLORS = {
@@ -22,9 +29,18 @@ const COLORS = {
   success: 0x67b887,
 };
 
-const TABLE_FRONT_SCALE_X = 0.97;
-const CAT_HOLE_SCALE = 1.1;
-const CAT_HOLE_OFFSET_Y = 30;
+// The source assets are authored around the hole center. Keeping every table
+// layer on the same anchor makes the in-game assembly match the reference
+// preview and leaves one stable coordinate system for the future Cat Rig.
+const TABLE_SCALE = 1;
+const ROUND_TABLE_SCALE = 0.8;
+// Round-mode cat cutouts were generated with a larger subject than the 1024px
+// source. Keep the subject inside the new ring while leaving the paws free to
+// overlap the near rim naturally.
+const ROUND_CAT_SCALE = 0.58;
+const ROUND_TABLE_FRONT_CROP_Y = 760;
+const CAT_HOLE_OFFSET_Y = HOLE_CAT_OFFSET_Y;
+const PLACEHOLDER_ART_OFFSET_Y = TABLE_HOLE_OFFSET_Y;
 
 function createTexture(scene, key, draw) {
   if (scene.textures.exists(key)) return;
@@ -45,6 +61,7 @@ function drawHole(graphics) {
 }
 
 function drawCatHead(graphics, y = 480) {
+  y += PLACEHOLDER_ART_OFFSET_Y;
   graphics.fillStyle(COLORS.cat, 1);
   graphics.fillCircle(TABLE_ANCHOR.x, y, 136);
   graphics.fillTriangle(395, y - 80, 430, y - 215, 500, y - 120);
@@ -101,15 +118,15 @@ function createCatTextures(scene) {
   createTexture(scene, ASSET_KEYS.cat[CAT_STATES.HIDDEN], (graphics) => {
     drawHole(graphics);
     graphics.fillStyle(COLORS.cream, 0.45);
-    graphics.fillCircle(445, 420, 18);
-    graphics.fillCircle(575, 420, 18);
+    graphics.fillCircle(445, 420 + PLACEHOLDER_ART_OFFSET_Y, 18);
+    graphics.fillCircle(575, 420 + PLACEHOLDER_ART_OFFSET_Y, 18);
   });
 
   createTexture(scene, ASSET_KEYS.cat[CAT_STATES.WARNING], (graphics) => {
     drawHole(graphics);
     graphics.fillStyle(COLORS.cream, 0.45);
-    graphics.fillCircle(445, 420, 18);
-    graphics.fillCircle(575, 420, 18);
+    graphics.fillCircle(445, 420 + PLACEHOLDER_ART_OFFSET_Y, 18);
+    graphics.fillCircle(575, 420 + PLACEHOLDER_ART_OFFSET_Y, 18);
   });
 
   createTexture(scene, ASSET_KEYS.cat[CAT_STATES.PEEK], (graphics) => {
@@ -121,32 +138,37 @@ function createCatTextures(scene) {
     drawHole(graphics);
     drawCatHead(graphics, 440);
     graphics.lineStyle(8, COLORS.warning, 1);
-    graphics.strokeCircle(465, 430, 34);
-    graphics.strokeCircle(559, 430, 34);
+    graphics.strokeCircle(465, 430 + PLACEHOLDER_ART_OFFSET_Y, 34);
+    graphics.strokeCircle(559, 430 + PLACEHOLDER_ART_OFFSET_Y, 34);
   });
 
   createTexture(scene, ASSET_KEYS.cat[CAT_STATES.ATTACK], (graphics) => {
     drawHole(graphics);
     drawCatHead(graphics, 465);
-    drawPaw(graphics, 735, 525, COLORS.danger);
+    drawPaw(graphics, 735, 525 + PLACEHOLDER_ART_OFFSET_Y, COLORS.danger);
     graphics.lineStyle(10, COLORS.danger, 1);
-    graphics.strokeLineShape(new Phaser.Geom.Line(670, 470, 790, 600));
+    graphics.strokeLineShape(new Phaser.Geom.Line(
+      670,
+      470 + PLACEHOLDER_ART_OFFSET_Y,
+      790,
+      600 + PLACEHOLDER_ART_OFFSET_Y,
+    ));
   });
 
   createTexture(scene, ASSET_KEYS.cat[CAT_STATES.SABOTAGE], (graphics) => {
     drawHole(graphics);
     drawCatHead(graphics, 465);
-    drawPaw(graphics, 680, 610, COLORS.warning);
+    drawPaw(graphics, 680, 610 + PLACEHOLDER_ART_OFFSET_Y, COLORS.warning);
     graphics.fillStyle(COLORS.warning, 1);
-    graphics.fillCircle(805, 570, 16);
-    graphics.fillCircle(845, 610, 11);
-    graphics.fillCircle(800, 650, 9);
+    graphics.fillCircle(805, 570 + PLACEHOLDER_ART_OFFSET_Y, 16);
+    graphics.fillCircle(845, 610 + PLACEHOLDER_ART_OFFSET_Y, 11);
+    graphics.fillCircle(800, 650 + PLACEHOLDER_ART_OFFSET_Y, 9);
   });
 
   createTexture(scene, ASSET_KEYS.cat[CAT_STATES.HIDE], (graphics) => {
     drawHole(graphics);
     graphics.fillStyle(COLORS.catDark, 0.4);
-    graphics.fillEllipse(512, 475, 160, 70);
+    graphics.fillEllipse(512, 475 + PLACEHOLDER_ART_OFFSET_Y, 160, 70);
   });
 }
 
@@ -154,10 +176,10 @@ function createSabotagePawTexture(scene) {
   createTexture(scene, ASSET_KEYS.sabotagePaw, (graphics) => {
     graphics.lineStyle(86, COLORS.cat, 1);
     graphics.beginPath();
-    graphics.moveTo(405, 430);
-    graphics.lineTo(820, 820);
+    graphics.moveTo(405, 430 + PLACEHOLDER_ART_OFFSET_Y);
+    graphics.lineTo(820, 820 + PLACEHOLDER_ART_OFFSET_Y);
     graphics.strokePath();
-    drawPaw(graphics, 820, 820, COLORS.cream);
+    drawPaw(graphics, 820, 820 + PLACEHOLDER_ART_OFFSET_Y, COLORS.cream);
   });
 }
 
@@ -167,25 +189,47 @@ export function ensurePlaceholderTextures(scene) {
   createSabotagePawTexture(scene);
 }
 
-export function createCatTableAssembly(scene, { useRealAssets = false, anchor = TABLE_ANCHOR } = {}) {
+export function createCatTableAssembly(scene, {
+  useRealAssets = false,
+  anchor = TABLE_ASSEMBLY_ANCHOR,
+  showRigBlockout = false,
+  showRoundTableMockup = false,
+} = {}) {
   if (!useRealAssets) ensurePlaceholderTextures(scene);
 
   const container = scene.add.container(anchor.x, anchor.y).setDepth(1);
   container.setName('catTableContainer');
 
-  const tableBack = scene.add.image(0, -110, ASSET_KEYS.tableBack)
+  const canUseRoundTable = showRoundTableMockup && scene.textures.exists(ASSET_KEYS.tableRoundBase);
+  const catTextureMap = canUseRoundTable ? ASSET_KEYS.catRound : ASSET_KEYS.cat;
+  const catScale = canUseRoundTable ? ROUND_CAT_SCALE : HOLE_CAT_SCALE;
+  const tableBack = scene.add.image(
+    0,
+    canUseRoundTable ? TABLE_HOLE_OFFSET_Y : TABLE_BACK_OFFSET_Y,
+    canUseRoundTable ? ASSET_KEYS.tableRoundBase : ASSET_KEYS.tableBack,
+  )
     .setOrigin(0.5, 0.5)
-    .setScale(0.97);
+    .setScale(canUseRoundTable ? ROUND_TABLE_SCALE : TABLE_SCALE);
   tableBack.setName('tableBack').setDepth(ASSEMBLY_DEPTH.BACK);
-  const tableFront = scene.add.image(0, 0, ASSET_KEYS.tableFront)
+  const tableFront = scene.add.image(
+    0,
+    canUseRoundTable ? TABLE_HOLE_OFFSET_Y : TABLE_FRONT_OFFSET_Y,
+    canUseRoundTable ? ASSET_KEYS.tableRoundBase : ASSET_KEYS.tableFront,
+  )
     .setOrigin(0.5, 0.5)
-    .setScale(TABLE_FRONT_SCALE_X, 1);
-  tableFront.setName('tableFront').setPosition(0, 210).setDepth(ASSEMBLY_DEPTH.FRONT);
-  const catState = scene.add.image(0, 0, ASSET_KEYS.cat[CAT_STATES.HIDDEN])
+    .setScale(canUseRoundTable ? ROUND_TABLE_SCALE : TABLE_SCALE)
+    .setCrop(
+      0,
+      canUseRoundTable ? ROUND_TABLE_FRONT_CROP_Y : 0,
+      CANVAS_SIZE,
+      canUseRoundTable ? CANVAS_SIZE - ROUND_TABLE_FRONT_CROP_Y : CANVAS_SIZE,
+    );
+  tableFront.setName('tableFront').setDepth(ASSEMBLY_DEPTH.FRONT);
+  const catState = scene.add.image(0, 0, catTextureMap[CAT_STATES.HIDDEN])
     .setOrigin(0.5, 0.5)
-    .setScale(CAT_HOLE_SCALE)
+    .setScale(catScale)
     .setPosition(0, CAT_HOLE_OFFSET_Y);
-  catState.baseScale = CAT_HOLE_SCALE;
+  catState.baseScale = catScale;
   catState.baseY = CAT_HOLE_OFFSET_Y;
   catState.setName('catState').setDepth(ASSEMBLY_DEPTH.MIDDLE);
   const sabotagePaw = scene.add.image(0, CAT_HOLE_OFFSET_Y, ASSET_KEYS.sabotagePaw)
@@ -195,6 +239,16 @@ export function createCatTableAssembly(scene, { useRealAssets = false, anchor = 
   sabotagePaw.setName('sabotagePaw').setDepth(ASSEMBLY_DEPTH.MIDDLE + 5);
 
   container.add([tableBack, catState, sabotagePaw, tableFront]);
+
+  const catRig = showRigBlockout
+    ? createCatRigRuntime(scene, {
+      parent: container,
+      offsetY: CAT_HOLE_OFFSET_Y,
+      showDebug: true,
+    })
+    : null;
+  if (catRig) catState.setVisible(false);
+
   container.sort('depth');
 
   return {
@@ -203,11 +257,13 @@ export function createCatTableAssembly(scene, { useRealAssets = false, anchor = 
     catState,
     sabotagePaw,
     tableFront,
+    usesRoundTable: canUseRoundTable,
+    catRig,
     setCatState(state) {
       const textureState = state === CAT_STATES.SABOTAGE ? CAT_STATES.PEEK : state;
       const textureKey = state === CAT_STATES.WARNING
-        ? ASSET_KEYS.cat[CAT_STATES.HIDDEN]
-        : ASSET_KEYS.cat[textureState];
+        ? catTextureMap[CAT_STATES.HIDDEN]
+        : catTextureMap[textureState];
       catState.setTexture(textureKey);
     },
   };

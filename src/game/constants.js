@@ -1,10 +1,20 @@
 export const CANVAS_SIZE = 1024;
-export const TABLE_ANCHOR = { x: 512, y: 512 };
+export const TABLE_ASSEMBLY_ANCHOR = Object.freeze({ x: 512, y: 512 });
+export const TABLE_HOLE_OFFSET_Y = -60;
+export const HOLE_CAT_OFFSET_Y = -20;
+export const HOLE_CAT_SCALE = 1.15;
+export const TABLE_LAYER_GAP_Y = 185;
+export const TABLE_BACK_OFFSET_Y = -155;
+export const TABLE_FRONT_OFFSET_Y = TABLE_LAYER_GAP_Y;
+export const TABLE_ANCHOR = Object.freeze({
+  x: TABLE_ASSEMBLY_ANCHOR.x,
+  y: TABLE_ASSEMBLY_ANCHOR.y + TABLE_HOLE_OFFSET_Y,
+});
 
 export const ASSEMBLY_DEPTH = {
   BACK: 10,
-  FRONT: 15,
-  MIDDLE: 30,
+  MIDDLE: 20,
+  FRONT: 30,
   BUTTONS: 40,
   FOREGROUND: 50,
 };
@@ -33,23 +43,36 @@ export const GAME_SCREENS = Object.freeze({
   GAME_OVER: 'game-over',
 });
 
-// Slots follow the tabletop curve in four mirrored rows around the cat.
-// The inner lower rows keep the buttons visually grouped around the hole
-// instead of forcing every slot onto one oversized ellipse.
-const BUTTON_OFFSETS = Object.freeze([
-  { x: -280, y: -175 }, // Top-Left
-  { x: 280, y: -175 },  // Top-Right
-  { x: -345, y: -35 },  // Mid-Left
-  { x: 345, y: -35 },   // Mid-Right
-  { x: -310, y: 110 },  // Lower-Left
-  { x: 310, y: 110 },   // Lower-Right
-  { x: -225, y: 205 },  // Bottom-Left
-  { x: 225, y: 205 },   // Bottom-Right
+// Button Slots form one fixed ring around the hole. The order preserves the
+// existing mirrored preset pairs while the geometry uses all eight 45-degree
+// directions required by the Cat Rig and Direction Pose mapping.
+export const BUTTON_RING_RADIUS = 300;
+export const BUTTON_SLOT_ANGLES_DEGREES = Object.freeze([
+  225, // slot-1: upper-left
+  315, // slot-2: upper-right
+  180, // slot-3: left
+  0,   // slot-4: right
+  135, // slot-5: lower-left
+  45,  // slot-6: lower-right
+  270, // slot-7: top
+  90,  // slot-8: bottom
 ]);
 
-export const BUTTON_POSITIONS = BUTTON_OFFSETS.map(({ x, y }) => ({
+const BUTTON_OFFSETS = Object.freeze(
+  BUTTON_SLOT_ANGLES_DEGREES.map((angle) => {
+    const radians = (angle * Math.PI) / 180;
+    return {
+      x: Math.round(Math.cos(radians) * BUTTON_RING_RADIUS * 1000) / 1000,
+      y: Math.round(Math.sin(radians) * BUTTON_RING_RADIUS * 1000) / 1000,
+      angle,
+    };
+  }),
+);
+
+export const BUTTON_POSITIONS = BUTTON_OFFSETS.map(({ x, y, angle }) => ({
   x: TABLE_ANCHOR.x + x,
   y: TABLE_ANCHOR.y + y,
+  angle,
 }));
 
 export const BUTTON_SLOT_IDS = Object.freeze(
