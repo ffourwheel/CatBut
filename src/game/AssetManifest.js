@@ -11,6 +11,14 @@ export const ASSET_MANIFEST = Object.freeze({
   table_back: '/assets/table_back.png',
   table_front: '/assets/table_front.png',
   sabotage_paw: '/assets/sabotage_paw.png',
+  cat_rig_head: '/assets/cat-rig/cat_rig_head.png',
+  cat_rig_paws: '/assets/cat-rig/cat_rig_paws.png',
+  cat_reach_body_v2: '/assets/cat-rig/cat_reach_v2_body.png',
+  cat_reach_head_v2: '/assets/cat-rig/cat_reach_v2_head.png',
+  cat_reach_sleep_head_v3: '/assets/cat-rig/cat_reach_v3_sleep_head.png',
+  cat_reach_gaze_v3: '/assets/cat-rig/cat_reach_v3_gaze.png',
+  cat_reach_arm_left_v2: '/assets/cat-rig/cat_reach_v2_arm_left.png',
+  cat_reach_arm_right_v2: '/assets/cat-rig/cat_reach_v2_arm_right.png',
   ...Object.fromEntries(
     Object.values(CAT_STATES).map((state) => [
       `cat_hole_${state}`,

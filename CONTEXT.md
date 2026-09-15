@@ -36,6 +36,22 @@ _Avoid_: cat turn, encounter
 การกระทำจริงของแมวใน Cat Event ซึ่งมีเฉพาะ WATCH และ SABOTAGE ใน Prototype
 _Avoid_: cat move, random trick
 
+**Cat Rig**:
+ชุดส่วนประกอบภาพของแมวที่แยกจากกันและประกอบเป็นรูปลักษณ์ของแมว โดยไม่รวม Hole หรือขอบฐานรู
+_Avoid_: cat image, sprite group
+
+**Cat Motion Animation**:
+การเคลื่อนไหวเชิงภาพของ Cat Rig ระหว่าง Cat State เพื่อสื่อการโผล่ จ้อง โจมตี แกล้ง และมุดกลับ โดยไม่เปลี่ยนกติกาหรือสถานะของเกม
+_Avoid_: state transition, gameplay action
+
+**Sleep Idle**:
+ท่าพักปกติของแมวเมื่อไม่มี Cat Action โดยแมวจะหลับให้เห็นบางส่วนอยู่ใน Hole และมีการขยับเล็กน้อยเพื่อสื่อว่ากำลังนอน ไม่ใช่การหายออกจากฉากหรือการเปลี่ยนกติกาเกม
+_Avoid_: hidden state, inactive cat
+
+**Cat Reach Chain**:
+แขนที่ต่อเนื่องจากไหล่ถึงอุ้งเท้าใน Cat Reach Animation โดย runtime ใช้แขนชิ้นเดียวแบบสั้นและขยับลำตัว/หัวเข้าหา Sabotage Target ก่อนเอื้อม เพื่อไม่ให้เกิดรอยต่อหลายข้อหรือภาพแขนลอย
+_Avoid_: detached hand, hand overlay
+
 **Warning**:
 ช่วงเตือนล่วงหน้าก่อนแมวเข้า WATCH โดยต้องให้ผู้เล่นมีเวลาตัดสินใจว่าจะชะลอการแตะปุ่ม
 _Avoid_: alert, notification
@@ -57,12 +73,16 @@ _Avoid_: cat target, sabotage position
 _Avoid_: instant counter, guaranteed reaction
 
 **Sabotage Preview**:
-การไฮไลต์ Sabotage Target ล่วงหน้า 300 มิลลิวินาทีก่อน Sabotage Paw เคลื่อนที่ 220 มิลลิวินาทีไปยังกึ่งกลางปุ่ม แล้วแมวกลับเข้ารูภายในประมาณ 200 มิลลิวินาที เพื่อให้ผู้เล่นอ่านเหตุการณ์ได้ทัน
+การไฮไลต์ Sabotage Target ล่วงหน้าก่อน Cat Reach Animation เริ่มหันตัวและเอื้อมแขนไปยังกึ่งกลางปุ่ม เพื่อให้ผู้เล่นอ่านเหตุการณ์ได้ทัน
 _Avoid_: target warning, sabotage alert
 
 **Sabotage Paw**:
-เลเยอร์อุ้งเท้าที่อ้างอิงท่าจาก `cat_hole_sabotage.png` และหมุนตาม Button Slot เป้าหมาย โดยไม่หมุนฐานรูหรือโต๊ะ
-_Avoid_: rotating cat, rotating sabotage image
+ปลายมือของแมวที่ต่อเนื่องมาจากแขนใน Cat Reach Animation ใช้สัมผัสกึ่งกลาง Button เป้าหมาย ไม่ใช่เลเยอร์มือที่โผล่แยกจากหัว
+_Avoid_: detached hand, hand from head
+
+**Cat Reach Animation**:
+การกระทำเชิงภาพของแมวระหว่าง Sabotage ที่ประกอบด้วยการมองเป้า หันหัว/ลำตัว ถ่ายน้ำหนัก ยื่นแขน กดปุ่ม และถอนกลับ โดยแขนต้องเชื่อมกับไหล่หรือลำตัวตลอดการเคลื่อนไหว
+_Avoid_: instant paw teleport, rotating hand overlay
 
 **Combo**:
 ตัวคูณคะแนนที่เพิ่มจากการเปิดปุ่มสำเร็จต่อเนื่อง สูงสุด x4 และหมดอายุเมื่อไม่มีการเปิดปุ่มสำเร็จเป็นเวลา 2 วินาที รีเซ็ตทันทีเมื่อผู้เล่นถูกแมวโจมตี ทั้งการเปิดปุ่มใหม่และการ Reactivation เพิ่ม Combo

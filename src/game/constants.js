@@ -75,8 +75,8 @@ export const BUTTON_SLOT_PRESETS = Object.freeze({
   8: BUTTON_SLOT_IDS,
 });
 
-// The generated sabotage paw points down-right by default. The runtime
-// rotates only this overlay; the table, hole, and cat body stay anchored.
+// Legacy fallback constants for sabotage_paw. The active Cat Reach Rig uses
+// shoulder-pivoted arm layers, while the table and hole remain anchored.
 export const SABOTAGE_PAW_DEFAULT_ANGLE = 0.64;
 // Measured from the generated 1254px paw asset's attachment point
 // (368, 424) to the paw tip (1084, 1032).

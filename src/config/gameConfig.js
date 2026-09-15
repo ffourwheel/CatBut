@@ -14,6 +14,9 @@ export const DEFAULT_CONFIG = Object.freeze({
   // World
   canvasSize: 1024,
   useRealAssets: true,
+  // Keep the code-drawn Cat Rig as the visual default while motion is tuned.
+  // Set false to preview the production raster rig when it is ready.
+  useVectorCat: true,
 
   // Player interaction
   startingHealth: 3,
@@ -29,11 +32,11 @@ export const DEFAULT_CONFIG = Object.freeze({
   warningDuration: 500,
   peekDuration: 650,
   watchDuration: 1000,
-  hideDuration: 200,
-  sabotagePreviewDuration: 250,
-  sabotageDuration: 200,
-  sabotageReachDuration: 180,
-  sabotageHitDuration: 140,
+  hideDuration: 220,
+  sabotagePreviewDuration: 350,
+  sabotageDuration: 500,
+  sabotageReachDuration: 280,
+  sabotageHitDuration: 260,
   sabotageCooldown: 1000,
   attackRecovery: 500,
   watchProbability: 0.5,
@@ -183,6 +186,7 @@ function normalizeConfig(rawConfig) {
   config.reactivationFloor = clampInt(config.reactivationFloor, 0, config.reactivationBaseScore, DEFAULT_CONFIG.reactivationFloor);
   config.stageClearBonus = clampInt(config.stageClearBonus, 0, 1000000, DEFAULT_CONFIG.stageClearBonus);
   config.useRealAssets = config.useRealAssets !== false;
+  config.useVectorCat = config.useVectorCat !== false;
 
   config.debug = Object.freeze({
     ...DEFAULT_CONFIG.debug,

@@ -7,6 +7,16 @@ import {
   SABOTAGE_PAW_ORIGIN,
   TABLE_ANCHOR,
 } from './constants.js';
+import { CAT_RIG_GEOMETRY } from './CatRigConstants.js';
+import {
+  createVectorCatPart,
+  drawCatArm,
+  drawCatBackHead,
+  drawCatBody,
+  drawCatGaze,
+  drawCatHead as drawVectorCatHead,
+  drawCatSleepHead as drawVectorCatSleepHead,
+} from './VectorCatArt.js';
 
 const COLORS = {
   table: 0xf3dcc1,
@@ -174,9 +184,12 @@ export function ensurePlaceholderTextures(scene) {
   createSabotagePawTexture(scene);
 }
 
-export function createCatTableAssembly(scene, { useRealAssets = false, anchor = TABLE_ANCHOR } = {}) {
+export function createCatTableAssembly(
+  scene,
+  { useRealAssets = false, useVectorCat = true, anchor = TABLE_ANCHOR } = {},
+) {
   // The table is intentionally a generated circular placeholder for now.
-  // Cat state textures and the sabotage paw still use the selected asset set.
+  // The static hole remains anchored while the cat rig animates independently.
   createTableTextures(scene);
   if (!useRealAssets) ensurePlaceholderTextures(scene);
 
@@ -197,20 +210,104 @@ export function createCatTableAssembly(scene, { useRealAssets = false, anchor = 
     .setPosition(0, CAT_HOLE_OFFSET_Y);
   catState.baseScale = CAT_HOLE_SCALE;
   catState.baseY = CAT_HOLE_OFFSET_Y;
-  catState.setName('catState').setDepth(ASSEMBLY_DEPTH.MIDDLE);
+  const requiredCatReachKeys = [
+    ASSET_KEYS.catReach.body,
+    ASSET_KEYS.catReach.head,
+    ASSET_KEYS.catReach.sleepHead,
+    ASSET_KEYS.catReach.gaze,
+    ASSET_KEYS.catReach.armLeft,
+    ASSET_KEYS.catReach.armRight,
+  ];
+  const hasCatRig = useVectorCat || (
+    useRealAssets && requiredCatReachKeys.every((key) => scene.textures.exists(key))
+  );
+  catState.setName('catState')
+    .setDepth(ASSEMBLY_DEPTH.MIDDLE)
+    .setVisible(!hasCatRig);
+
+  const { bodyScale, armScale, headY, sleepHeadY, shoulder, arms } = CAT_RIG_GEOMETRY;
+  const catRig = scene.add.container(0, CAT_HOLE_OFFSET_Y)
+    .setName('catRig')
+    .setDepth(ASSEMBLY_DEPTH.MIDDLE + 1)
+    .setVisible(hasCatRig);
+  const createCatPart = (draw, key, scale) => {
+    if (useVectorCat) return createVectorCatPart(scene, draw, scale);
+    return scene.add.image(0, 0, key)
+      .setOrigin(0.5, 0.5)
+      .setScale(scale)
+      .setAlpha(0);
+  };
+  const catReachBody = createCatPart(drawCatBody, ASSET_KEYS.catReach.body, bodyScale)
+    .setPosition(0, 0);
+  const catReachHead = createCatPart(drawVectorCatHead, ASSET_KEYS.catReach.head, bodyScale)
+    .setPosition(0, headY);
+  const catReachSleepHead = createCatPart(
+    drawVectorCatSleepHead,
+    ASSET_KEYS.catReach.sleepHead,
+    bodyScale,
+  ).setPosition(0, sleepHeadY);
+  const catReachBackHead = createVectorCatPart(scene, drawCatBackHead, bodyScale)
+    .setPosition(0, headY);
+  const catReachGaze = createCatPart(drawCatGaze, ASSET_KEYS.catReach.gaze, bodyScale)
+    .setPosition(0, headY);
+  const catReachArmLeft = createCatPart(
+    (graphics) => drawCatArm(graphics, 'left'),
+    ASSET_KEYS.catReach.armLeft,
+    armScale,
+  )
+    .setPosition(-shoulder.x, shoulder.y);
+  const catReachArmRight = createCatPart(
+    (graphics) => drawCatArm(graphics, 'right'),
+    ASSET_KEYS.catReach.armRight,
+    armScale,
+  )
+    .setPosition(shoulder.x, shoulder.y);
+  catReachBody.baseScale = bodyScale;
+  catReachHead.baseScale = bodyScale;
+  catReachSleepHead.baseScale = bodyScale;
+  catReachBackHead.baseScale = bodyScale;
+  catReachGaze.baseScale = bodyScale;
+  catReachArmLeft.baseScale = armScale;
+  catReachArmRight.baseScale = armScale;
+  catReachArmLeft.baseX = -shoulder.x;
+  catReachArmLeft.baseY = shoulder.y;
+  catReachArmRight.baseX = shoulder.x;
+  catReachArmRight.baseY = shoulder.y;
+  // Body first, then arms on top of the torso: the reaching limb must read
+  // as a front leg lying on the chest, while the head still covers the
+  // shoulder area when the cat faces forward.
+  catRig.add([
+    catReachBody,
+    catReachArmLeft,
+    catReachArmRight,
+    catReachHead,
+    catReachSleepHead,
+    catReachBackHead,
+    catReachGaze,
+  ]);
+
   const sabotagePaw = scene.add.image(0, CAT_HOLE_OFFSET_Y, ASSET_KEYS.sabotagePaw)
     .setOrigin(SABOTAGE_PAW_ORIGIN.x, SABOTAGE_PAW_ORIGIN.y)
     .setScale(0.44)
     .setVisible(false);
   sabotagePaw.setName('sabotagePaw').setDepth(ASSEMBLY_DEPTH.MIDDLE + 5);
 
-  container.add([tableBack, catState, sabotagePaw, tableFront]);
+  container.add([tableBack, catState, catRig, sabotagePaw, tableFront]);
   container.sort('depth');
 
   return {
     container,
     tableBack,
     catState,
+    catRig,
+    catReachBody,
+    catReachHead,
+    catReachSleepHead,
+    catReachBackHead,
+    catReachGaze,
+    catReachArmLeft,
+    catReachArmRight,
+    hasCatRig,
     sabotagePaw,
     tableFront,
     setCatState(state) {

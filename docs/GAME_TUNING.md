@@ -22,9 +22,9 @@ export const ACTIVE_GAME_PRESET = 'normal';
 | `peekDuration` | ระยะเวลาแมวโผล่ให้เห็น | `900` |
 | `watchDuration` | ระยะเวลาที่แมวจ้อง | `1000` |
 | `watchProbability` | โอกาสที่แมวจะเลือกจ้อง (0–1) | `0.35` |
-| `sabotagePreviewDuration` | เวลาที่แมวเล็งปุ่มก่อนยื่นมือ (มิลลิวินาที) | `300` |
-| `sabotageReachDuration` | เวลาที่มือยื่นถึงปุ่ม (มิลลิวินาที) | `220` |
-| `sabotageHitDuration` | จังหวะที่สั่งปิดปุ่มหลังเริ่มยื่นมือ (มิลลิวินาที) | `180` |
+| `sabotagePreviewDuration` | เวลาที่แมวเล็งปุ่มและหันตัวก่อนยื่นแขน (มิลลิวินาที) | `350` |
+| `sabotageReachDuration` | เวลาที่แขนต่อจากไหล่ยื่นถึงปุ่ม (มิลลิวินาที) | `280` |
+| `sabotageHitDuration` | จังหวะสัมผัส/สั่งปิดปุ่มหลังเริ่มยื่นแขน (มิลลิวินาที) | `260` |
 | `tapReactionProbability` | โอกาสที่การเปิดปุ่มจะเร่ง SABOTAGE (0–1) | `0.40` |
 | `rapidTapThreshold` / `rapidTapWindow` | จำนวนและช่วงเวลาที่แตะรัวจนแมวเร่ง SABOTAGE แน่นอน | `2` ครั้งใน `500` มิลลิวินาที |
 | `buttonCountMin` / `buttonCountMax` | จำนวนปุ่มที่สุ่มในแต่ละรอบ | `4` ถึง `8` |

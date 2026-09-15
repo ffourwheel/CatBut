@@ -8,6 +8,18 @@ export const ASSET_KEYS = Object.freeze({
   roundTableBack: 'table_round_back',
   roundTableFront: 'table_round_front',
   sabotagePaw: 'sabotage_paw',
+  catRig: {
+    head: 'cat_rig_head',
+    paws: 'cat_rig_paws',
+  },
+  catReach: {
+    body: 'cat_reach_body_v2',
+    head: 'cat_reach_head_v2',
+    sleepHead: 'cat_reach_sleep_head_v3',
+    gaze: 'cat_reach_gaze_v3',
+    armLeft: 'cat_reach_arm_left_v2',
+    armRight: 'cat_reach_arm_right_v2',
+  },
   cat: Object.fromEntries(Object.values(CAT_STATES).map((state) => [state, `cat_hole_${state}`])),
   buttons: {
     off: 'button_off',
