@@ -361,9 +361,11 @@ export class GameScene extends Phaser.Scene {
       .setRotation(targetAngle - SABOTAGE_PAW_DEFAULT_ANGLE)
       .setScale(0.02);
 
-    const reachDuration = Math.max(100, this.config.sabotageReachDuration);
-    const extendDuration = Math.round(reachDuration * 0.72);
-    const pressDuration = Math.max(40, reachDuration - extendDuration);
+    // Keep the legacy paw fallback on the same contact beat as the gameplay
+    // timer so the button never closes before the visible paw lands.
+    const contactBeat = Math.max(50, this.config.sabotageHitDuration);
+    const extendDuration = Math.max(20, Math.round(contactBeat * 0.5));
+    const pressDuration = Math.max(20, contactBeat - extendDuration);
     const pressScale = targetScale * 0.96;
     const extendedScale = targetScale * 1.02;
     const pressButton = () => {
