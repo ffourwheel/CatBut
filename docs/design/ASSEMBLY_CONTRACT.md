@@ -16,7 +16,7 @@
 - Hole เดิมยังอยู่ที่กึ่งกลาง `(512, 512)`
 - Button Slot มีตำแหน่งถาวร 8 จุดบนวงแหวนวงรี รัศมีแนวนอนประมาณ `335 px` และแนวตั้งประมาณ `310 px`
 - `slot-1` เริ่มที่ 12 นาฬิกา และ Slot ถัดไปเรียงตามเข็มนาฬิกาทีละ `45°`
-- Stage ยังคงเลือกใช้งาน 4–8 Slot จากตำแหน่งถาวรชุดนี้
+- Stage ใช้งาน Slot ทั้ง 8 จากตำแหน่งถาวรชุดนี้เสมอ
 
 ## Layer Structure
 
@@ -46,7 +46,7 @@ Runtime object names ต้องเป็น `catTableContainer`, `tableBack`, 
 
 ## Targeted Sabotage Contract
 
-- Stage เลือก `slotId` จาก preset 4–8 ช่อง โดยช่องที่ไม่ใช้ไม่มี Button และไม่มี hit area
+- Stage เลือก `slotId` จาก preset 8 ช่องเสมอ ทุกตำแหน่งจึงมี Button และ hit area
 - Cat Controller ส่ง `targetSlotId` ให้ Gameplay/UI Animation
 - ปุ่มเป้าหมายไฮไลต์ก่อน Cat Reach Animation เริ่มหันตัวและเอื้อมแขน
 - ลำตัวและหัวต้องหันเข้าหาเป้าหมายก่อนแขนด้านใกล้เริ่มเอื้อม เพื่อรักษาความยาวแขนให้สั้นและต่อเนื่อง

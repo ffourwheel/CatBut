@@ -14,6 +14,9 @@ test('normal preset keeps the shorter cat pacing and readable warning windows', 
       watchDuration: config.watchDuration,
       watchProbability: config.watchProbability,
       catEventMinimumGap: config.catEventMinimumGap,
+      buttonCount: config.buttonCount,
+      buttonCountMin: config.buttonCountMin,
+      buttonCountMax: config.buttonCountMax,
       sabotagePreviewDuration: config.sabotagePreviewDuration,
       sabotageReachDuration: config.sabotageReachDuration,
       sabotageHitDuration: config.sabotageHitDuration,
@@ -26,9 +29,12 @@ test('normal preset keeps the shorter cat pacing and readable warning windows', 
       watchDuration: 1000,
       watchProbability: 0.6,
       catEventMinimumGap: 500,
-      sabotagePreviewDuration: 240,
-      sabotageReachDuration: 180,
-      sabotageHitDuration: 120,
+      buttonCount: 8,
+      buttonCountMin: 8,
+      buttonCountMax: 8,
+      sabotagePreviewDuration: 160,
+      sabotageReachDuration: 120,
+      sabotageHitDuration: 80,
     },
   );
 });
@@ -43,6 +49,7 @@ test('hard preset adds pressure without extending the post-sabotage pause', () =
       warningDuration: config.warningDuration,
       peekDuration: config.peekDuration,
       watchProbability: config.watchProbability,
+      buttonCount: config.buttonCount,
       buttonCountMin: config.buttonCountMin,
       buttonCountMax: config.buttonCountMax,
       sabotageCooldown: config.sabotageCooldown,
@@ -56,12 +63,21 @@ test('hard preset adds pressure without extending the post-sabotage pause', () =
       warningDuration: 300,
       peekDuration: 350,
       watchProbability: 0.7,
-      buttonCountMin: 6,
+      buttonCount: 8,
+      buttonCountMin: 8,
       buttonCountMax: 8,
       sabotageCooldown: 900,
-      sabotagePreviewDuration: 180,
-      sabotageReachDuration: 150,
-      sabotageHitDuration: 100,
+      sabotagePreviewDuration: 120,
+      sabotageReachDuration: 100,
+      sabotageHitDuration: 70,
     },
   );
+});
+
+test('easy preset also keeps the fixed eight-button target', () => {
+  const config = createGameConfig({ preset: 'easy' });
+
+  assert.equal(config.buttonCount, 8);
+  assert.equal(config.buttonCountMin, 8);
+  assert.equal(config.buttonCountMax, 8);
 });

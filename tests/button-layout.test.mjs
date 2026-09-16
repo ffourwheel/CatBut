@@ -7,6 +7,8 @@ import {
   BUTTON_SLOT_PRESETS,
   TABLE_ANCHOR,
 } from '../src/game/constants.js';
+import { createGameConfig } from '../src/config/gameConfig.js';
+import { ButtonManager } from '../src/game/ButtonManager.js';
 
 test('button slots form an eight-point clockwise ring around the cat hole', () => {
   assert.equal(BUTTON_SLOT_LAYOUT.length, 8);
@@ -51,7 +53,19 @@ test('button slots form an eight-point clockwise ring around the cat hole', () =
   });
 });
 
-test('stage presets keep the existing 4-to-8 button range', () => {
+test('stage presets keep the eight-slot ring available', () => {
   assert.deepEqual(BUTTON_SLOT_PRESETS[4], ['slot-1', 'slot-3', 'slot-5', 'slot-7']);
   assert.equal(BUTTON_SLOT_PRESETS[8].length, 8);
+});
+
+test('gameplay resolves all eight button slots without randomizing the count', () => {
+  const manager = Object.create(ButtonManager.prototype);
+  manager.config = createGameConfig({ debug: { disableRandomness: false } });
+
+  const first = manager.resolveActiveSlotIds();
+  const second = manager.resolveActiveSlotIds(first.length);
+
+  assert.equal(first.length, 8);
+  assert.equal(second.length, 8);
+  assert.deepEqual(second, first);
 });

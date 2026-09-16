@@ -9,7 +9,7 @@
 ## Decision
 
 - ปรับ `normal` ให้ Cat Event เริ่มในช่วง `500–850ms`, WARNING `350ms`, PEEK `400ms`, WATCH probability `0.60` และคง minimum gap `500ms`
-- ปรับ `hard` ให้ใช้ Cat Event `500–700ms`, WARNING `300ms`, PEEK `350ms`, WATCH probability `0.70`, ปุ่ม `6–8` ปุ่ม และ Sabotage cooldown `900ms`
+- ปรับ `hard` ให้ใช้ Cat Event `500–700ms`, WARNING `300ms`, PEEK `350ms`, WATCH probability `0.70`, ปุ่มคงที่ 8 ปุ่ม และ Sabotage cooldown `900ms` พร้อมจังหวะปิดปุ่มที่เร็วขึ้น
 - คง `easy` เป็น preset สำหรับการเรียนรู้ และคงหัวใจเริ่มต้น 3 ดวง
 - ใช้ asset `assets/ui/cat_mood_bubbles.png` เป็น spritesheet 2×2 ที่สร้างสำหรับ Mood cue โดยให้เกมวาง label ภาษาไทยแยกจากภาพ
 - Mood cue เป็น floating UI ที่ UIManager ควบคุม แยกจาก Cat Rig, ติดตามตำแหน่งหัวโดยไม่หมุนหรือสเกลตามแมว และใช้ depth ต่ำกว่า Warning cue
@@ -20,6 +20,6 @@
 ## Consequences
 
 - Normal จะเริ่มกดดันจาก Cat Event เร็วขึ้น และ Rapid Tap ตอนแมวตื่นจะลงโทษด้วย ATTACK โดยไม่ต้องรอ Cat Event ใหม่
-- Hard กดดันต่อเนื่องจากจำนวนปุ่มและ cooldown ที่สั้นลง โดยไม่ลดจำนวนหัวใจ
+- Hard กดดันต่อเนื่องจากจังหวะแมวที่เร็วขึ้นและ cooldown ที่สั้นลง โดยไม่ลดจำนวนหัวใจ
 - Mood cue ไม่รับผลกระทบจากการหมุน/ยืดของแขนและลำตัว จึงอ่านระดับได้คงที่
 - ต้องดูแล frame contract ของ generated spritesheet และ label mapping ให้ตรงกับระดับ Mood ทั้งสี่

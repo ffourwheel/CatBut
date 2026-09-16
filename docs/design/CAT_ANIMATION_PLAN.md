@@ -31,7 +31,7 @@ implementation รอบใหม่เสร็จแล้ว:
 - แขนใช้สัดส่วนใหญ่เท่าตัว (`armScale = 0.24`) มีศอกงอเล็กน้อย แผ่นขนไหล่ไร้เส้นขอบทับลำตัว และ layer เรียง body → arms → head (ADR 0010)
 - ช่วงเล็งเป้าหมาย หัวเอียงนำและดวงตานำหัวตามปุ่ม ส่วนแขนที่ไม่ได้ใช้ห้อยแนบอก ไม่ชี้ไปที่อื่น
 - `GameScene` ใช้แขนที่ต่อจาก shoulder เป็น visual หลัก และซ่อน `sabotagePaw` เก่าเมื่อ rig ใหม่โหลดครบ
-- ช่วง Sabotage ใช้จังหวะ preview `350ms` (เท้าแตะปุ่มแล้ว) → reach `280ms` (หมุนนำ ยืดตาม แล้วบีบกดตามทิศ shoulder→button) → contact/กด `260ms` → ถอนกลับผ่าน `HIDE` `220ms`
+- ช่วง Sabotage ใช้จังหวะ preview `160ms` (เท้าแตะปุ่มแล้ว) → reach `120ms` (หมุนนำ ยืดตาม แล้วบีบกดตามทิศ shoulder→button) → contact/กด `80ms` → ถอนกลับผ่าน `HIDE` `220ms`
 - หน้าตรวจท่าสำหรับ dev: `dev/cat-rig-preview.html` (`aim/press/hold/state` ต่อ slot)
 
 ตา/หูแยกเป็น layer เพิ่มเติมยังเป็น polish pass ในอนาคต แต่ไม่จำเป็นต่อการแก้ปัญหาแขนลอย เพราะหัวและแขนปัจจุบันมีจุดเชื่อมกับลำตัวชัดเจนแล้ว
@@ -106,8 +106,8 @@ Hole/rim ต้องคงเป็น layer นิ่งเสมอ ภาพ
 | `WARNING → PEEK` | body/head rise ตาม path แล้ว settle อ่อน ๆ | `peekDuration = 650ms` |
 | `PEEK → WATCH` | head settle, eye gaze, micro tilt และ stare tension | `watchDuration = 1000ms` |
 | `WATCH → ATTACK` | squash → anticipation → lunge → recoil | `attackRecovery = 500ms` |
-| `PEEK → SABOTAGE` | target highlight → มองเป้า → หันหัวและลำตัว/ไหล่ตามเป้า → เตรียมแขนด้านใกล้ | `sabotagePreviewDuration = 240ms`, turn `180ms`, reach `180ms`, contact `120ms` |
-| `SABOTAGE` | shoulder follow-through → แขนต่อเนื่องเอื้อม → กดค้างสั้น ๆ → resolve | reach `280ms`, contact `260ms` |
+| `PEEK → SABOTAGE` | target highlight → มองเป้า → หันหัวและลำตัว/ไหล่ตามเป้า → เตรียมแขนด้านใกล้ | `sabotagePreviewDuration = 160ms`, turn `120ms`, reach `120ms`, contact `80ms` |
+| `SABOTAGE` | shoulder follow-through → แขนต่อเนื่องเอื้อม → กดค้างสั้น ๆ → resolve | reach `120ms`, contact `80ms` |
 | `WATCH/ATTACK/SABOTAGE → HIDE` | ถอนแขน → sink ลงตาม path กลับเข้ารู | `hideDuration = 220ms` |
 | `HIDE → HIDDEN` | settle กลับเป็น idle pose | ต่อเนื่องจาก `HIDE` |
 

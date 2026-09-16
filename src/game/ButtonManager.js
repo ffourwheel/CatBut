@@ -29,8 +29,7 @@ export class ButtonManager {
   }
 
   createButtons() {
-    const previousCount = this.buttons?.length || null;
-    const activeSlotIds = this.resolveActiveSlotIds(previousCount);
+    const activeSlotIds = this.resolveActiveSlotIds();
     this.activeSlotIds = activeSlotIds;
     if (!this.layer) {
       this.layer = this.scene.add.container(0, 0).setDepth(ASSEMBLY_DEPTH.BUTTONS);
@@ -82,7 +81,7 @@ export class ButtonManager {
     });
   }
 
-  resolveActiveSlotIds(previousCount = null) {
+  resolveActiveSlotIds() {
     const forcedSet = this.config.debug.forceButtonSet;
     if (Array.isArray(forcedSet) && forcedSet.length > 0) {
       return this.normalizeSlotIds(forcedSet);
@@ -93,7 +92,7 @@ export class ButtonManager {
       return this.normalizeSlotIds(configuredSet);
     }
 
-    const count = this.config.debug.forceButtonCount ?? this.randomButtonCount(previousCount);
+    const count = this.config.debug.forceButtonCount ?? this.config.buttonCount ?? BUTTON_SLOT_IDS.length;
     const preset = this.config.buttonSetPresets?.[count] ?? BUTTON_SLOT_PRESETS[count];
     return this.normalizeSlotIds(preset ?? BUTTON_SLOT_IDS.slice(0, count));
   }
@@ -103,18 +102,6 @@ export class ButtonManager {
     return [...new Set(slotIds)]
       .filter((slotId) => validSlotIds.has(slotId))
       .slice(0, BUTTON_SLOT_IDS.length);
-  }
-
-  randomButtonCount(previousCount = null) {
-    const min = Math.max(1, Math.floor(this.config.buttonCountMin ?? this.config.buttonCount ?? 4));
-    const max = Math.max(min, Math.floor(this.config.buttonCountMax ?? min));
-    if (this.config.debug.disableRandomness || min === max) return min;
-
-    let count = min + Math.floor(Math.random() * (max - min + 1));
-    if (previousCount !== null && max > min && count === previousCount) {
-      count = min + Math.floor(Math.random() * (max - min + 1));
-    }
-    return count;
   }
 
   activateButton(buttonId) {
