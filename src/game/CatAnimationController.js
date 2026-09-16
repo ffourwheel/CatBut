@@ -506,7 +506,7 @@ export class CatAnimationController {  constructor(scene, assembly) {
     this.animateTargetLook();
   }
 
-  startSabotageReach(button, { duration = 280 } = {}) {
+  startSabotageReach(button, { duration = 280, contactDuration = null } = {}) {
     if (!this.enabled || !button) return;
 
     this.setTarget(button, { animate: false });
@@ -516,13 +516,16 @@ export class CatAnimationController {  constructor(scene, assembly) {
     this.applyVisibility(to);
     const activeArm = this.targetPose.armSide;
     const inactiveArm = activeArm === ARM_SIDE.LEFT ? ARM_SIDE.RIGHT : ARM_SIDE.LEFT;
-    // 150 + 55 + 55 = the default 260ms sabotage hit beat. Keeping visual
-    // contact on that beat prevents the button from changing before the paw
-    // appears to land.
-    const reachDuration = Math.max(110, duration - 130);
-    const pressLiftDuration = 55;
-    const pressDownDuration = 55;
-    const pressUpDuration = 120;
+    // When gameplay supplies a hit beat, make the paw's first contact land on
+    // that exact beat so the button never closes before the animation reaches it.
+    const hasContactBeat = Number.isFinite(contactDuration);
+    const contactBeat = hasContactBeat ? Math.max(50, Math.round(contactDuration)) : null;
+    const pressLiftDuration = hasContactBeat ? Math.max(10, Math.round(contactBeat * 0.25)) : 55;
+    const pressDownDuration = hasContactBeat ? Math.max(10, Math.round(contactBeat * 0.25)) : 55;
+    const reachDuration = hasContactBeat
+      ? Math.max(20, contactBeat - pressLiftDuration - pressDownDuration)
+      : Math.max(110, duration - 130);
+    const pressUpDuration = hasContactBeat ? Math.max(60, Math.round(contactBeat * 0.8)) : 120;
     this.reachProgress = 1;
 
     // The body settles during the reach so it is free to dip with the press

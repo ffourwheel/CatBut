@@ -330,6 +330,34 @@ test('sabotage contact lands on the configured hit beat and the body dips with t
   assert.ok(bodyRecovery);
 });
 
+test('fast sabotage contact keeps the paw and button on the same hit beat', () => {
+  const { controller, tweens } = makeHarness();
+  controller.transitionTo(CAT_STATES.SABOTAGE, { immediate: true });
+  tweens.added.length = 0;
+
+  controller.startSabotageReach(
+    { x: 847, y: 512 },
+    { duration: 120, contactDuration: 80 },
+  );
+
+  const arm = controller.arms.right.part;
+  const reachTween = tweens.added.find(
+    (tween) => tween.config.targets === arm && tween.config.scaleX !== undefined,
+  );
+  assert.equal(reachTween?.config.duration, 40);
+  reachTween.config.onComplete();
+
+  const liftTween = tweens.added.at(-1);
+  assert.equal(liftTween.config.duration, 20);
+  liftTween.config.onComplete();
+
+  const slapTween = tweens.added.findLast(
+    (tween) => tween.config.targets === arm && tween.config.scaleX !== undefined,
+  );
+  assert.equal(slapTween.config.duration, 20);
+  assert.equal(reachTween.config.duration + liftTween.config.duration + slapTween.config.duration, 80);
+});
+
 test('attack motion starts with a readable wind-up before the lunge', () => {
   const { controller, tweens } = makeHarness();
   controller.transitionTo(CAT_STATES.ATTACK);

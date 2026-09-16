@@ -340,6 +340,7 @@ export class GameScene extends Phaser.Scene {
       this.sabotagePawTween = null;
       this.catAnimation.startSabotageReach(button, {
         duration: this.config.sabotageReachDuration,
+        contactDuration: this.config.sabotageHitDuration,
       });
       return;
     }
