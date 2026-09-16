@@ -9,6 +9,7 @@ import {
   isMoodCueVisibleForCatState,
   MOOD_CUE_ICONS,
   MOOD_CUE_FRAME_SIZE,
+  shouldAnimateMoodCue,
 } from '../ui/MoodCue.js';
 import { ASSET_KEYS } from './AssetManifest.js';
 import { CAT_STATES, GAME_SCREENS } from './constants.js';
@@ -209,8 +210,11 @@ export class UIManager {
 
   onMoodChange(snapshot) {
     if (!snapshot) return;
-    this.setMoodCue(snapshot.level, { animate: snapshot.levelChanged });
-    if (snapshot.levelChanged) this.hud.pulseMood?.(snapshot.direction);
+    const levelChanged = shouldAnimateMoodCue(snapshot, this.moodCueLevel);
+    if (snapshot.level !== this.moodCueLevel) {
+      this.setMoodCue(snapshot.level, { animate: levelChanged });
+    }
+    if (levelChanged) this.hud.pulseMood?.(snapshot.direction);
   }
 
   setClearStats(score, maxCombo) {
@@ -328,6 +332,7 @@ export class UIManager {
   }
 
   setMoodCueVisibility(visible, immediate = false) {
+    if (this.moodCueStateVisible === visible && this.moodCueRoot.visible === visible) return;
     this.moodCueStateVisible = visible;
     if (!visible || this.currentScreen !== GAME_SCREENS.GAMEPLAY) {
       this.hideMoodCue(immediate);

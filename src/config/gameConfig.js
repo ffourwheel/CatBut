@@ -49,7 +49,7 @@ export const DEFAULT_CONFIG = Object.freeze({
 
   // Cat Mood: only Rapid Tap raises the cat's mood. Pausing lets it calm down in steps.
   moodMax: 100,
-  moodRapidTapGain: 25,
+  moodRapidTapGain: 50,
   moodDecayDelay: 2000,
   moodLevelDecayInterval: 1500,
   moodIntervalScaleByLevel: Object.freeze({

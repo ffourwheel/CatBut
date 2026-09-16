@@ -24,10 +24,26 @@ export const MOOD_CUE_ICONS = Object.freeze({
 });
 
 export const MOOD_CUE_PRESENTATION = Object.freeze({
-  sleepy: Object.freeze({ frame: MOOD_CUE_FRAMES.sleepy, label: MOOD_CUE_LABELS.sleepy, icon: MOOD_CUE_ICONS.sleepy }),
-  curious: Object.freeze({ frame: MOOD_CUE_FRAMES.curious, label: MOOD_CUE_LABELS.curious, icon: MOOD_CUE_ICONS.curious }),
-  annoyed: Object.freeze({ frame: MOOD_CUE_FRAMES.annoyed, label: MOOD_CUE_LABELS.annoyed, icon: MOOD_CUE_ICONS.annoyed }),
-  angry: Object.freeze({ frame: MOOD_CUE_FRAMES.angry, label: MOOD_CUE_LABELS.angry, icon: MOOD_CUE_ICONS.angry }),
+  sleepy: Object.freeze({
+    frame: MOOD_CUE_FRAMES.sleepy,
+    label: MOOD_CUE_LABELS.sleepy,
+    icon: MOOD_CUE_ICONS.sleepy,
+  }),
+  curious: Object.freeze({
+    frame: MOOD_CUE_FRAMES.curious,
+    label: MOOD_CUE_LABELS.curious,
+    icon: MOOD_CUE_ICONS.curious,
+  }),
+  annoyed: Object.freeze({
+    frame: MOOD_CUE_FRAMES.annoyed,
+    label: MOOD_CUE_LABELS.annoyed,
+    icon: MOOD_CUE_ICONS.annoyed,
+  }),
+  angry: Object.freeze({
+    frame: MOOD_CUE_FRAMES.angry,
+    label: MOOD_CUE_LABELS.angry,
+    icon: MOOD_CUE_ICONS.angry,
+  }),
 });
 
 const HIDDEN_MOOD_CUE_STATES = new Set([
@@ -43,4 +59,12 @@ export function getMoodCue(level = 'sleepy') {
 
 export function isMoodCueVisibleForCatState(state) {
   return !HIDDEN_MOOD_CUE_STATES.has(state);
+}
+
+export function shouldAnimateMoodCue(snapshot, currentLevel) {
+  return Boolean(
+    snapshot?.levelChanged
+    && snapshot.level
+    && snapshot.level !== currentLevel,
+  );
 }

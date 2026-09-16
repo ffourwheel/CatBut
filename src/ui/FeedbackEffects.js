@@ -1,4 +1,6 @@
 import { UI_DEPTH } from './UITokens.js';
+import { ASSET_KEYS } from '../game/AssetKeys.js';
+import { CAT_CLAW_CUTSCENE_FRAMES } from './CatAttackCutscene.js';
 
 /**
  * CatKub Visual Feedback & Animation FX Specifications
@@ -52,15 +54,19 @@ export const FEEDBACK_EFFECTS = Object.freeze({
       duration: 350,
     },
     clawScratch: {
-      color: 0xf4dec2,
-      alpha: 0.92,
-      lineWidth: 18,
-      offsetX: 26,
-      offsetY: 38,
       depth: UI_DEPTH.CAT_FX + 1,
-      fadeDuration: 90,
-      holdDuration: 70,
-      startScale: 0.72,
+      overlayColor: 0x261711,
+      overlayAlpha: 0.16,
+      frameDuration: 95,
+      introDuration: 120,
+      outroDuration: 180,
+      startScale: 0.62,
+      peakScale: 0.88,
+      fallbackColor: 0xf4dec2,
+      fallbackAlpha: 0.92,
+      fallbackLineWidth: 18,
+      fallbackOffsetX: 26,
+      fallbackOffsetY: 38,
     },
   },
 
@@ -119,11 +125,85 @@ export const FeedbackFX = {
 
   triggerClawScratch(scene, { x = 512, y = 910 } = {}) {
     const config = FEEDBACK_EFFECTS.catAttack.clawScratch;
+    const textureKey = ASSET_KEYS.ui.catClawCutscene;
+    if (!scene.textures.exists(textureKey)) {
+      this.triggerFallbackClawScratch(scene, { x, y, config });
+      return;
+    }
+
+    const viewportHeight = scene.scale.gameSize?.height ?? 1024;
+    const vignette = scene.add.rectangle(
+      512,
+      viewportHeight / 2,
+      1024,
+      viewportHeight,
+      config.overlayColor,
+      0,
+    ).setDepth(config.depth - 1);
+    const scratch = scene.add.image(x, y, textureKey, CAT_CLAW_CUTSCENE_FRAMES.pawReady)
+      .setOrigin(0.5, 0.5)
+      .setDepth(config.depth)
+      .setScale(config.startScale)
+      .setAlpha(0);
+
+    let frame = CAT_CLAW_CUTSCENE_FRAMES.pawReady;
+    const frameTimer = scene.time.addEvent({
+      delay: config.frameDuration,
+      repeat: 2,
+      callback: () => {
+        frame += 1;
+        scratch.setFrame(frame);
+      },
+    });
+
+    scene.tweens.add({
+      targets: vignette,
+      alpha: { from: 0, to: config.overlayAlpha },
+      duration: config.introDuration,
+      ease: 'Quad.easeOut',
+    });
+    scene.tweens.add({
+      targets: scratch,
+      alpha: { from: 0, to: 1 },
+      scaleX: { from: config.startScale, to: config.peakScale },
+      scaleY: { from: config.startScale, to: config.peakScale },
+      duration: config.introDuration,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        scene.tweens.add({
+          targets: scratch,
+          x: x + 8,
+          angle: { from: -2, to: 2 },
+          duration: config.frameDuration * 2,
+          yoyo: true,
+          repeat: 1,
+          ease: 'Sine.easeInOut',
+        });
+      },
+    });
+    scene.time.delayedCall(config.frameDuration * 4 + config.outroDuration, () => {
+      frameTimer.remove(false);
+      scene.tweens.add({
+        targets: [scratch, vignette],
+        alpha: 0,
+        scaleX: 0.76,
+        scaleY: 0.76,
+        duration: config.outroDuration,
+        ease: 'Quad.easeIn',
+        onComplete: () => {
+          scratch.destroy();
+          vignette.destroy();
+        },
+      });
+    });
+  },
+
+  triggerFallbackClawScratch(scene, { x, y, config }) {
     const scratch = scene.add.graphics().setDepth(config.depth).setPosition(x, y).setAlpha(0);
-    scratch.lineStyle(config.lineWidth, config.color, config.alpha);
+    scratch.lineStyle(config.fallbackLineWidth, config.fallbackColor, config.fallbackAlpha);
     [-1, 0, 1].forEach((offset) => {
-      const offsetX = offset * config.offsetX;
-      const offsetY = offset * config.offsetY;
+      const offsetX = offset * config.fallbackOffsetX;
+      const offsetY = offset * config.fallbackOffsetY;
       scratch.beginPath();
       scratch.moveTo(-150 + offsetX, -92 + offsetY);
       scratch.lineTo(150 + offsetX, 92 + offsetY);
@@ -134,9 +214,9 @@ export const FeedbackFX = {
       alpha: { from: 0, to: 1 },
       scaleX: { from: config.startScale, to: 1 },
       scaleY: { from: config.startScale, to: 1 },
-      duration: config.fadeDuration,
+      duration: config.introDuration,
       ease: 'Back.easeOut',
-      hold: config.holdDuration,
+      hold: config.frameDuration * 2,
       yoyo: true,
       onComplete: () => scratch.destroy(),
     });

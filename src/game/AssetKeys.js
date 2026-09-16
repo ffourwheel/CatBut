@@ -34,6 +34,7 @@ export const ASSET_KEYS = Object.freeze({
     warningBubble: 'warning_bubble',
     warningMark: 'warning_mark',
     catMoodBubbles: 'cat_mood_bubbles',
+    catClawCutscene: 'cat_claw_cutscene',
     soundOn: 'sound_on',
     soundOff: 'sound_off',
     pause: 'pause_icon',

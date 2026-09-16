@@ -3,6 +3,7 @@ import scoreBarUrl from '../../assets/ui/score_bar.png?url';
 import healthBarUrl from '../../assets/ui/health_bar.png?url';
 import { ASSET_KEYS } from './AssetKeys.js';
 import { MOOD_CUE_FRAME_SIZE } from '../ui/MoodCue.js';
+import { CAT_CLAW_CUTSCENE_FRAME_SIZE } from '../ui/CatAttackCutscene.js';
 
 export { ASSET_KEYS } from './AssetKeys.js';
 
@@ -40,6 +41,7 @@ export const ASSET_MANIFEST = Object.freeze({
   warning_bubble: '/assets/ui/warning_bubble.png',
   warning_mark: '/assets/ui/warning.png',
   cat_mood_bubbles: '/assets/ui/cat_mood_bubbles.png',
+  cat_claw_cutscene: '/assets/ui/cat_claw_cutscene.png',
   sound_on: '/assets/ui/sound_on.png',
   sound_off: '/assets/ui/sound_off.png',
   pause_icon: '/assets/ui/pause_icon.png',
@@ -65,6 +67,13 @@ export function preloadContractAssets(scene, { useRealAssets = false } = {}) {
       scene.load.spritesheet(key, path, {
         frameWidth: MOOD_CUE_FRAME_SIZE,
         frameHeight: MOOD_CUE_FRAME_SIZE,
+      });
+      return;
+    }
+    if (key === ASSET_KEYS.ui.catClawCutscene) {
+      scene.load.spritesheet(key, path, {
+        frameWidth: CAT_CLAW_CUTSCENE_FRAME_SIZE,
+        frameHeight: CAT_CLAW_CUTSCENE_FRAME_SIZE,
       });
       return;
     }

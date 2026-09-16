@@ -10,22 +10,19 @@ test('rapid taps raise mood through the four readable levels', () => {
 
   assert.equal(mood.snapshot().level, 'sleepy');
   mood.recordRapidTap();
-  assert.equal(mood.snapshot().level, 'curious');
-  mood.recordRapidTap();
   assert.equal(mood.snapshot().level, 'annoyed');
   mood.recordRapidTap();
   assert.equal(mood.snapshot().level, 'angry');
-  assert.equal(mood.snapshot().value, 75);
+  assert.equal(mood.snapshot().value, 100);
 });
 
 test('mood decays one level at two seconds and then every 1.5 seconds', () => {
   const mood = new MoodManager(createGameConfig());
   mood.recordRapidTap();
   mood.recordRapidTap();
-  mood.recordRapidTap();
 
   mood.update(1999);
-  assert.equal(mood.snapshot().value, 75);
+  assert.equal(mood.snapshot().value, 100);
   mood.update(1);
   assert.equal(mood.snapshot().value, 50);
   mood.update(1499);
@@ -38,7 +35,6 @@ test('mood decays one level at two seconds and then every 1.5 seconds', () => {
 
 test('mood decay carries overshoot across multiple level boundaries', () => {
   const mood = new MoodManager(createGameConfig());
-  mood.recordRapidTap();
   mood.recordRapidTap();
   mood.recordRapidTap();
 

@@ -4,6 +4,7 @@ import {
   MOOD_CUE_FRAMES,
   getMoodCue,
   isMoodCueVisibleForCatState,
+  shouldAnimateMoodCue,
 } from '../src/ui/MoodCue.js';
 
 test('mood levels map to stable generated bubble frames and Thai labels', () => {
@@ -31,4 +32,10 @@ test('mood bubble stays readable except when the cat faces away', () => {
 
 test('unknown Mood levels fall back to the readable sleepy cue', () => {
   assert.deepEqual(getMoodCue('not-a-level'), { frame: 0, label: 'ง่วง' });
+});
+
+test('mood cue animation only runs when the level actually changes', () => {
+  assert.equal(shouldAnimateMoodCue({ level: 'annoyed', levelChanged: true }, 'curious'), true);
+  assert.equal(shouldAnimateMoodCue({ level: 'annoyed', levelChanged: false }, 'annoyed'), false);
+  assert.equal(shouldAnimateMoodCue({ level: 'annoyed', levelChanged: true }, 'annoyed'), false);
 });

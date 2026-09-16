@@ -48,9 +48,10 @@ Core Loop:
 | Reactivation | เปิดปุ่มที่ถูก Sabotage ซ้ำได้ โดยคะแนนลดตามจำนวนครั้งและยังเพิ่ม Combo |
 | Combo Duration | คอมโบหมดอายุหลังไม่มีการเปิดปุ่มสำเร็จ 2 วินาที |
 | Score | ปุ่มใหม่ +10 × Combo, Reactivation +5 ถึง +1 × Combo และ Stage Clear Bonus 0 |
-| Cat Mood | เพิ่มเฉพาะจาก Rapid Tap ครั้งละ 25; ง่วง/สนใจ/หงุดหงิด/โมโหเร่งระยะรอเป็น 100%/85%/70%/55% |
-| Mood Cue | ใช้ generated 2×2 bubble spritesheet ลอยเหนือหัวแมว ติดตามหัวโดยไม่หมุนตาม Cat Rig; HUD ใช้ pill 4 ช่องเป็น fallback |
-| Win Priority | เปิดปุ่มสุดท้ายสำเร็จแล้วชนะทันที และหยุด Cat Event |
+| Cat Mood | เพิ่มเฉพาะจาก Rapid Tap ครั้งละ 50; ง่วง/สนใจ/หงุดหงิด/โมโหเร่งระยะรอเป็น 100%/85%/70%/55% |
+| Mood Cue | ใช้ generated 2×2 bubble spritesheet ลอยเหนือหัวแมว ติดตามหัวโดยไม่หมุนตาม Cat Rig; HUD ใช้ pill 4 ช่องเป็น fallback และ Mood จะ animate เฉพาะตอนเปลี่ยนระดับ |
+| Attack Cutscene | ใช้ generated 2×2 claw spritesheet เล่นอุ้งเท้า → ปาด → รอยข่วน → ประกายจบ พร้อม vignette/fade |
+| Win Priority | เปิดปุ่มครบก่อน Cat Event แรกจะรอให้แมวแสดงและจบ Event แรกก่อนจึงชนะ; หลังจากนั้นหยุด Cat Event เมื่อปุ่มครบ |
 | Stage Scope | Prototype มี Stage เดียวที่รองรับ Difficulty Config |
 | Pause | Freeze Timer, Cat State และ Progress ทั้งหมด |
 | Resume | กลับมาเล่นพร้อมช่วงปลอดภัยประมาณ 0.5 วินาที |
