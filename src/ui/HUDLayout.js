@@ -6,6 +6,8 @@
 
 import { UI_COLORS, UI_FONTS, UI_SPACING, UI_DEPTH } from './UITokens.js';
 import { COPY_THAI } from './CopyThai.js';
+import { CAT_MOOD_LEVELS } from '../game/MoodManager.js';
+import { MOOD_CUE_ICONS } from './MoodCue.js';
 
 export const HUD_LAYOUT_CONFIG = Object.freeze({
   // Score plaque (Top Left)
@@ -116,6 +118,20 @@ export const HUD_LAYOUT_CONFIG = Object.freeze({
     valueOffsetX: 80,
     trackOffsetX: -20,
     trackWidth: 70,
+  },
+
+  // Cat Mood (Below Hearts)
+  moodBar: {
+    x: 20,
+    y: 342,
+    width: 320,
+    height: 54,
+    radius: 24,
+    trackX: 146,
+    trackY: 366,
+    trackWidth: 176,
+    trackHeight: 12,
+    segmentGap: 5,
   },
 
   // Bottom Floating Table Instruction Banner
@@ -458,7 +474,80 @@ export function buildCozyHUD(scene, callbacks = {}) {
 
   renderTimer(5000, 5000);
 
-  // 6. Warning Speech Bubble (Replaced by centered warning mark above cat head)
+  // 6. Cat Mood Meter
+  const cfgMood = HUD_LAYOUT_CONFIG.moodBar;
+  const moodContainer = scene.add.container(0, 0);
+  const moodBg = scene.add.graphics();
+  const moodTrack = scene.add.graphics();
+  const moodFill = scene.add.graphics();
+  moodBg.fillStyle(UI_COLORS.panelBg, 0.94);
+  moodBg.fillRoundedRect(cfgMood.x, cfgMood.y, cfgMood.width, cfgMood.height, cfgMood.radius);
+  moodBg.lineStyle(3, UI_COLORS.panelBorder, 0.95);
+  moodBg.strokeRoundedRect(cfgMood.x, cfgMood.y, cfgMood.width, cfgMood.height, cfgMood.radius);
+
+  const moodLabel = scene.add.text(cfgMood.x + 16, cfgMood.y + 7, COPY_THAI.hud.moodLabel, {
+    fontFamily: UI_FONTS.family,
+    fontSize: '16px',
+    color: UI_COLORS.textLight,
+    fontStyle: 'bold',
+  }).setOrigin(0, 0);
+  const moodValue = scene.add.text(cfgMood.x + cfgMood.width - 16, cfgMood.y + 7, 'Z ง่วง', {
+    fontFamily: UI_FONTS.family,
+    fontSize: '16px',
+    color: UI_COLORS.greenSuccessHex,
+    fontStyle: 'bold',
+  }).setOrigin(1, 0);
+
+  moodContainer.add([moodBg, moodTrack, moodFill, moodLabel, moodValue]);
+  container.add(moodContainer);
+
+  const moodPresentation = Object.freeze({
+    sleepy: { color: UI_COLORS.greenSuccess, hex: UI_COLORS.greenSuccessHex, icon: MOOD_CUE_ICONS.sleepy },
+    curious: { color: UI_COLORS.accentGold, hex: UI_COLORS.accentGoldHex, icon: MOOD_CUE_ICONS.curious },
+    annoyed: { color: UI_COLORS.accentAmber, hex: UI_COLORS.accentAmberHex, icon: MOOD_CUE_ICONS.annoyed },
+    angry: { color: UI_COLORS.dangerCoral, hex: UI_COLORS.dangerCoralHex, icon: MOOD_CUE_ICONS.angry },
+  });
+
+  function renderMood(snapshot = {}) {
+    const level = snapshot?.level ?? 'sleepy';
+    const presentation = moodPresentation[level] ?? moodPresentation.sleepy;
+    const levelIndex = Math.max(0, CAT_MOOD_LEVELS.findIndex((moodLevel) => moodLevel.key === level));
+    const segmentWidth = (cfgMood.trackWidth - (cfgMood.segmentGap * 3)) / 4;
+
+    moodTrack.clear();
+    moodTrack.fillStyle(0x241711, 1);
+    for (let index = 0; index < 4; index += 1) {
+      const segmentX = cfgMood.trackX + index * (segmentWidth + cfgMood.segmentGap);
+      moodTrack.fillRoundedRect(
+        segmentX,
+        cfgMood.trackY,
+        segmentWidth,
+        cfgMood.trackHeight,
+        cfgMood.trackHeight / 2,
+      );
+    }
+
+    moodFill.clear();
+    moodFill.fillStyle(presentation.color, 1);
+    for (let index = 0; index <= levelIndex; index += 1) {
+      const segmentX = cfgMood.trackX + index * (segmentWidth + cfgMood.segmentGap);
+      moodFill.fillRoundedRect(
+        segmentX,
+        cfgMood.trackY,
+        segmentWidth,
+        cfgMood.trackHeight,
+        cfgMood.trackHeight / 2,
+      );
+    }
+    const moodLabelText = snapshot?.label
+      ?? CAT_MOOD_LEVELS.find((moodLevel) => moodLevel.key === level)?.label
+      ?? CAT_MOOD_LEVELS[0].label;
+    moodValue.setText(`${presentation.icon} ${moodLabelText}`)
+      .setColor(presentation.hex);
+  }
+  renderMood();
+
+  // 7. Warning Speech Bubble (Replaced by centered warning mark above cat head)
   // Handled by UIManager to avoid duplicate warning marks
 
   // 7. Bottom Instruction / Toast Banner
@@ -474,7 +563,7 @@ export function buildCozyHUD(scene, callbacks = {}) {
   bannerBg.lineStyle(1.5, 0xffe2b8, 0.3);
   bannerBg.strokeRoundedRect(cfgBanner.x - cfgBanner.width / 2 + 5, cfgBanner.y - cfgBanner.height / 2 + 5, cfgBanner.width - 10, cfgBanner.height - 10, cfgBanner.radius - 5);
 
-  const bannerText = scene.add.text(cfgBanner.x, cfgBanner.y, COPY_THAI.instructions.promptHold, {
+  const bannerText = scene.add.text(cfgBanner.x, cfgBanner.y, COPY_THAI.instructions.promptTap, {
     fontFamily: UI_FONTS.family,
     fontSize: `${cfgBanner.fontSize}px`,
     color: '#fff4dc',
@@ -589,11 +678,28 @@ export function buildCozyHUD(scene, callbacks = {}) {
         }
       });
     },
+    getHeartImage(index) {
+      return heartIcons[index] ?? null;
+    },
     setProgress(activeCount, totalCount = 4) {
       renderProgressSegments(activeCount, totalCount);
     },
     setComboTimer(remainingMs, durationMs) {
       renderTimer(remainingMs, durationMs);
+    },
+    setMood(snapshot) {
+      renderMood(snapshot);
+    },
+    pulseMood(direction = 'up') {
+      scene.tweens.add({
+        targets: moodContainer,
+        scaleX: direction === 'down' ? 0.97 : 1.04,
+        scaleY: direction === 'down' ? 0.97 : 1.04,
+        duration: direction === 'down' ? 220 : 140,
+        ease: 'Back.easeOut',
+        yoyo: true,
+        onComplete: () => moodContainer.setScale(1),
+      });
     },
     setWarning(_visible) {
       // Centered warning mark is handled directly above cat's head in UIManager

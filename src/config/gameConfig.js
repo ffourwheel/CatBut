@@ -14,42 +14,58 @@ export const DEFAULT_CONFIG = Object.freeze({
   // World
   canvasSize: 1024,
   useRealAssets: true,
+  // Keep the code-drawn Cat Rig as the visual default while motion is tuned.
+  // Set false to preview the production raster rig when it is ready.
+  useVectorCat: true,
 
   // Player interaction
-  holdDuration: 800,
-  decayDuration: 2800,
   startingHealth: 3,
-  buttonCount: 4,
-  buttonCountMin: 4,
-  buttonCountMax: 8,
+  // Every stage uses the complete ring so the player can learn one stable layout.
+  buttonCount: 8,
   buttonSetPresets: BUTTON_SLOT_PRESETS,
   resumeSafeWindow: 500,
 
   // Cat timing and behaviour
-  catIntervalMin: 5000,
-  catIntervalMax: 5000,
-  warningDuration: 700,
-  peekDuration: 900,
+  catIntervalMin: 500,
+  catIntervalMax: 850,
+  warningDuration: 350,
+  peekDuration: 400,
   watchDuration: 1000,
-  hideDuration: 200,
-  sabotagePreviewDuration: 300,
-  sabotageDuration: 220,
-  sabotageReachDuration: 220,
-  sabotageHitDuration: 180,
-  sabotageCooldown: 1800,
+  hideDuration: 220,
+  sabotagePreviewDuration: 160,
+  sabotageDuration: 500,
+  sabotageReachDuration: 120,
+  sabotageHitDuration: 80,
+  sabotageCooldown: 800,
   attackRecovery: 500,
-  watchProbability: 0.35,
-  catWatchProbabilityAtMaxProgress: 0.18,
-  catIntervalProgressScaleMin: 0.55,
+  watchProbability: 0.6,
+  tapReactionProbability: 0.4,
+  rapidTapThreshold: 2,
+  rapidTapWindow: 500,
+  catWatchProbabilityAtMaxProgress: 0.35,
+  catIntervalProgressScaleMin: 0.45,
+  catEventMinimumGap: 500,
+
+  // Cat Mood: only Rapid Tap raises the cat's mood. Pausing lets it calm down in steps.
+  moodMax: 100,
+  moodRapidTapGain: 50,
+  moodDecayDelay: 2000,
+  moodLevelDecayInterval: 1500,
+  moodIntervalScaleByLevel: Object.freeze({
+    sleepy: 1,
+    curious: 0.85,
+    annoyed: 0.7,
+    angry: 0.55,
+  }),
 
   // Score and combo
-  comboDuration: 5000,
+  comboDuration: 2000,
   comboStart: 1,
   comboMax: 4,
-  newActivationScore: 100,
-  reactivationBaseScore: 50,
-  reactivationStep: 10,
-  reactivationFloor: 10,
+  newActivationScore: 10,
+  reactivationBaseScore: 5,
+  reactivationStep: 1,
+  reactivationFloor: 1,
   stageClearBonus: 0,
 
   // Development-only switches
@@ -70,10 +86,8 @@ export const DEFAULT_CONFIG = Object.freeze({
 export const GAME_PRESETS = Object.freeze({
   normal: Object.freeze({}),
   easy: Object.freeze({
-    holdDuration: 650,
-    decayDuration: 3500,
-    catIntervalMin: 6500,
-    catIntervalMax: 8000,
+    catIntervalMin: 2200,
+    catIntervalMax: 3800,
     warningDuration: 900,
     peekDuration: 1100,
     watchDuration: 700,
@@ -81,16 +95,18 @@ export const GAME_PRESETS = Object.freeze({
     catWatchProbabilityAtMaxProgress: 0.2,
   }),
   hard: Object.freeze({
-    holdDuration: 1000,
-    decayDuration: 1800,
-    catIntervalMin: 3200,
-    catIntervalMax: 4300,
-    warningDuration: 500,
-    peekDuration: 600,
-    watchDuration: 1200,
-    watchProbability: 0.72,
-    catWatchProbabilityAtMaxProgress: 0.5,
-    sabotageCooldown: 2200,
+    catIntervalMin: 500,
+    catIntervalMax: 700,
+    warningDuration: 300,
+    peekDuration: 350,
+    watchDuration: 1000,
+    watchProbability: 0.7,
+    catWatchProbabilityAtMaxProgress: 0.55,
+    buttonCount: 8,
+    sabotageCooldown: 900,
+    sabotagePreviewDuration: 120,
+    sabotageReachDuration: 100,
+    sabotageHitDuration: 70,
   }),
 });
 
@@ -111,8 +127,6 @@ function normalizeConfig(rawConfig) {
   const config = { ...rawConfig };
 
   config.canvasSize = clampInt(config.canvasSize, 512, 4096, DEFAULT_CONFIG.canvasSize);
-  config.holdDuration = clampInt(config.holdDuration, 100, 10000, DEFAULT_CONFIG.holdDuration);
-  config.decayDuration = clampInt(config.decayDuration, 100, 10000, DEFAULT_CONFIG.decayDuration);
   config.startingHealth = clampInt(config.startingHealth, 1, 3, DEFAULT_CONFIG.startingHealth);
   config.catIntervalMin = clampInt(config.catIntervalMin, 500, 60000, DEFAULT_CONFIG.catIntervalMin);
   config.catIntervalMax = Math.max(
@@ -149,6 +163,20 @@ function normalizeConfig(rawConfig) {
   config.comboStart = clampInt(config.comboStart, 1, 4, DEFAULT_CONFIG.comboStart);
   config.comboMax = clampInt(config.comboMax, config.comboStart, 4, DEFAULT_CONFIG.comboMax);
   config.watchProbability = clamp(config.watchProbability, 0, 1, DEFAULT_CONFIG.watchProbability);
+  config.tapReactionProbability = clamp(
+    config.tapReactionProbability,
+    0,
+    1,
+    DEFAULT_CONFIG.tapReactionProbability,
+  );
+  config.rapidTapThreshold = clampInt(config.rapidTapThreshold, 2, 8, DEFAULT_CONFIG.rapidTapThreshold);
+  config.rapidTapWindow = clampInt(config.rapidTapWindow, 150, 2000, DEFAULT_CONFIG.rapidTapWindow);
+  config.catEventMinimumGap = clampInt(
+    config.catEventMinimumGap,
+    0,
+    10000,
+    DEFAULT_CONFIG.catEventMinimumGap,
+  );
   config.catWatchProbabilityAtMaxProgress = clamp(
     config.catWatchProbabilityAtMaxProgress,
     0,
@@ -161,25 +189,30 @@ function normalizeConfig(rawConfig) {
     1,
     DEFAULT_CONFIG.catIntervalProgressScaleMin,
   );
-  config.buttonCountMin = clampInt(config.buttonCountMin, 1, 8, DEFAULT_CONFIG.buttonCountMin);
-  config.buttonCountMax = clampInt(
-    config.buttonCountMax,
-    config.buttonCountMin,
-    8,
-    DEFAULT_CONFIG.buttonCountMax,
+  config.moodMax = clampInt(config.moodMax, 100, 100, DEFAULT_CONFIG.moodMax);
+  config.moodRapidTapGain = clamp(config.moodRapidTapGain, 0, config.moodMax, DEFAULT_CONFIG.moodRapidTapGain);
+  config.moodDecayDelay = clampInt(config.moodDecayDelay, 0, 10000, DEFAULT_CONFIG.moodDecayDelay);
+  config.moodLevelDecayInterval = clampInt(
+    config.moodLevelDecayInterval,
+    100,
+    10000,
+    DEFAULT_CONFIG.moodLevelDecayInterval,
   );
-  config.buttonCount = clampInt(
-    config.buttonCount,
-    config.buttonCountMin,
-    config.buttonCountMax,
-    DEFAULT_CONFIG.buttonCount,
-  );
+  const moodScales = config.moodIntervalScaleByLevel ?? {};
+  config.moodIntervalScaleByLevel = Object.freeze({
+    sleepy: clamp(moodScales.sleepy, 0.25, 1, DEFAULT_CONFIG.moodIntervalScaleByLevel.sleepy),
+    curious: clamp(moodScales.curious, 0.25, 1, DEFAULT_CONFIG.moodIntervalScaleByLevel.curious),
+    annoyed: clamp(moodScales.annoyed, 0.25, 1, DEFAULT_CONFIG.moodIntervalScaleByLevel.annoyed),
+    angry: clamp(moodScales.angry, 0.25, 1, DEFAULT_CONFIG.moodIntervalScaleByLevel.angry),
+  });
+  config.buttonCount = clampInt(config.buttonCount, 1, 8, DEFAULT_CONFIG.buttonCount);
   config.newActivationScore = clampInt(config.newActivationScore, 0, 100000, DEFAULT_CONFIG.newActivationScore);
   config.reactivationBaseScore = clampInt(config.reactivationBaseScore, 0, 100000, DEFAULT_CONFIG.reactivationBaseScore);
   config.reactivationStep = clampInt(config.reactivationStep, 0, 100000, DEFAULT_CONFIG.reactivationStep);
   config.reactivationFloor = clampInt(config.reactivationFloor, 0, config.reactivationBaseScore, DEFAULT_CONFIG.reactivationFloor);
   config.stageClearBonus = clampInt(config.stageClearBonus, 0, 1000000, DEFAULT_CONFIG.stageClearBonus);
   config.useRealAssets = config.useRealAssets !== false;
+  config.useVectorCat = config.useVectorCat !== false;
 
   config.debug = Object.freeze({
     ...DEFAULT_CONFIG.debug,

@@ -7,24 +7,37 @@ import {
   SABOTAGE_PAW_ORIGIN,
   TABLE_ANCHOR,
 } from './constants.js';
+import { CAT_RIG_GEOMETRY } from './CatRigConstants.js';
+import {
+  createVectorCatPart,
+  drawCatArm,
+  drawCatBackHead,
+  drawCatBody,
+  drawCatGaze,
+  drawCatHead as drawVectorCatHead,
+  drawCatSleepHead as drawVectorCatSleepHead,
+} from './VectorCatArt.js';
 
 const COLORS = {
   table: 0xf3dcc1,
   tableDark: 0xc08b60,
   tableEdge: 0x8a5e43,
   hole: 0x3b2930,
-  cat: 0xf1a35b,
-  catDark: 0xc66f48,
-  eye: 0x2e2530,
+  // Fallback flat cat shares the vector rig's cream-marmalade palette so
+  // both art paths read as the same character.
+  cat: 0xffd493,
+  catDark: 0x8f5a45,
+  eye: 0x533a33,
   cream: 0xfff4dc,
   warning: 0xf7c948,
   danger: 0xe66b5d,
   success: 0x67b887,
 };
 
-const TABLE_FRONT_SCALE_X = 0.97;
-const CAT_HOLE_SCALE = 1.1;
-const CAT_HOLE_OFFSET_Y = 30;
+const ROUND_TABLE_RADIUS_X = 480;
+const ROUND_TABLE_RADIUS_Y = 430;
+const CAT_HOLE_SCALE = 1;
+const CAT_HOLE_OFFSET_Y = 0;
 
 function createTexture(scene, key, draw) {
   if (scene.textures.exists(key)) return;
@@ -73,28 +86,34 @@ function drawPaw(graphics, x, y, color = COLORS.cat) {
 }
 
 function createTableTextures(scene) {
-  createTexture(scene, ASSET_KEYS.tableBack, (graphics) => {
+  createTexture(scene, ASSET_KEYS.roundTableBack, (graphics) => {
     graphics.fillStyle(COLORS.table, 1);
-    graphics.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-    graphics.fillStyle(0xe9c49e, 1);
-    graphics.fillRoundedRect(58, 58, 908, 908, 46);
+    graphics.fillEllipse(
+      TABLE_ANCHOR.x,
+      TABLE_ANCHOR.y,
+      ROUND_TABLE_RADIUS_X * 2,
+      ROUND_TABLE_RADIUS_Y * 2,
+    );
     graphics.lineStyle(18, COLORS.tableEdge, 1);
-    graphics.strokeRoundedRect(58, 58, 908, 908, 46);
+    graphics.strokeEllipse(
+      TABLE_ANCHOR.x,
+      TABLE_ANCHOR.y,
+      ROUND_TABLE_RADIUS_X * 2,
+      ROUND_TABLE_RADIUS_Y * 2,
+    );
     graphics.lineStyle(5, 0xfff1d7, 0.55);
-    graphics.strokeRoundedRect(90, 90, 844, 844, 34);
+    graphics.strokeEllipse(
+      TABLE_ANCHOR.x,
+      TABLE_ANCHOR.y,
+      (ROUND_TABLE_RADIUS_X - 22) * 2,
+      (ROUND_TABLE_RADIUS_Y - 22) * 2,
+    );
     drawHole(graphics);
   });
 
-  createTexture(scene, ASSET_KEYS.tableFront, (graphics) => {
-    graphics.fillStyle(0xa96f4f, 1);
-    graphics.fillRoundedRect(75, 790, 874, 190, 34);
-    graphics.lineStyle(14, COLORS.tableEdge, 1);
-    graphics.strokeRoundedRect(75, 790, 874, 190, 34);
-    graphics.fillStyle(0xd99c6e, 0.85);
-    graphics.fillRoundedRect(108, 830, 808, 94, 22);
-    graphics.fillStyle(0x8f5945, 0.8);
-    graphics.fillRoundedRect(438, 858, 148, 34, 17);
-  });
+  // Keep the contract's front layer object for depth and future polish,
+  // but leave it visually empty while the table is intentionally flat.
+  createTexture(scene, ASSET_KEYS.roundTableFront, () => {});
 }
 
 function createCatTextures(scene) {
@@ -167,40 +186,130 @@ export function ensurePlaceholderTextures(scene) {
   createSabotagePawTexture(scene);
 }
 
-export function createCatTableAssembly(scene, { useRealAssets = false, anchor = TABLE_ANCHOR } = {}) {
+export function createCatTableAssembly(
+  scene,
+  { useRealAssets = false, useVectorCat = true, anchor = TABLE_ANCHOR } = {},
+) {
+  // The table is intentionally a generated circular placeholder for now.
+  // The static hole remains anchored while the cat rig animates independently.
+  createTableTextures(scene);
   if (!useRealAssets) ensurePlaceholderTextures(scene);
 
   const container = scene.add.container(anchor.x, anchor.y).setDepth(1);
   container.setName('catTableContainer');
 
-  const tableBack = scene.add.image(0, -110, ASSET_KEYS.tableBack)
+  const tableBack = scene.add.image(0, 0, ASSET_KEYS.roundTableBack)
     .setOrigin(0.5, 0.5)
-    .setScale(0.97);
+    .setScale(1);
   tableBack.setName('tableBack').setDepth(ASSEMBLY_DEPTH.BACK);
-  const tableFront = scene.add.image(0, 0, ASSET_KEYS.tableFront)
+  const tableFront = scene.add.image(0, 0, ASSET_KEYS.roundTableFront)
     .setOrigin(0.5, 0.5)
-    .setScale(TABLE_FRONT_SCALE_X, 1);
-  tableFront.setName('tableFront').setPosition(0, 210).setDepth(ASSEMBLY_DEPTH.FRONT);
+    .setScale(1);
+  tableFront.setName('tableFront').setDepth(ASSEMBLY_DEPTH.FRONT);
   const catState = scene.add.image(0, 0, ASSET_KEYS.cat[CAT_STATES.HIDDEN])
     .setOrigin(0.5, 0.5)
     .setScale(CAT_HOLE_SCALE)
     .setPosition(0, CAT_HOLE_OFFSET_Y);
   catState.baseScale = CAT_HOLE_SCALE;
   catState.baseY = CAT_HOLE_OFFSET_Y;
-  catState.setName('catState').setDepth(ASSEMBLY_DEPTH.MIDDLE);
+  const requiredCatReachKeys = [
+    ASSET_KEYS.catReach.body,
+    ASSET_KEYS.catReach.head,
+    ASSET_KEYS.catReach.sleepHead,
+    ASSET_KEYS.catReach.gaze,
+    ASSET_KEYS.catReach.armLeft,
+    ASSET_KEYS.catReach.armRight,
+  ];
+  const hasCatRig = useVectorCat || (
+    useRealAssets && requiredCatReachKeys.every((key) => scene.textures.exists(key))
+  );
+  catState.setName('catState')
+    .setDepth(ASSEMBLY_DEPTH.MIDDLE)
+    .setVisible(!hasCatRig);
+
+  const { bodyScale, armScale, headY, sleepHeadY, shoulder, arms } = CAT_RIG_GEOMETRY;
+  const catRig = scene.add.container(0, CAT_HOLE_OFFSET_Y)
+    .setName('catRig')
+    .setDepth(ASSEMBLY_DEPTH.MIDDLE + 1)
+    .setVisible(hasCatRig);
+  const createCatPart = (draw, key, scale) => {
+    if (useVectorCat) return createVectorCatPart(scene, draw, scale);
+    return scene.add.image(0, 0, key)
+      .setOrigin(0.5, 0.5)
+      .setScale(scale)
+      .setAlpha(0);
+  };
+  const catReachBody = createCatPart(drawCatBody, ASSET_KEYS.catReach.body, bodyScale)
+    .setPosition(0, 0);
+  const catReachHead = createCatPart(drawVectorCatHead, ASSET_KEYS.catReach.head, bodyScale)
+    .setPosition(0, headY);
+  const catReachSleepHead = createCatPart(
+    drawVectorCatSleepHead,
+    ASSET_KEYS.catReach.sleepHead,
+    bodyScale,
+  ).setPosition(0, sleepHeadY);
+  const catReachBackHead = createVectorCatPart(scene, drawCatBackHead, bodyScale)
+    .setPosition(0, headY);
+  const catReachGaze = createCatPart(drawCatGaze, ASSET_KEYS.catReach.gaze, bodyScale)
+    .setPosition(0, headY);
+  const catReachArmLeft = createCatPart(
+    (graphics) => drawCatArm(graphics, 'left'),
+    ASSET_KEYS.catReach.armLeft,
+    armScale,
+  )
+    .setPosition(-shoulder.x, shoulder.y);
+  const catReachArmRight = createCatPart(
+    (graphics) => drawCatArm(graphics, 'right'),
+    ASSET_KEYS.catReach.armRight,
+    armScale,
+  )
+    .setPosition(shoulder.x, shoulder.y);
+  catReachBody.baseScale = bodyScale;
+  catReachHead.baseScale = bodyScale;
+  catReachSleepHead.baseScale = bodyScale;
+  catReachBackHead.baseScale = bodyScale;
+  catReachGaze.baseScale = bodyScale;
+  catReachArmLeft.baseScale = armScale;
+  catReachArmRight.baseScale = armScale;
+  catReachArmLeft.baseX = -shoulder.x;
+  catReachArmLeft.baseY = shoulder.y;
+  catReachArmRight.baseX = shoulder.x;
+  catReachArmRight.baseY = shoulder.y;
+  // Body first, then arms on top of the torso: the reaching limb must read
+  // as a front leg lying on the chest, while the head still covers the
+  // shoulder area when the cat faces forward.
+  catRig.add([
+    catReachBody,
+    catReachArmLeft,
+    catReachArmRight,
+    catReachHead,
+    catReachSleepHead,
+    catReachBackHead,
+    catReachGaze,
+  ]);
+
   const sabotagePaw = scene.add.image(0, CAT_HOLE_OFFSET_Y, ASSET_KEYS.sabotagePaw)
     .setOrigin(SABOTAGE_PAW_ORIGIN.x, SABOTAGE_PAW_ORIGIN.y)
     .setScale(0.44)
     .setVisible(false);
   sabotagePaw.setName('sabotagePaw').setDepth(ASSEMBLY_DEPTH.MIDDLE + 5);
 
-  container.add([tableBack, catState, sabotagePaw, tableFront]);
+  container.add([tableBack, catState, catRig, sabotagePaw, tableFront]);
   container.sort('depth');
 
   return {
     container,
     tableBack,
     catState,
+    catRig,
+    catReachBody,
+    catReachHead,
+    catReachSleepHead,
+    catReachBackHead,
+    catReachGaze,
+    catReachArmLeft,
+    catReachArmRight,
+    hasCatRig,
     sabotagePaw,
     tableFront,
     setCatState(state) {

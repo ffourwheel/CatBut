@@ -1,3 +1,7 @@
+import { UI_DEPTH } from './UITokens.js';
+import { ASSET_KEYS } from '../game/AssetKeys.js';
+import { CAT_CLAW_CUTSCENE_FRAMES } from './CatAttackCutscene.js';
+
 /**
  * CatKub Visual Feedback & Animation FX Specifications
  * Visual Direction: Cozy Cat Café
@@ -5,15 +9,6 @@
  */
 
 export const FEEDBACK_EFFECTS = Object.freeze({
-  buttonHolding: {
-    scale: 1.06,
-    duration: 120,
-    ease: 'Sine.easeInOut',
-    glowColor: 0xfff4dc,
-    glowAlpha: 0.6,
-    ringPulsePeriod: 600, // ms per gentle pulse
-  },
-
   buttonActivated: {
     popScale: 1.22,
     popDuration: 180,
@@ -46,17 +41,25 @@ export const FEEDBACK_EFFECTS = Object.freeze({
   },
 
   catAttack: {
-    screenShake: {
-      intensity: 0.014, // in Phaser scene.cameras.main.shake
-      duration: 250,
-    },
-    flashColor: 0xe66b5d,
-    flashAlpha: 0.45,
-    flashDuration: 180,
     heartBreak: {
       scale: 1.4,
       dropDistanceY: 32,
       duration: 350,
+    },
+    clawScratch: {
+      depth: UI_DEPTH.CAT_FX + 1,
+      overlayColor: 0x120b09,
+      overlayAlpha: 0.35,
+      frameDuration: 95,
+      introDuration: 120,
+      outroDuration: 180,
+      startScale: 0.62,
+      peakScale: 0.88,
+      fallbackColor: 0xf4dec2,
+      fallbackAlpha: 0.92,
+      fallbackLineWidth: 18,
+      fallbackOffsetX: 26,
+      fallbackOffsetY: 38,
     },
   },
 
@@ -106,11 +109,103 @@ export const FeedbackFX = {
     });
   },
 
-  triggerScreenShake(scene) {
-    scene.cameras.main.shake(
-      FEEDBACK_EFFECTS.catAttack.screenShake.duration,
-      FEEDBACK_EFFECTS.catAttack.screenShake.intensity
-    );
+  triggerClawScratch(scene, { x = 512, y = 910 } = {}) {
+    const config = FEEDBACK_EFFECTS.catAttack.clawScratch;
+    const textureKey = ASSET_KEYS.ui.catClawCutscene;
+    if (!scene.textures.exists(textureKey)) {
+      this.triggerFallbackClawScratch(scene, { x, y, config });
+      return;
+    }
+
+    const viewportHeight = scene.scale.gameSize?.height ?? 1024;
+    const vignette = scene.add.rectangle(
+      512,
+      viewportHeight / 2,
+      1024,
+      viewportHeight,
+      config.overlayColor,
+      1,
+    ).setDepth(config.depth - 1).setAlpha(0);
+    const scratch = scene.add.image(x, y, textureKey, CAT_CLAW_CUTSCENE_FRAMES.pawReady)
+      .setOrigin(0.5, 0.5)
+      .setDepth(config.depth)
+      .setScale(config.startScale)
+      .setAlpha(0);
+
+    let frame = CAT_CLAW_CUTSCENE_FRAMES.pawReady;
+    const frameTimer = scene.time.addEvent({
+      delay: config.frameDuration,
+      repeat: 2,
+      callback: () => {
+        frame += 1;
+        scratch.setFrame(frame);
+      },
+    });
+
+    scene.tweens.add({
+      targets: vignette,
+      alpha: { from: 0, to: config.overlayAlpha },
+      duration: config.introDuration,
+      ease: 'Quad.easeOut',
+    });
+    scene.tweens.add({
+      targets: scratch,
+      alpha: { from: 0, to: 1 },
+      scaleX: { from: config.startScale, to: config.peakScale },
+      scaleY: { from: config.startScale, to: config.peakScale },
+      duration: config.introDuration,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        scene.tweens.add({
+          targets: scratch,
+          x: x + 8,
+          angle: { from: -2, to: 2 },
+          duration: config.frameDuration * 2,
+          yoyo: true,
+          repeat: 1,
+          ease: 'Sine.easeInOut',
+        });
+      },
+    });
+    scene.time.delayedCall(config.frameDuration * 4 + config.outroDuration, () => {
+      frameTimer.remove(false);
+      scene.tweens.add({
+        targets: [scratch, vignette],
+        alpha: 0,
+        scaleX: 0.76,
+        scaleY: 0.76,
+        duration: config.outroDuration,
+        ease: 'Quad.easeIn',
+        onComplete: () => {
+          scratch.destroy();
+          vignette.destroy();
+        },
+      });
+    });
+  },
+
+  triggerFallbackClawScratch(scene, { x, y, config }) {
+    const scratch = scene.add.graphics().setDepth(config.depth).setPosition(x, y).setAlpha(0);
+    scratch.lineStyle(config.fallbackLineWidth, config.fallbackColor, config.fallbackAlpha);
+    [-1, 0, 1].forEach((offset) => {
+      const offsetX = offset * config.fallbackOffsetX;
+      const offsetY = offset * config.fallbackOffsetY;
+      scratch.beginPath();
+      scratch.moveTo(-150 + offsetX, -92 + offsetY);
+      scratch.lineTo(150 + offsetX, 92 + offsetY);
+      scratch.strokePath();
+    });
+    scene.tweens.add({
+      targets: scratch,
+      alpha: { from: 0, to: 1 },
+      scaleX: { from: config.startScale, to: 1 },
+      scaleY: { from: config.startScale, to: 1 },
+      duration: config.introDuration,
+      ease: 'Back.easeOut',
+      hold: config.frameDuration * 2,
+      yoyo: true,
+      onComplete: () => scratch.destroy(),
+    });
   },
 
   triggerHeartDamage(scene, heartImage) {

@@ -38,7 +38,7 @@ Key tenets:
 
 | Token Name | Hex Code | RGB / RGBA | Role / Application |
 | :--- | :--- | :--- | :--- |
-| `color-active-matcha` | `#4CAF50` | `rgb(76, 175, 80)` | Button charging progress ring / active status |
+| `color-active-matcha` | `#4CAF50` | `rgb(76, 175, 80)` | Button activation glow / active status |
 | `color-caution-amber` | `#FF9800` | `rgb(255, 152, 0)` | Cat warning state / early release decay ring |
 | `color-danger-crimson`| `#F44336` | `rgb(244, 67, 54)` | Cat attack strike / lost hearts / game over |
 | `color-gold-star`     | `#FFD700` | `rgb(255, 215, 0)` | Completed button paw / combo badges / stage stars |
@@ -118,12 +118,9 @@ CatKub is engineered for full cross-platform responsiveness on mobile web, table
 To ensure fast, frustration-free finger interaction on touchscreens:
 
 1. **Table Button Placement**:
-   - Four interactive buttons located symmetrically around the center hole:
-     - Top-Left: `(300, 300)`
-     - Top-Right: `(724, 300)`
-     - Bottom-Left: `(300, 724)`
-     - Bottom-Right: `(724, 724)`
-   - Distance from table center `(512, 512)`: **~300 px**, providing generous ~100px safety clearance from the center cat hole.
+   - Eight fixed Button Slots are arranged around the center hole every `45°` on a circle.
+   - `slot-1` starts at 12 o'clock and the remaining slots continue clockwise.
+   - Distance from table center `(512, 512)`: **~335 px horizontally / ~310 px vertically**, providing generous clearance from the center cat hole.
 2. **Expanded Hit Areas (+25%)**:
    - Visual button radius: `48 px` (diameter `96 px`).
    - Interactive touch collider: Expanded by **+25%** to radius `60 px` (diameter `120 px`).
@@ -144,7 +141,7 @@ Depth   Layer / Element Name           Description
  10     tableBack                      Table top wooden surface & rear perspective
  20     catState                       7-state cat texture inside center hole
  30     tableFront                     Table front rim, apron, and front legs
- 40     tableButtons                   4 interactive wooden button bases
+ 40     tableButtons                   Up to 8 interactive wooden button bases on the circular ring
  45     buttonRings / buttonFX         Radial charging rings & touch feedback glow
 100     HUDContainer                   Top bar, hearts, score, combo badge, controls
 120     warningBubble                  Comic alert bubble above cat during WARNING

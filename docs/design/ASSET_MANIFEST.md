@@ -13,9 +13,9 @@ This document catalogues all visual and typographic assets produced by **AI-2** 
 All assembly assets strictly adhere to the [CatKub Assembly Contract](file:///d:/Codesmash/game/CatKub/docs/design/ASSEMBLY_CONTRACT.md):
 - **Canvas Dimensions**: `1024 × 1024 px`
 - **Center of Hole (Anchor)**: Exactly at `(512, 512) px`
-- **Origin**: `(0.5, 0.5)`
-- **Scale**: `(1.0, 1.0)`
-- **Rotation**: `0`
+- **Assembly Origin**: `(0.5, 0.5)` for table/catState/Cat Rig root; arm child layers use their shoulder pivot
+- **Assembly Scale**: `(1.0, 1.0)`
+- **Assembly Rotation**: `0`
 - **Color Format**: 32-bit RGBA PNG with alpha transparency
 - **Color Space**: sRGB
 
@@ -23,7 +23,9 @@ All assembly assets strictly adhere to the [CatKub Assembly Contract](file:///d:
 
 ## 2. Core Assembly Assets (Cat Table 3-Layer Stack)
 
-These 10 textures form the interactive centerpiece of CatKub. They are designed to be rendered within `catTableContainer` at coordinate `(512, 512)`. When switching cat states, **only** the texture of `catState` changes; the targeted sabotage animation uses the separate `sabotagePaw` overlay so the table and hole never rotate.
+These assembly textures form the interactive centerpiece of CatKub. They are designed to be rendered within `catTableContainer` at coordinate `(512, 512)`. When the layered Cat Rig is available, Cat Motion Animation changes only the transparent cat layers; targeted sabotage uses a connected body/head/arm rig so the table and hole never rotate.
+
+> Interim layout note: the runtime currently uses a generated flat circular placeholder for `tableBack` with a slightly wider horizontal radius, plus a transparent `tableFront` layer. The supplied rectangular table textures remain available for a later visual pass.
 
 | Asset Key | File Path | Dimensions | Origin | Depth | Role / Description | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -34,21 +36,34 @@ These 10 textures form the interactive centerpiece of CatKub. They are designed 
 | `cat_hole_watch` | `assets/cat_hole_watch.png` | `1024 × 1024` | `(0.5, 0.5)` | 20 | Cat fully raised, watchful glare directly at player | Verified |
 | `cat_hole_attack` | `assets/cat_hole_attack.png` | `1024 × 1024` | `(0.5, 0.5)` | 20 | Cat lunging forward with claws bared (strike state) | Verified |
 | `cat_hole_sabotage` | `assets/cat_hole_sabotage.png` | `1024 × 1024` | `(0.5, 0.5)` | 20 | Cat paw reaching outward to swipe and reset a button | Verified |
-| `sabotage_paw` | `assets/sabotage_paw.png` | `1254 × 1254` | `(0.29, 0.34)` | 35 | Standalone striped paw overlay derived from `cat_hole_sabotage.png`, rotated per target slot | Integrated |
+| `sabotage_paw` | `assets/sabotage_paw.png` | `1254 × 1254` | `(0.29, 0.34)` | 35 | Legacy fallback end-effector; hidden when the connected Cat Reach Rig is available | Fallback |
 | `cat_hole_hide` | `assets/cat_hole_hide.png` | `1024 × 1024` | `(0.5, 0.5)` | 20 | Cat rapidly retracting down into hole with motion lines | Verified |
-| `table_front` | `assets/table_front.png` | `1024 × 1024` | `(0.5, 0.5)` | 30 | Front table edge, front wooden apron, front legs | Verified |
+| `table_front` | `assets/table_front.png` | `1024 × 1024` | `(0.5, 0.5)` | 15 | Front table edge, front wooden apron, front legs | Verified |
+| `cat_rig_head` | `assets/cat-rig/cat_rig_head.png` | `1024 × 1024` | `(0.5, 0.5)` | 31 | Previous transparent head layer retained as a fallback/reference | Legacy fallback |
+| `cat_rig_paws` | `assets/cat-rig/cat_rig_paws.png` | `1024 × 1024` | `(0.5, 0.5)` | 31 | Previous transparent paws layer retained as a fallback/reference | Legacy fallback |
+| `cat_reach_body_v2` | `assets/cat-rig/cat_reach_v2_body.png` | `1254 × 1254` | `(0.5, 0.5)` | 31 | Compact round gray-tabby torso with broad shoulder sockets; root of the connected reach rig | Integrated |
+| `cat_reach_head_v2` | `assets/cat-rig/cat_reach_v2_head.png` | `1254 × 1254` | `(0.5, 0.5)` | 31 | Compact round face with a tiny neck nub for body connection and target gaze | Integrated |
+| `cat_reach_sleep_head_v3` | `assets/cat-rig/cat_reach_v3_sleep_head.png` | `1254 × 1254` | `(0.5, 0.5)` | 31 | Closed-eye head variant used by visible Sleep Idle | Integrated |
+| `cat_reach_gaze_v3` | `assets/cat-rig/cat_reach_v3_gaze.png` | `1254 × 1254` | `(0.5, 0.5)` | 31 | Independent eye overlay that leads the target gaze before the head turn | Integrated |
+| `cat_reach_arm_left_v2` | `assets/cat-rig/cat_reach_v2_arm_left.png` | `1254 × 1254` | `(0.8, 0.07)` | 31 | Compact continuous viewer-left arm and paw, selected for left-side targets | Integrated |
+| `cat_reach_arm_right_v2` | `assets/cat-rig/cat_reach_v2_arm_right.png` | `1254 × 1254` | `(0.2, 0.1)` | 31 | Compact continuous viewer-right arm and paw, selected for right-side targets | Integrated |
+| `cat_reach_upper_arm_left_v3` | `assets/cat-rig/cat_reach_v3_upper_arm_left.png` | `1254 × 1254` | `(0.8, 0.07)` | 31 | Legacy/reference segmented arm; not used by the runtime reach | Legacy |
+| `cat_reach_upper_arm_right_v3` | `assets/cat-rig/cat_reach_v3_upper_arm_right.png` | `1254 × 1254` | `(0.2, 0.07)` | 31 | Legacy/reference segmented arm; not used by the runtime reach | Legacy |
+| `cat_reach_forearm_left_v3` | `assets/cat-rig/cat_reach_v3_forearm_left.png` | `1254 × 1254` | `(0.8, 0.06)` | 31 | Legacy/reference segmented arm; not used by the runtime reach | Legacy |
+| `cat_reach_forearm_right_v3` | `assets/cat-rig/cat_reach_v3_forearm_right.png` | `1254 × 1254` | `(0.2, 0.06)` | 31 | Legacy/reference segmented arm; not used by the runtime reach | Legacy |
 
 ### Layer Hierarchy Reference
 
 ```text
 catTableContainer (Anchor: 512, 512)
 ├── tableBack   → table_back.png        [Depth: 10]
-├── catState    → cat_hole_[state].png  [Depth: 20]
-├── sabotagePaw → sabotage_paw.png      [Depth: 35]
-└── tableFront  → table_front.png       [Depth: 30]
+├── catState    → cat_hole_[state].png  [Depth: 30, fallback]
+├── catRig      → body + head + near/far arm [Depth: 31]
+├── tableFront  → table_front.png       [Depth: 15]
+└── sabotagePaw → legacy fallback only   [Depth: 35]
 ```
 
-`cat_hole_sabotage.png` remains the master visual reference for the paw pose. Runtime uses `sabotage_paw.png` so only the paw can rotate toward `slot-1` through `slot-8`.
+`cat_hole_sabotage.png`, `cat_rig_head.png`, `cat_rig_paws.png`, and `sabotage_paw.png` remain available as fallback/reference assets. Runtime uses the v2 body/head with the v3 sleep/gaze layers and a compact single-piece v2 arm, selecting the arm connected to the shoulder on the target side. The v3 upper-arm/forearm assets remain legacy/reference only.
 
 ---
 
@@ -74,6 +89,8 @@ All UI elements are provided as transparent PNGs tailored for mobile touch targe
 | `star_icon` | `assets/ui/star_icon.png` | `64 × 64` | 100 | Score and combo badge icon |
 | `cat_paw` | `assets/ui/cat_paw.png` | `64 × 64` | 100 | UI accent, menu badge, button icon |
 | `warning_bubble` | `assets/ui/warning_bubble.png` | `96 × 96` | 100 | Comic exclamation bubble above cat during WARNING |
+| `cat_mood_bubbles` | `assets/ui/cat_mood_bubbles.png` | `1254 × 1254` (2×2 frames, 627px each) | 60 | Generated floating Mood bubbles: sleepy, curious, annoyed, angry |
+| `cat_claw_cutscene` | `assets/ui/cat_claw_cutscene.png` | `1254 × 1254` (2×2 frames, 627px each) | 61 | Generated cute claw-scratch cutscene: paw, swipe, scratches, settle |
 | `sound_on` | `assets/ui/sound_on.png` | `64 × 64` | 100 | Sound enabled button icon (top right HUD) |
 | `sound_off` | `assets/ui/sound_off.png` | `64 × 64` | 100 | Sound muted button icon (top right HUD) |
 | `pause_icon` | `assets/ui/pause_icon.png` | `64 × 64` | 100 | Pause modal trigger button (top right HUD) |

@@ -11,11 +11,14 @@ import {
 } from './constants.js';
 import { AudioManager } from './AudioManager.js';
 import { ButtonManager } from './ButtonManager.js';
+import { CatAnimationController } from './CatAnimationController.js';
 import { CatController } from './CatController.js';
 import { HealthManager } from './HealthManager.js';
+import { MoodManager } from './MoodManager.js';
 import { ScoreManager } from './ScoreManager.js';
 import { StageManager } from './StageManager.js';
 import { SettingsStore } from './SettingsStore.js';
+import { resolveButtonCompletion } from './StageFlow.js';
 import { UIManager } from './UIManager.js';
 
 export class GameScene extends Phaser.Scene {
@@ -50,13 +53,16 @@ export class GameScene extends Phaser.Scene {
       .setDepth(ASSEMBLY_DEPTH.FOREGROUND);
     this.assembly = createCatTableAssembly(this, {
       useRealAssets: this.config.useRealAssets,
+      useVectorCat: this.config.useVectorCat,
       anchor: { x: 512, y: boardCenterY },
     });
     this.zeroJumpReport = this.runZeroJumpVerification();
+    this.catAnimation = new CatAnimationController(this, this.assembly);
     this.audio = new AudioManager({ muted: this.settings.get('muted') });
     this.stage = new StageManager();
     this.score = new ScoreManager(this.config, () => this.refreshHud());
     this.health = new HealthManager(this.config.debug.forceHealth ?? this.config.startingHealth, () => this.refreshHud());
+    this.mood = new MoodManager(this.config, (snapshot) => this.handleMoodChange(snapshot));
 
     this.sessionScreen = GAME_SCREENS.START;
     this.inputLockRemaining = 0;
@@ -76,22 +82,20 @@ export class GameScene extends Phaser.Scene {
       onTutorialComplete: () => this.beginStage(),
       onTutorialReturn: () => this.showPause(),
       boardOffsetY: this.boardOffsetY,
+      getMoodCueAnchor: () => this.catAnimation?.getMoodCueAnchor?.() ?? {
+        x: 660,
+        y: this.boardCenterY - 180,
+      },
     });
 
     this.buttons = new ButtonManager(this, this.config, {
-      canStartHold: () => this.canStartHold(),
-      onHoldStart: (button) => {
-        this.ui.onButtonHold(button.visual);
-        this.cat?.onPlayerStartedHold();
-      },
-      onHoldEnd: (button) => this.ui.onButtonRelease(button.visual),
-      onComplete: (result) => this.handleButtonComplete(result),
+      canActivate: () => this.canActivateButton(),
+      onActivate: (result) => this.handleButtonComplete(result),
       worldOffsetY: this.boardOffsetY,
     });
 
     this.cat = new CatController(this, this.config, {
       onStateChange: (state) => this.handleCatState(state),
-      onWatch: () => this.handleWatchStart(),
       onAttack: () => this.handleAttack(),
       onSabotagePreview: (slotId) => this.handleSabotagePreview(slotId),
       onSabotage: (slotId) => this.handleSabotage(slotId),
@@ -99,7 +103,10 @@ export class GameScene extends Phaser.Scene {
         activeCount: this.buttons.getActivatedCount(),
         totalCount: this.buttons.getButtonCount(),
       }),
-      getSabotageTarget: () => this.buttons.getSabotageTarget(),
+      getSabotageTarget: (excludedSlotId) => this.buttons.getSabotageTarget(excludedSlotId),
+      isSabotageTargetAvailable: (slotId) => this.buttons.isActivated(slotId),
+      getMoodIntervalScale: () => this.mood.getIntervalScale(),
+      onRapidTap: () => this.handleRapidTap(),
     });
 
     this.showStart(true);
@@ -112,7 +119,9 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (!this.stage.isPlaying()) return;
+    this.ui.update(delta);
     this.score.update(delta);
+    this.mood.update(delta);
     this.buttons.update(delta, true);
     this.cat.update(delta);
     this.refreshHud();
@@ -120,6 +129,7 @@ export class GameScene extends Phaser.Scene {
 
   beginStage() {
     this.hideSabotagePaw(true);
+    this.catAnimation?.transitionTo(CAT_STATES.HIDDEN, { immediate: true });
     this.buttons?.clearSabotageTarget();
     if (this.assembly?.container) {
       this.assembly.container.setY(this.boardCenterY);
@@ -129,6 +139,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.score.reset();
     this.health.reset();
+    this.mood.reset();
     this.buttons.reset({ randomize: true });
     this.inputLockRemaining = 0;
     this.lastScoreEvent = null;
@@ -143,9 +154,9 @@ export class GameScene extends Phaser.Scene {
 
   pauseStage() {
     if (!this.stage.isPlaying()) return;
-    this.buttons.cancelCurrent();
     this.buttons.setVisible(false);
     this.cat.pause();
+    this.catAnimation?.pause();
     this.sabotagePawTween?.pause();
     this.stage.pause();
     this.sessionScreen = GAME_SCREENS.PAUSE;
@@ -156,6 +167,7 @@ export class GameScene extends Phaser.Scene {
     if (this.stage.status !== 'paused') return;
     this.stage.resume();
     this.cat.resume();
+    this.catAnimation?.resume();
     this.sabotagePawTween?.resume();
     this.cat.suppressFor(this.config.resumeSafeWindow);
     this.buttons.setVisible(true);
@@ -192,6 +204,7 @@ export class GameScene extends Phaser.Scene {
         });
       }
       this.assembly.setCatState(CAT_STATES.WATCH);
+      this.catAnimation?.transitionTo(CAT_STATES.WATCH, { immediate: true });
     }
     if (this.buttons?.layer) {
       this.tweens.killTweensOf(this.buttons.layer);
@@ -242,10 +255,14 @@ export class GameScene extends Phaser.Scene {
     this.audio.play(isReactivation ? 'reactivation' : 'button-complete');
     this.ui.setStatus(isReactivation ? 'เปิดปุ่มกลับมาแล้ว!' : 'เปิดปุ่มสำเร็จ!');
 
-    if (this.buttons.areAllActivated()) {
-      this.finishStage();
-      return;
-    }
+    const allActivated = this.buttons.areAllActivated();
+    resolveButtonCompletion({
+      allActivated,
+      onStageClear: () => this.finishStage(),
+      onPlayerActivated: (slotId) => this.cat.onPlayerActivated(slotId),
+      slotId: button.slotId,
+    });
+    if (allActivated) return;
 
     this.refreshHud();
     this.tweens.add({
@@ -258,6 +275,7 @@ export class GameScene extends Phaser.Scene {
 
   handleCatState(state) {
     this.assembly.setCatState(state);
+    this.catAnimation?.transitionTo(state);
     this.ui.onCatState(state, this.assembly.catState);
     if (state === CAT_STATES.WARNING || state === CAT_STATES.PEEK) {
       this.audio.play('warning');
@@ -271,15 +289,11 @@ export class GameScene extends Phaser.Scene {
     this.refreshHud();
   }
 
-  handleWatchStart() {
-    if (this.buttons.isHolding()) this.cat.requestAttack();
-  }
-
   handleAttack() {
-    this.buttons.cancelCurrent();
     this.inputLockRemaining = this.config.attackRecovery;
     this.score.resetCombo();
-    this.health.damage(1);
+    const remainingHealth = this.health.damage(1);
+    this.ui.onAttackDamage?.(remainingHealth);
     this.audio.play('attack');
     if (this.health.isEmpty()) {
       this.finishGameOver();
@@ -289,6 +303,7 @@ export class GameScene extends Phaser.Scene {
   handleSabotagePreview(slotId) {
     const button = this.buttons.setSabotageTarget(slotId);
     if (!button) return;
+    this.catAnimation?.setTarget(button);
     this.ui.setStatus('แมวกำลังเล็งปุ่มนี้!', true);
     this.ui.onSabotagePreview?.(button);
   }
@@ -296,17 +311,7 @@ export class GameScene extends Phaser.Scene {
   handleSabotage(slotId) {
     const button = this.buttons.getButtonBySlotId(slotId);
     if (!button) return;
-
     const paw = this.assembly.sabotagePaw;
-    const containerX = this.assembly.container.x;
-    const containerY = this.assembly.container.y;
-    const targetX = button.x - containerX;
-    const targetY = button.y - containerY;
-    const originX = 0;
-    const originY = this.assembly.catState.baseY ?? 0;
-    const targetAngle = Math.atan2(targetY - originY, targetX - originX);
-    const targetDistance = Math.hypot(targetX - originX, targetY - originY);
-    const targetScale = Math.max(0.3, Math.min(0.58, targetDistance / SABOTAGE_PAW_REACH));
     let sabotageResolved = false;
     const resolveSabotage = () => {
       if (sabotageResolved) return;
@@ -327,24 +332,78 @@ export class GameScene extends Phaser.Scene {
       this.config.sabotageHitDuration,
       resolveSabotage,
     );
+
+    if (this.catAnimation?.usesConnectedReach) {
+      // The connected arm is now the only active sabotage visual. Keep the
+      // legacy overlay hidden so a second, detached hand cannot appear.
+      paw.setVisible(false).setAlpha(0).setScale(0.02);
+      this.sabotagePawTween = null;
+      this.catAnimation.startSabotageReach(button, {
+        duration: this.config.sabotageReachDuration,
+        contactDuration: this.config.sabotageHitDuration,
+      });
+      return;
+    }
+
+    const containerX = this.assembly.container.x;
+    const containerY = this.assembly.container.y;
+    const targetX = button.x - containerX;
+    const targetY = button.y - containerY;
+    const originX = 0;
+    const originY = this.assembly.catState.baseY ?? 0;
+    const targetAngle = Math.atan2(targetY - originY, targetX - originX);
+    const targetDistance = Math.hypot(targetX - originX, targetY - originY);
+    const targetScale = Math.max(0.3, Math.min(0.58, targetDistance / SABOTAGE_PAW_REACH));
     paw
       .setVisible(true)
-      .setAlpha(1)
+      .setAlpha(0.08)
       .setPosition(originX, originY)
       .setRotation(targetAngle - SABOTAGE_PAW_DEFAULT_ANGLE)
       .setScale(0.02);
 
+    // Keep the legacy paw fallback on the same contact beat as the gameplay
+    // timer so the button never closes before the visible paw lands.
+    const contactBeat = Math.max(50, this.config.sabotageHitDuration);
+    const extendDuration = Math.max(20, Math.round(contactBeat * 0.5));
+    const pressDuration = Math.max(20, contactBeat - extendDuration);
+    const pressScale = targetScale * 0.96;
+    const extendedScale = targetScale * 1.02;
+    const pressButton = () => {
+      this.sabotagePawTween = this.tweens.add({
+        targets: paw,
+        scaleX: pressScale,
+        scaleY: pressScale,
+        duration: pressDuration,
+        ease: 'Sine.easeInOut',
+        yoyo: true,
+        onComplete: () => {
+          this.sabotagePawTween = null;
+          resolveSabotage();
+        },
+      });
+    };
+
     this.sabotagePawTween = this.tweens.add({
       targets: paw,
-      scaleX: targetScale,
-      scaleY: targetScale,
-      duration: this.config.sabotageReachDuration,
-      ease: 'Quad.easeInOut',
-      onComplete: () => {
-        this.sabotagePawTween = null;
-        resolveSabotage();
-      },
+      scaleX: extendedScale,
+      scaleY: extendedScale,
+      alpha: 1,
+      duration: extendDuration,
+      ease: 'Cubic.easeOut',
+      onComplete: pressButton,
     });
+  }
+
+  handleRapidTap() {
+    const moodChange = this.mood.recordRapidTap();
+    this.ui?.onRapidTap?.(moodChange);
+    this.refreshHud();
+  }
+
+  handleMoodChange(snapshot) {
+    this.ui?.onMoodChange?.(snapshot);
+    this.catAnimation?.setMood?.(snapshot.level);
+    this.refreshHud();
   }
 
   hideSabotagePaw(immediate = false) {
@@ -377,7 +436,6 @@ export class GameScene extends Phaser.Scene {
   finishStage() {
     if (!this.stage.isPlaying()) return;
     this.cat.stop();
-    this.buttons.cancelCurrent();
     this.buttons.setVisible(false);
     const bonus = this.score.addBonus(this.config.stageClearBonus);
     this.stage.clear();
@@ -390,7 +448,6 @@ export class GameScene extends Phaser.Scene {
   finishGameOver() {
     if (!this.stage.isPlaying()) return;
     this.cat.stop();
-    this.buttons.cancelCurrent();
     this.buttons.setVisible(false);
     this.stage.gameOver();
     this.sessionScreen = GAME_SCREENS.GAME_OVER;
@@ -398,8 +455,14 @@ export class GameScene extends Phaser.Scene {
     this.ui.show(GAME_SCREENS.GAME_OVER);
   }
 
-  canStartHold() {
-    return this.stage.isPlaying() && this.inputLockRemaining <= 0;
+  canActivateButton() {
+    if (!this.stage.isPlaying() || this.inputLockRemaining > 0) return false;
+    if (this.cat?.state === CAT_STATES.WATCH) {
+      this.cat.requestAttack();
+      return false;
+    }
+    if (this.cat?.state === CAT_STATES.ATTACK) return false;
+    return true;
   }
 
   toggleMute() {
@@ -420,6 +483,7 @@ export class GameScene extends Phaser.Scene {
     if (this.cat) this.cat.config = this.config;
     if (this.buttons) this.buttons.config = this.config;
     if (this.score) this.score.config = this.config;
+    if (this.mood) this.mood.config = this.config;
     this.ui?.setDifficulty?.(difficulty);
   }
 
@@ -437,6 +501,12 @@ export class GameScene extends Phaser.Scene {
       catState: this.cat?.state ?? CAT_STATES.HIDDEN,
       comboTimeRemaining: comboTimerInfo.remaining,
       comboTimeDuration: comboTimerInfo.duration,
+      mood: this.mood?.snapshot() ?? {
+        value: 0,
+        max: 100,
+        level: 'sleepy',
+        intervalScale: 1,
+      },
     });
   }
 

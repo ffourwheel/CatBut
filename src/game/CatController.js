@@ -14,8 +14,13 @@ export class CatController {
     this.eventResolved = false;
     this.safeRemaining = 0;
     this.cooldownRemaining = 0;
+    this.eventGapRemaining = 0;
+    this.pendingSabotageAfterGap = false;
     this.sabotagePhase = 'idle';
     this.sabotageTargetId = null;
+    this.queuedSabotageSlotId = null;
+    this.rapidTapCount = 0;
+    this.rapidTapRemaining = 0;
   }
 
   start() {
@@ -23,8 +28,13 @@ export class CatController {
     this.paused = false;
     this.safeRemaining = 0;
     this.cooldownRemaining = 0;
+    this.eventGapRemaining = 0;
+    this.pendingSabotageAfterGap = false;
     this.sabotagePhase = 'idle';
     this.sabotageTargetId = null;
+    this.queuedSabotageSlotId = null;
+    this.rapidTapCount = 0;
+    this.rapidTapRemaining = 0;
     this.eventResolved = false;
     this.setState(CAT_STATES.HIDDEN);
     this.scheduleNextEvent();
@@ -36,6 +46,11 @@ export class CatController {
     this.setState(CAT_STATES.HIDDEN);
     this.sabotagePhase = 'idle';
     this.sabotageTargetId = null;
+    this.queuedSabotageSlotId = null;
+    this.eventGapRemaining = 0;
+    this.pendingSabotageAfterGap = false;
+    this.rapidTapCount = 0;
+    this.rapidTapRemaining = 0;
   }
 
   pause() {
@@ -52,21 +67,34 @@ export class CatController {
 
   update(delta) {
     if (!this.running || this.paused) return;
+    if (this.rapidTapRemaining > 0) {
+      this.rapidTapRemaining = Math.max(0, this.rapidTapRemaining - delta);
+      if (this.rapidTapRemaining === 0) this.rapidTapCount = 0;
+    }
     if (this.safeRemaining > 0) {
       this.safeRemaining = Math.max(0, this.safeRemaining - delta);
       return;
     }
 
     if (this.cooldownRemaining > 0) this.cooldownRemaining = Math.max(0, this.cooldownRemaining - delta);
+    if (this.eventGapRemaining > 0) {
+      this.eventGapRemaining = Math.max(0, this.eventGapRemaining - delta);
+    }
 
     if (this.state === CAT_STATES.HIDDEN) {
       this.hiddenRemaining -= delta;
       const pressureInterval = this.getProgressAdjustedInterval(this.config.catIntervalMax);
       this.hiddenRemaining = Math.min(
         this.hiddenRemaining,
-        Math.max(this.cooldownRemaining, pressureInterval),
+        Math.max(this.config.catEventMinimumGap ?? 0, this.cooldownRemaining, pressureInterval),
       );
-      if (this.hiddenRemaining <= 0) this.enterWarning();
+      if (this.hiddenRemaining <= 0) {
+        if (this.pendingSabotageAfterGap) {
+          this.startQueuedSabotage();
+        } else {
+          this.enterWarning();
+        }
+      }
       return;
     }
 
@@ -97,17 +125,78 @@ export class CatController {
     }
   }
 
-  onPlayerStartedHold() {
-    if (this.state === CAT_STATES.WATCH && !this.eventResolved) this.requestAttack();
+  onPlayerActivated(slotId) {
+    if (!this.running || this.paused) return false;
+
+    const rapidTap = this.recordRapidTap();
+    if (rapidTap && this.triggerRapidTapAttack()) return true;
+    const targetSlotId = this.callbacks.getSabotageTarget?.(slotId);
+    if (targetSlotId === null || targetSlotId === undefined) return false;
+
+    const reactionProbability = Math.max(
+      0,
+      Math.min(1, this.config.tapReactionProbability ?? 0),
+    );
+    const randomValue = this.config.debug.disableRandomness ? 0 : Math.random();
+    if (!rapidTap && randomValue >= reactionProbability) return false;
+
+    if (this.state !== CAT_STATES.HIDDEN || this.pendingSabotageAfterGap) {
+      this.queuedSabotageSlotId = targetSlotId;
+      return true;
+    }
+
+    if (this.eventGapRemaining > 0) {
+      this.queuedSabotageSlotId = targetSlotId;
+      this.pendingSabotageAfterGap = true;
+      this.hiddenRemaining = Math.min(this.hiddenRemaining, this.eventGapRemaining);
+      return true;
+    }
+
+    this.enterSabotagePreview(targetSlotId);
+    return true;
+  }
+
+  recordRapidTap() {
+    if (this.rapidTapRemaining > 0) {
+      this.rapidTapCount += 1;
+    } else {
+      this.rapidTapCount = 1;
+    }
+    this.rapidTapRemaining = this.config.rapidTapWindow;
+
+    if (this.rapidTapCount < this.config.rapidTapThreshold) return false;
+    this.rapidTapCount = 0;
+    this.rapidTapRemaining = 0;
+    this.callbacks.onRapidTap?.();
+    return true;
   }
 
   requestAttack() {
     if (this.state !== CAT_STATES.WATCH || this.eventResolved) return false;
+    return this.enterAttack();
+  }
+
+  triggerRapidTapAttack() {
+    if (![CAT_STATES.PEEK, CAT_STATES.WATCH].includes(this.state) || this.eventResolved) return false;
+    this.queuedSabotageSlotId = null;
+    this.pendingSabotageAfterGap = false;
+    return this.enterAttack();
+  }
+
+  enterAttack() {
     this.eventResolved = true;
     this.setState(CAT_STATES.ATTACK);
     this.phaseRemaining = this.config.attackRecovery;
     this.callbacks.onAttack?.();
     return true;
+  }
+
+  hasActiveAction() {
+    return this.running && (
+      this.state !== CAT_STATES.HIDDEN
+      || this.pendingSabotageAfterGap
+      || this.queuedSabotageSlotId !== null
+    );
   }
 
   enterWarning() {
@@ -176,14 +265,50 @@ export class CatController {
   finishEvent() {
     this.setState(CAT_STATES.HIDDEN);
     this.sabotageTargetId = null;
+    this.eventGapRemaining = Math.max(0, this.config.catEventMinimumGap ?? 0);
+
+    if (this.queuedSabotageSlotId !== null) {
+      this.pendingSabotageAfterGap = true;
+      this.scheduleNextEvent({ queued: true });
+      return;
+    }
+
     this.scheduleNextEvent();
   }
 
-  scheduleNextEvent() {
+  startQueuedSabotage() {
+    const queuedTarget = this.queuedSabotageSlotId;
+    this.queuedSabotageSlotId = null;
+    this.pendingSabotageAfterGap = false;
+    const targetAvailable = this.callbacks.isSabotageTargetAvailable
+      ? this.callbacks.isSabotageTargetAvailable(queuedTarget)
+      : true;
+    if (targetAvailable) {
+      this.enterSabotagePreview(queuedTarget);
+      return;
+    }
+    this.scheduleNextEvent();
+  }
+
+  scheduleNextEvent({ queued = false } = {}) {
+    if (queued) {
+      this.hiddenDuration = Math.max(
+        this.config.catEventMinimumGap ?? 0,
+        this.cooldownRemaining,
+      );
+      this.hiddenRemaining = this.hiddenDuration;
+      this.eventResolved = false;
+      return;
+    }
+
     const range = this.config.catIntervalMax - this.config.catIntervalMin;
     const random = this.config.debug.disableRandomness ? 0 : Math.random();
     const interval = this.config.catIntervalMin + Math.round(range * random);
-    this.hiddenDuration = Math.max(this.getProgressAdjustedInterval(interval), this.cooldownRemaining);
+    this.hiddenDuration = Math.max(
+      this.getProgressAdjustedInterval(interval),
+      this.config.catEventMinimumGap ?? 0,
+      this.cooldownRemaining,
+    );
     this.hiddenRemaining = this.hiddenDuration;
     this.eventResolved = false;
   }
@@ -198,8 +323,15 @@ export class CatController {
 
   getProgressAdjustedInterval(interval) {
     const minimumScale = Math.max(0.1, Math.min(1, this.config.catIntervalProgressScaleMin ?? 1));
-    const scale = 1 - (1 - minimumScale) * this.getProgressPressure();
-    return Math.max(1, Math.round(interval * scale));
+    const progressScale = 1 - (1 - minimumScale) * this.getProgressPressure();
+    const moodScale = Math.max(
+      0.25,
+      Math.min(1, this.callbacks.getMoodIntervalScale?.() ?? 1),
+    );
+    return Math.max(
+      this.config.catEventMinimumGap ?? 0,
+      Math.round(interval * progressScale * moodScale),
+    );
   }
 
   getWatchProbability() {
@@ -208,7 +340,8 @@ export class CatController {
       0,
       Math.min(baseProbability, this.config.catWatchProbabilityAtMaxProgress ?? baseProbability),
     );
-    return baseProbability - (baseProbability - minimumProbability) * this.getProgressPressure();
+    return baseProbability
+      - (baseProbability - minimumProbability) * this.getProgressPressure();
   }
 
   setState(state) {

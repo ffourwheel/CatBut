@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cat Rig Preview</title>
+  <style>
+    html, body { margin: 0; background: #2b2620; display: flex; flex-direction: column; align-items: center; }
+    canvas { background: #f3dcc1; }
+    #hint { color: #d8c9b8; font: 13px/1.6 monospace; padding: 8px; }
+  </style>
+</head>
+<body>
+  <div id="game-container"></div>
+  <div id="hint">window.__catPreview.aim(n) / press(n) / state('watch'|'hidden'|...) — n = slot 1..8</div>
+  <script type="module">
+    import Phaser from 'phaser';
+    import { createCatTableAssembly } from '/src/game/PlaceholderArt.js';
+    import { CatAnimationController, CAT_POSES } from '/src/game/CatAnimationController.js';
+    import { BUTTON_SLOT_LAYOUT, CAT_STATES } from '/src/game/constants.js';
+
+    const ANCHOR = { x: 512, y: 512 };
+
+    class CatPreviewScene extends Phaser.Scene {
+      constructor() {
+        super('CatPreviewScene');
+      }
+
+      create() {
+        const assembly = createCatTableAssembly(this, {
+          useRealAssets: false,
+          useVectorCat: true,
+          anchor: ANCHOR,
+        });
+
+        // Simple stand-in buttons so every reach target is visible.
+        BUTTON_SLOT_LAYOUT.forEach((slot) => {
+          const g = this.add.graphics().setDepth(40);
+          g.fillStyle(0x8a5e43, 1);
+          g.fillCircle(slot.x, slot.y, 74);
+          g.fillStyle(0xf0c987, 1);
+          g.fillCircle(slot.x, slot.y, 62);
+          g.lineStyle(6, 0x6b4632, 1);
+          g.strokeCircle(slot.x, slot.y, 74);
+          this.add.text(slot.x, slot.y, slot.id.replace('slot-', ''), {
+            color: '#6b4632',
+            fontFamily: 'monospace',
+            fontSize: '30px',
+            fontStyle: 'bold',
+          }).setOrigin(0.5).setDepth(41);
+        });
+
+        this.cat = new CatAnimationController(this, assembly);
+        this.cat.transitionTo(CAT_STATES.HIDDEN, { immediate: true });
+
+        const buttonAt = (n) => BUTTON_SLOT_LAYOUT[n - 1];
+
+        window.__catPreview = {
+          aim: (n) => {
+            this.cat.transitionTo(CAT_STATES.SABOTAGE, { immediate: true });
+            this.cat.setTarget(buttonAt(n));
+          },
+          press: (n, duration = 480) => {
+            this.cat.transitionTo(CAT_STATES.SABOTAGE, { immediate: true });
+            this.cat.setTarget(buttonAt(n), { animate: false });
+            this.cat.startSabotageReach(buttonAt(n), { duration });
+          },
+          // Deterministic end-of-press pose: no tweens, so background tab
+          // throttling cannot freeze the frame mid-motion.
+          hold: (n) => {
+            const cat = this.cat;
+            cat.transitionTo(CAT_STATES.SABOTAGE, { immediate: true });
+            cat.setTarget(buttonAt(n), { animate: false });
+            cat.targetPose = { ...cat.targetPose, armAlpha: 1 };
+            cat.reachProgress = 1;
+            cat.stopTweens();
+            cat.applyPose(CAT_POSES[CAT_STATES.SABOTAGE]);
+          },
+          state: (s, immediate = true) => this.cat.transitionTo(s, { immediate }),
+        };
+
+        const initialSlot = Number(new URLSearchParams(window.location.search).get('slot'));
+        if (initialSlot >= 1 && initialSlot <= BUTTON_SLOT_LAYOUT.length) {
+          window.__catPreview.hold(initialSlot);
+        }
+      }
+    }
+
+    // Dev-only handle so the rig can be inspected from the console.
+    const previewGame = new Phaser.Game({
+      type: Phaser.AUTO,
+      parent: 'game-container',
+      width: 1024,
+      height: 1024,
+      backgroundColor: '#f3dcc1',
+      scene: [CatPreviewScene],
+      scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+    });
+    window.__catPreviewGame = previewGame;
+  </script>
+</body>
+</html>
