@@ -47,8 +47,15 @@ export const MOOD_CUE_PRESENTATION = Object.freeze({
 });
 
 const HIDDEN_MOOD_CUE_STATES = new Set([
+  CAT_STATES.WARNING,
   CAT_STATES.SABOTAGE,
   CAT_STATES.HIDE,
+  CAT_STATES.ATTACK,
+]);
+
+const AWAKE_MOOD_CUE_STATES = new Set([
+  CAT_STATES.PEEK,
+  CAT_STATES.WATCH,
 ]);
 
 export function getMoodCue(level = 'sleepy') {
@@ -57,8 +64,10 @@ export function getMoodCue(level = 'sleepy') {
   return { frame, label };
 }
 
-export function isMoodCueVisibleForCatState(state) {
-  return !HIDDEN_MOOD_CUE_STATES.has(state);
+export function isMoodCueVisibleForCatState(state, level = 'sleepy') {
+  if (HIDDEN_MOOD_CUE_STATES.has(state)) return false;
+  if (level === 'sleepy') return state === CAT_STATES.HIDDEN;
+  return AWAKE_MOOD_CUE_STATES.has(state);
 }
 
 export function shouldAnimateMoodCue(snapshot, currentLevel) {

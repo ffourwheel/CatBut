@@ -106,7 +106,7 @@ Hole/rim ต้องคงเป็น layer นิ่งเสมอ ภาพ
 | `WARNING → PEEK` | body/head rise ตาม path แล้ว settle อ่อน ๆ | `peekDuration = 650ms` |
 | `PEEK → WATCH` | head settle, eye gaze, micro tilt และ stare tension | `watchDuration = 1000ms` |
 | `WATCH → ATTACK` | squash → anticipation → lunge → recoil | `attackRecovery = 500ms` |
-| `PEEK → SABOTAGE` | target highlight → มองเป้า → หันหัวและลำตัว/ไหล่ตามเป้า → เตรียมแขนด้านใกล้ | `sabotagePreviewDuration = 350ms`, turn `180ms` |
+| `PEEK → SABOTAGE` | target highlight → มองเป้า → หันหัวและลำตัว/ไหล่ตามเป้า → เตรียมแขนด้านใกล้ | `sabotagePreviewDuration = 240ms`, turn `180ms`, reach `180ms`, contact `120ms` |
 | `SABOTAGE` | shoulder follow-through → แขนต่อเนื่องเอื้อม → กดค้างสั้น ๆ → resolve | reach `280ms`, contact `260ms` |
 | `WATCH/ATTACK/SABOTAGE → HIDE` | ถอนแขน → sink ลงตาม path กลับเข้ารู | `hideDuration = 220ms` |
 | `HIDE → HIDDEN` | settle กลับเป็น idle pose | ต่อเนื่องจาก `HIDE` |
@@ -146,7 +146,7 @@ Hole/rim ต้องคงเป็น layer นิ่งเสมอ ภาพ
 - ต่อ `CatController.onStateChange` เข้ากับ Animation Controller
 - คง duration/probability/timing ใน `gameConfig.js`
 - คง target contract เดิม แต่ใช้แขนชิ้นเดียว `cat_reach_arm_left/right_v2` เป็นแขนหลัก และ `sabotagePaw` เป็น fallback เท่านั้น
-- คง UI warning, status, attack flash และ screen shake เป็น feedback แยกจาก Cat Rig
+- คง UI warning, status และ claw cutscene เป็น feedback แยกจาก Cat Rig โดยตัด attack flash กับ screen shake ออกเพื่อให้ภาพรอยข่วนเป็นจุดสนใจหลัก
 
 ### Phase 5 — QA and Tuning
 

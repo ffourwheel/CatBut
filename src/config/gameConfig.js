@@ -33,10 +33,10 @@ export const DEFAULT_CONFIG = Object.freeze({
   peekDuration: 400,
   watchDuration: 1000,
   hideDuration: 220,
-  sabotagePreviewDuration: 350,
+  sabotagePreviewDuration: 240,
   sabotageDuration: 500,
-  sabotageReachDuration: 280,
-  sabotageHitDuration: 260,
+  sabotageReachDuration: 180,
+  sabotageHitDuration: 120,
   sabotageCooldown: 800,
   attackRecovery: 500,
   watchProbability: 0.6,
@@ -107,6 +107,9 @@ export const GAME_PRESETS = Object.freeze({
     buttonCountMin: 6,
     buttonCountMax: 8,
     sabotageCooldown: 900,
+    sabotagePreviewDuration: 180,
+    sabotageReachDuration: 150,
+    sabotageHitDuration: 100,
   }),
 });
 

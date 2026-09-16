@@ -20,14 +20,26 @@ test('mood levels map to stable generated bubble frames and Thai labels', () => 
   assert.deepEqual(getMoodCue('angry'), { frame: 3, label: 'โมโห' });
 });
 
-test('mood bubble stays readable except when the cat faces away', () => {
-  assert.equal(isMoodCueVisibleForCatState('hidden'), true);
-  assert.equal(isMoodCueVisibleForCatState('warning'), true);
-  assert.equal(isMoodCueVisibleForCatState('peek'), true);
-  assert.equal(isMoodCueVisibleForCatState('watch'), true);
-  assert.equal(isMoodCueVisibleForCatState('attack'), true);
-  assert.equal(isMoodCueVisibleForCatState('sabotage'), false);
-  assert.equal(isMoodCueVisibleForCatState('hide'), false);
+test('sleepy mood bubble disappears as soon as the cat wakes up', () => {
+  assert.equal(isMoodCueVisibleForCatState('hidden', 'sleepy'), true);
+  assert.equal(isMoodCueVisibleForCatState('warning', 'sleepy'), false);
+  assert.equal(isMoodCueVisibleForCatState('peek', 'sleepy'), false);
+  assert.equal(isMoodCueVisibleForCatState('watch', 'sleepy'), false);
+  assert.equal(isMoodCueVisibleForCatState('attack', 'sleepy'), false);
+  assert.equal(isMoodCueVisibleForCatState('sabotage', 'sleepy'), false);
+  assert.equal(isMoodCueVisibleForCatState('hide', 'sleepy'), false);
+});
+
+test('active mood bubbles only show while the cat is readable and facing the player', () => {
+  ['curious', 'annoyed', 'angry'].forEach((level) => {
+    assert.equal(isMoodCueVisibleForCatState('hidden', level), false, level);
+    assert.equal(isMoodCueVisibleForCatState('warning', level), false, level);
+    assert.equal(isMoodCueVisibleForCatState('peek', level), true, level);
+    assert.equal(isMoodCueVisibleForCatState('watch', level), true, level);
+    assert.equal(isMoodCueVisibleForCatState('attack', level), false, level);
+    assert.equal(isMoodCueVisibleForCatState('sabotage', level), false, level);
+    assert.equal(isMoodCueVisibleForCatState('hide', level), false, level);
+  });
 });
 
 test('unknown Mood levels fall back to the readable sleepy cue', () => {

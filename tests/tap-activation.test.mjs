@@ -4,6 +4,7 @@ import test from 'node:test';
 import { createGameConfig } from '../src/config/gameConfig.js';
 import { ButtonManager } from '../src/game/ButtonManager.js';
 import { CatController } from '../src/game/CatController.js';
+import { HealthManager } from '../src/game/HealthManager.js';
 import { ScoreManager } from '../src/game/ScoreManager.js';
 
 function createButtonManager({ canActivate = () => true, onActivate = () => {} } = {}) {
@@ -52,7 +53,7 @@ test('tap activates a button immediately without an update or pointer release', 
   assert.equal(manager.buttons[0].activated, true);
 });
 
-test('cat reports the first event only when its warning begins', () => {
+test('cat enters warning on its first scheduled event', () => {
   const config = createGameConfig({
     catIntervalMin: 500,
     catIntervalMax: 500,
@@ -62,11 +63,9 @@ test('cat reports the first event only when its warning begins', () => {
   const cat = new CatController(null, config);
 
   cat.start();
-  assert.equal(cat.hasPresentedEvent(), false);
   cat.update(499);
-  assert.equal(cat.hasPresentedEvent(), false);
+  assert.equal(cat.state, 'hidden');
   cat.update(1);
-  assert.equal(cat.hasPresentedEvent(), true);
   assert.equal(cat.state, 'warning');
 });
 
@@ -299,6 +298,35 @@ test('two rapid taps force a sabotage reaction even when normal tap pressure mis
   assert.equal(cat.onPlayerActivated('slot-3'), true);
   assert.equal(cat.state, 'sabotage');
   assert.equal(cat.sabotageTargetId, 'slot-1');
+});
+
+test('two rapid taps during PEEK trigger an attack instead of waiting for sabotage', () => {
+  let attackCount = 0;
+  const health = new HealthManager(3);
+  const config = createGameConfig({
+    tapReactionProbability: 1,
+    rapidTapThreshold: 2,
+    rapidTapWindow: 500,
+    debug: { disableRandomness: true },
+  });
+  const cat = new CatController(null, config, {
+    onAttack: () => {
+      attackCount += 1;
+      health.damage(1);
+    },
+    getSabotageTarget: () => 'slot-1',
+  });
+
+  cat.start();
+  cat.enterPeek();
+  assert.equal(cat.onPlayerActivated('slot-2'), true);
+  assert.equal(cat.queuedSabotageSlotId, 'slot-1');
+  assert.equal(cat.onPlayerActivated('slot-3'), true);
+  assert.equal(cat.state, 'attack');
+  assert.equal(attackCount, 1);
+  assert.equal(health.health, 2);
+  assert.equal(cat.queuedSabotageSlotId, null);
+  assert.equal(cat.pendingSabotageAfterGap, false);
 });
 
 test('combo expires after two seconds without another activation', () => {

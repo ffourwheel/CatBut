@@ -13,13 +13,13 @@
 - คง `easy` เป็น preset สำหรับการเรียนรู้ และคงหัวใจเริ่มต้น 3 ดวง
 - ใช้ asset `assets/ui/cat_mood_bubbles.png` เป็น spritesheet 2×2 ที่สร้างสำหรับ Mood cue โดยให้เกมวาง label ภาษาไทยแยกจากภาพ
 - Mood cue เป็น floating UI ที่ UIManager ควบคุม แยกจาก Cat Rig, ติดตามตำแหน่งหัวโดยไม่หมุนหรือสเกลตามแมว และใช้ depth ต่ำกว่า Warning cue
-- แสดง Mood cue ใน HIDDEN/WARNING/PEEK/WATCH/ATTACK และซ่อนใน SABOTAGE/HIDE ที่แมวหันหลังหรือกำลังมุด
+- แสดง Mood cue ง่วงเฉพาะ HIDDEN; ระดับสนใจ/หงุดหงิด/โมโหแสดงเฉพาะ PEEK/WATCH และซ่อนใน WARNING/ATTACK/SABOTAGE/HIDE เพื่อไม่ทับ Warning หรือ Cutscene
 - HUD ลดเป็น pill แบบ 4 segment พร้อมไอคอนและชื่อระดับ เพื่อเป็น fallback เมื่อ Mood cue ถูกซ่อน
-- ถ้าเปิดปุ่มครบก่อน Cat Event แรก รอบจะรอจนแมวแสดง WARNING และจบ Event แรกก่อนจึงเคลียร์รอบ เพื่อไม่ให้กดรัวจบรอบโดยไม่เจอกลไกแมว
+- เมื่อเปิดปุ่มสุดท้ายสำเร็จให้ Stage Clear ทันที และยกเลิก Cat Event ที่กำลังทำงานหรือคิวที่รออยู่ เพื่อไม่ให้ Sabotage ในเฟรมเดียวกันทำให้รอบค้าง
 
 ## Consequences
 
-- Normal จะได้เจอ Cat Event ก่อนเคลียร์รอบเสมอ โดยยังมี WARNING/PEEK ให้ตอบสนองได้
+- Normal จะเริ่มกดดันจาก Cat Event เร็วขึ้น และ Rapid Tap ตอนแมวตื่นจะลงโทษด้วย ATTACK โดยไม่ต้องรอ Cat Event ใหม่
 - Hard กดดันต่อเนื่องจากจำนวนปุ่มและ cooldown ที่สั้นลง โดยไม่ลดจำนวนหัวใจ
 - Mood cue ไม่รับผลกระทบจากการหมุน/ยืดของแขนและลำตัว จึงอ่านระดับได้คงที่
 - ต้องดูแล frame contract ของ generated spritesheet และ label mapping ให้ตรงกับระดับ Mood ทั้งสี่

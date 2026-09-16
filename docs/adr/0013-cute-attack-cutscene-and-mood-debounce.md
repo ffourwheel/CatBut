@@ -9,7 +9,7 @@
 ## Decision
 
 - ใช้ `assets/ui/cat_claw_cutscene.png` เป็น spritesheet 2×2 ที่สร้างขึ้นใหม่แบบโปร่งใส โดยเล่น 4 เฟรมตามลำดับอุ้งเท้า → ปาด → รอยข่วน → ประกายจบ
-- ห่อ cutscene ด้วย vignette โปร่งบาง, fade in/out และ motion เล็กน้อย โดยให้ Warning/Attack feedback เดิมยังอยู่ด้านหน้า/หลังตาม depth ที่กำหนด
+- ห่อ cutscene ด้วยพื้นหลังมืดลงประมาณ 35%, fade in/out และ motion เล็กน้อย โดยไม่ใช้ red flash หรือ screen shake ซ้อนกับรอยข่วน ส่วนเอฟเฟกต์หัวใจลดบน HUD ยังคงอยู่
 - ให้ Mood cue animate เฉพาะเมื่อ `level` เปลี่ยนจริง และไม่สั่ง show/hide ซ้ำเมื่อ visibility เดิมยังตรงกับ Cat State
 - เพิ่ม Mood จาก Rapid Tap ครั้งละ `50` เพื่อให้ “หงุดหงิด” เกิดเร็วขึ้นหลัง anti-mash trigger แรก และ “โมโห” เกิดหลัง trigger ถัดไป
 

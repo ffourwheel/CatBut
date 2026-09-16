@@ -41,13 +41,6 @@ export const FEEDBACK_EFFECTS = Object.freeze({
   },
 
   catAttack: {
-    screenShake: {
-      intensity: 0.014, // in Phaser scene.cameras.main.shake
-      duration: 250,
-    },
-    flashColor: 0xe66b5d,
-    flashAlpha: 0.45,
-    flashDuration: 180,
     heartBreak: {
       scale: 1.4,
       dropDistanceY: 32,
@@ -55,8 +48,8 @@ export const FEEDBACK_EFFECTS = Object.freeze({
     },
     clawScratch: {
       depth: UI_DEPTH.CAT_FX + 1,
-      overlayColor: 0x261711,
-      overlayAlpha: 0.16,
+      overlayColor: 0x120b09,
+      overlayAlpha: 0.35,
       frameDuration: 95,
       introDuration: 120,
       outroDuration: 180,
@@ -114,13 +107,6 @@ export const FeedbackFX = {
         onFinish?.();
       },
     });
-  },
-
-  triggerScreenShake(scene) {
-    scene.cameras.main.shake(
-      FEEDBACK_EFFECTS.catAttack.screenShake.duration,
-      FEEDBACK_EFFECTS.catAttack.screenShake.intensity
-    );
   },
 
   triggerClawScratch(scene, { x = 512, y = 910 } = {}) {

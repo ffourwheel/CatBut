@@ -23,11 +23,11 @@ export const ACTIVE_GAME_PRESET = 'normal';
 | `peekDuration` | ระยะเวลาแมวโผล่ให้เห็น | `400` |
 | `watchDuration` | ระยะเวลาที่แมวจ้อง | `1000` |
 | `watchProbability` | โอกาสที่แมวจะเลือกจ้อง (0–1) | `0.60` |
-| `sabotagePreviewDuration` | เวลาที่แมวเล็งปุ่มและหันตัวก่อนยื่นแขน (มิลลิวินาที) | `350` |
-| `sabotageReachDuration` | เวลาที่แขนต่อจากไหล่ยื่นถึงปุ่ม (มิลลิวินาที) | `280` |
-| `sabotageHitDuration` | จังหวะสัมผัส/สั่งปิดปุ่มหลังเริ่มยื่นแขน (มิลลิวินาที) | `260` |
-| `tapReactionProbability` | โอกาสที่การเปิดปุ่มจะเร่ง SABOTAGE (0–1) | `0.40` |
-| `rapidTapThreshold` / `rapidTapWindow` | จำนวนและช่วงเวลาที่แตะรัวจนแมวเร่ง SABOTAGE แน่นอน | `2` ครั้งใน `500` มิลลิวินาที |
+| `sabotagePreviewDuration` | เวลาที่แมวเล็งปุ่มและหันตัวก่อนยื่นแขน (มิลลิวินาที) | `240` |
+| `sabotageReachDuration` | เวลาที่แขนต่อจากไหล่ยื่นถึงปุ่ม (มิลลิวินาที) | `180` |
+| `sabotageHitDuration` | จังหวะสัมผัส/สั่งปิดปุ่มหลังเริ่มยื่นแขน (มิลลิวินาที) | `120` |
+| `tapReactionProbability` | โอกาสที่การเปิดปุ่มปกติจะเร่ง SABOTAGE (0–1) | `0.40` |
+| `rapidTapThreshold` / `rapidTapWindow` | จำนวนและช่วงเวลาที่แตะรัวจนแมวลงโทษตาม Cat State | `2` ครั้งใน `500` มิลลิวินาที |
 | `buttonCountMin` / `buttonCountMax` | จำนวนปุ่มที่สุ่มในแต่ละรอบ | `4` ถึง `8` |
 | `startingHealth` | จำนวนหัวใจเริ่มต้น (สูงสุด 3 ตาม UI ปัจจุบัน) | `3` |
 | `comboDuration` | อายุคอมโบหลังเปิดปุ่มสำเร็จ (มิลลิวินาที) | `2000` |
@@ -45,13 +45,15 @@ Mood มี 4 ระดับและเพิ่มขึ้นเฉพาะ
 | หงุดหงิด | `50–74` | `0.70` |
 | โมโห | `75–100` | `0.55` |
 
-Rapid Tap เพิ่ม Mood `50` หน่วยต่อครั้ง ทำให้ชุด Rapid Tap แรกขึ้นระดับ “หงุดหงิด” ได้ทันที และชุดถัดไปขึ้น “โมโห” หลังไม่มี Rapid Tap `2,000 ms` Mood จะลดหนึ่งระดับทุก `1,500 ms` โดยช่วงพักขั้นต่ำของ Cat Event ยังคงเป็น `500 ms` เสมอ
+Rapid Tap เพิ่ม Mood `50` หน่วยต่อครั้ง ทำให้ชุด Rapid Tap แรกขึ้นระดับ “หงุดหงิด” ได้ทันที และชุดถัดไปขึ้น “โมโห” หลังไม่มี Rapid Tap `2,000 ms` Mood จะลดหนึ่งระดับทุก `1,500 ms` โดยช่วงพักขั้นต่ำของ Cat Event ยังคงเป็น `500 ms` เสมอ Rapid Tap ตอน `PEEK/WATCH` เปลี่ยนเป็น ATTACK และ Rapid Tap ตอน `HIDDEN` เร่ง Sabotage; การแตะเดี่ยวในจังหวะปลอดภัยไม่เสียหัวใจ
 
-Mood cue ใช้ `assets/ui/cat_mood_bubbles.png` เป็น spritesheet แบบ 2×2: `sleepy=0`, `curious=1`, `annoyed=2`, `angry=3` โดย UI วาง label ภาษาไทยแยกจากภาพและติดตามหัวแมวโดยไม่หมุนตาม Cat Rig การเปลี่ยน bubble จะ animate เฉพาะตอนข้ามระดับ เพื่อไม่ให้ภาพเด้งรัวจากค่า Mood ที่เปลี่ยนอยู่ในระดับเดิม
+Preset `hard` ใช้ `sabotagePreviewDuration = 180 ms`, `sabotageReachDuration = 150 ms` และ `sabotageHitDuration = 100 ms` เพื่อให้แมวปิดปุ่มเร็วขึ้นโดยยังมีช่วง Preview ให้อ่านเป้าหมาย
+
+Mood cue ใช้ `assets/ui/cat_mood_bubbles.png` เป็น spritesheet แบบ 2×2: `sleepy=0`, `curious=1`, `annoyed=2`, `angry=3` โดย UI วาง label ภาษาไทยแยกจากภาพและติดตามหัวแมวโดยไม่หมุนตาม Cat Rig `sleepy` แสดงเฉพาะ HIDDEN ส่วนระดับอื่นแสดงเฉพาะ PEEK/WATCH การเปลี่ยน bubble จะ animate เฉพาะตอนข้ามระดับ เพื่อไม่ให้ภาพเด้งรัวจากค่า Mood ที่เปลี่ยนอยู่ในระดับเดิม
 
 เมื่อผู้เล่นโดน WATCH จะเล่น `assets/ui/cat_claw_cutscene.png` แบบ 4 เฟรม: อุ้งเท้าเตรียมฟาด → ปาด → รอยข่วน → ประกายจบ พร้อม vignette และ fade สั้น ๆ
 
-ถ้าเปิดปุ่มครบก่อน Cat Event แรก รอบจะรอให้แมวแสดง WARNING และจบ Event แรกก่อนจึงเคลียร์รอบ เพื่อให้ผู้เล่นได้เจอกลไกแมวทุกครั้ง
+เมื่อเปิดปุ่มสุดท้ายสำเร็จ Stage Clear จะเกิดทันทีและยกเลิก Cat Event หรือคิว Sabotage ที่กำลังทำงาน เพื่อไม่ให้แมวปิดปุ่มในเฟรมเดียวกันแล้วทำรอบค้าง
 
 Preset `hard` ใช้ Cat Event `500–700 ms`, WARNING `300 ms`, PEEK `350 ms`, WATCH probability `0.70`, ปุ่ม `6–8` ปุ่ม และ Sabotage cooldown `900 ms`; preset `easy` คงช่วงพักยาวเพื่อใช้เรียนรู้
 

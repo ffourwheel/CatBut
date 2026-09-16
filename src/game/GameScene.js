@@ -18,6 +18,7 @@ import { MoodManager } from './MoodManager.js';
 import { ScoreManager } from './ScoreManager.js';
 import { StageManager } from './StageManager.js';
 import { SettingsStore } from './SettingsStore.js';
+import { resolveButtonCompletion } from './StageFlow.js';
 import { UIManager } from './UIManager.js';
 
 export class GameScene extends Phaser.Scene {
@@ -68,7 +69,6 @@ export class GameScene extends Phaser.Scene {
     this.lastScoreEvent = null;
     this.sabotagePawTween = null;
     this.sabotageHitTimer = null;
-    this.stageClearPending = false;
 
     this.ui = new UIManager(this, {
       onPause: () => this.pauseStage(),
@@ -124,7 +124,6 @@ export class GameScene extends Phaser.Scene {
     this.mood.update(delta);
     this.buttons.update(delta, true);
     this.cat.update(delta);
-    this.tryFinishPendingStage();
     this.refreshHud();
   }
 
@@ -144,7 +143,6 @@ export class GameScene extends Phaser.Scene {
     this.buttons.reset({ randomize: true });
     this.inputLockRemaining = 0;
     this.lastScoreEvent = null;
-    this.stageClearPending = false;
     this.stage.start();
     this.sessionScreen = GAME_SCREENS.GAMEPLAY;
     this.buttons.setVisible(true);
@@ -257,19 +255,14 @@ export class GameScene extends Phaser.Scene {
     this.audio.play(isReactivation ? 'reactivation' : 'button-complete');
     this.ui.setStatus(isReactivation ? 'เปิดปุ่มกลับมาแล้ว!' : 'เปิดปุ่มสำเร็จ!');
 
-    this.cat.onPlayerActivated(button.slotId);
-    if (this.buttons.areAllActivated()) {
-      if (!this.cat.hasPresentedEvent()) {
-        this.stageClearPending = true;
-        this.ui.setStatus('เปิดครบแล้ว... แมวกำลังจะมา!', true);
-      } else if (this.cat.hasActiveAction()) {
-        this.stageClearPending = true;
-        this.ui.setStatus('เปิดครบแล้ว... แต่แมวยังไม่ยอมแพ้!', true);
-      } else {
-        this.finishStage();
-      }
-      return;
-    }
+    const allActivated = this.buttons.areAllActivated();
+    resolveButtonCompletion({
+      allActivated,
+      onStageClear: () => this.finishStage(),
+      onPlayerActivated: (slotId) => this.cat.onPlayerActivated(slotId),
+      slotId: button.slotId,
+    });
+    if (allActivated) return;
 
     this.refreshHud();
     this.tweens.add({
@@ -439,7 +432,6 @@ export class GameScene extends Phaser.Scene {
 
   finishStage() {
     if (!this.stage.isPlaying()) return;
-    this.stageClearPending = false;
     this.cat.stop();
     this.buttons.setVisible(false);
     const bonus = this.score.addBonus(this.config.stageClearBonus);
@@ -452,7 +444,6 @@ export class GameScene extends Phaser.Scene {
 
   finishGameOver() {
     if (!this.stage.isPlaying()) return;
-    this.stageClearPending = false;
     this.cat.stop();
     this.buttons.setVisible(false);
     this.stage.gameOver();
@@ -469,16 +460,6 @@ export class GameScene extends Phaser.Scene {
     }
     if (this.cat?.state === CAT_STATES.ATTACK) return false;
     return true;
-  }
-
-  tryFinishPendingStage() {
-    if (!this.stageClearPending || !this.stage.isPlaying()) return;
-    if (!this.buttons.areAllActivated()) {
-      this.stageClearPending = false;
-      return;
-    }
-    if (!this.cat.hasPresentedEvent() || this.cat.hasActiveAction()) return;
-    this.finishStage();
   }
 
   toggleMute() {

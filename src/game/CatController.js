@@ -21,7 +21,6 @@ export class CatController {
     this.queuedSabotageSlotId = null;
     this.rapidTapCount = 0;
     this.rapidTapRemaining = 0;
-    this.firstEventPresented = false;
   }
 
   start() {
@@ -36,7 +35,6 @@ export class CatController {
     this.queuedSabotageSlotId = null;
     this.rapidTapCount = 0;
     this.rapidTapRemaining = 0;
-    this.firstEventPresented = false;
     this.eventResolved = false;
     this.setState(CAT_STATES.HIDDEN);
     this.scheduleNextEvent();
@@ -131,6 +129,7 @@ export class CatController {
     if (!this.running || this.paused) return false;
 
     const rapidTap = this.recordRapidTap();
+    if (rapidTap && this.triggerRapidTapAttack()) return true;
     const targetSlotId = this.callbacks.getSabotageTarget?.(slotId);
     if (targetSlotId === null || targetSlotId === undefined) return false;
 
@@ -174,6 +173,17 @@ export class CatController {
 
   requestAttack() {
     if (this.state !== CAT_STATES.WATCH || this.eventResolved) return false;
+    return this.enterAttack();
+  }
+
+  triggerRapidTapAttack() {
+    if (![CAT_STATES.PEEK, CAT_STATES.WATCH].includes(this.state) || this.eventResolved) return false;
+    this.queuedSabotageSlotId = null;
+    this.pendingSabotageAfterGap = false;
+    return this.enterAttack();
+  }
+
+  enterAttack() {
     this.eventResolved = true;
     this.setState(CAT_STATES.ATTACK);
     this.phaseRemaining = this.config.attackRecovery;
@@ -189,12 +199,7 @@ export class CatController {
     );
   }
 
-  hasPresentedEvent() {
-    return this.firstEventPresented;
-  }
-
   enterWarning() {
-    this.firstEventPresented = true;
     this.eventResolved = false;
     this.setState(CAT_STATES.WARNING);
     this.phaseRemaining = this.config.warningDuration;

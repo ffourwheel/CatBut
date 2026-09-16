@@ -1,7 +1,6 @@
-import Phaser from 'phaser';
 import { buildCozyHUD } from '../ui/HUDLayout.js';
 import { ScreenLayoutManager } from '../ui/ScreenLayouts.js';
-import { FEEDBACK_EFFECTS, FeedbackFX } from '../ui/FeedbackEffects.js';
+import { FeedbackFX } from '../ui/FeedbackEffects.js';
 import { UI_DEPTH } from '../ui/UITokens.js';
 import { COPY_THAI } from '../ui/CopyThai.js';
 import {
@@ -58,10 +57,6 @@ export class UIManager {
       onTutorialReturn: () => callbacks.onTutorialReturn?.(),
     });
 
-    this.attackFlash = scene.add.rectangle(512, this.viewportHeight / 2, 1024, this.viewportHeight, FEEDBACK_EFFECTS.catAttack.flashColor, 0)
-      .setDepth(UI_DEPTH.CAT_FX + 1)
-      .setBlendMode(Phaser.BlendModes.SCREEN);
-
     const warningKey = scene.textures.exists('warning_mark')
       ? 'warning_mark'
       : (scene.textures.exists('warning_bubble') ? 'warning_bubble' : 'warning_mark');
@@ -103,6 +98,7 @@ export class UIManager {
     this.moodCueRoot.add([this.moodCueMark, this.moodCueLabel]);
     this.moodCueStateVisible = true;
     this.moodCueLevel = 'sleepy';
+    this.currentCatState = CAT_STATES.HIDDEN;
 
     this.hud.setVisible(false);
     this.screens.show('start');
@@ -327,6 +323,7 @@ export class UIManager {
     if (this.moodCueMark.setFrame) this.moodCueMark.setFrame(cue.frame);
     else this.moodCueMark.setText(MOOD_CUE_ICONS[this.moodCueLevel]);
     this.moodCueLabel.setText(cue.label);
+    this.setMoodCueVisibility(isMoodCueVisibleForCatState(this.currentCatState, this.moodCueLevel));
     if (!this.moodCueStateVisible || this.currentScreen !== GAME_SCREENS.GAMEPLAY) return;
     this.showMoodCue(animate);
   }
@@ -388,7 +385,8 @@ export class UIManager {
   }
 
   onCatState(state, catStateImage) {
-    this.setMoodCueVisibility(isMoodCueVisibleForCatState(state));
+    this.currentCatState = state;
+    this.setMoodCueVisibility(isMoodCueVisibleForCatState(state, this.moodCueLevel));
     if (state === CAT_STATES.WARNING) {
       this.showGameplayFeedback('ระวังนะ! แมวเริ่มได้ยิน!', { priority: 30, highlight: true });
       this.showWarningMark();
@@ -413,16 +411,9 @@ export class UIManager {
         holdMs: 500,
         highlight: true,
       });
-      FeedbackFX.triggerScreenShake(this.scene);
       FeedbackFX.triggerClawScratch(this.scene, {
         x: 512,
         y: this.viewportHeight / 2,
-      });
-      this.scene.tweens.add({
-        targets: this.attackFlash,
-        alpha: { from: FEEDBACK_EFFECTS.catAttack.flashAlpha, to: 0 },
-        duration: FEEDBACK_EFFECTS.catAttack.flashDuration,
-        ease: 'Power2.easeOut',
       });
       return;
     }
