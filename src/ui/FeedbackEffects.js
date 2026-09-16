@@ -124,8 +124,8 @@ export const FeedbackFX = {
       1024,
       viewportHeight,
       config.overlayColor,
-      0,
-    ).setDepth(config.depth - 1);
+      1,
+    ).setDepth(config.depth - 1).setAlpha(0);
     const scratch = scene.add.image(x, y, textureKey, CAT_CLAW_CUTSCENE_FRAMES.pawReady)
       .setOrigin(0.5, 0.5)
       .setDepth(config.depth)
