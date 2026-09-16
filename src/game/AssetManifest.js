@@ -1,3 +1,45 @@
+import backgroundUrl from '../../assets/background.png?url';
+import in_background_overlayUrl from '../../assets/in_background_overlay.png?url';
+import table_backUrl from '../../assets/table_back.png?url';
+import table_frontUrl from '../../assets/table_front.png?url';
+import sabotage_pawUrl from '../../assets/sabotage_paw.png?url';
+import cat_rig_cat_rig_headUrl from '../../assets/cat-rig/cat_rig_head.png?url';
+import cat_rig_cat_rig_pawsUrl from '../../assets/cat-rig/cat_rig_paws.png?url';
+import cat_rig_cat_reach_v2_bodyUrl from '../../assets/cat-rig/cat_reach_v2_body.png?url';
+import cat_rig_cat_reach_v2_headUrl from '../../assets/cat-rig/cat_reach_v2_head.png?url';
+import cat_rig_cat_reach_v3_sleep_headUrl from '../../assets/cat-rig/cat_reach_v3_sleep_head.png?url';
+import cat_rig_cat_reach_v3_gazeUrl from '../../assets/cat-rig/cat_reach_v3_gaze.png?url';
+import cat_rig_cat_reach_v2_arm_leftUrl from '../../assets/cat-rig/cat_reach_v2_arm_left.png?url';
+import cat_rig_cat_reach_v2_arm_rightUrl from '../../assets/cat-rig/cat_reach_v2_arm_right.png?url';
+import cat_hole_hiddenUrl from '../../assets/cat_hole_hidden.png?url';
+import ui_button_offUrl from '../../assets/ui/button_off.png?url';
+import ui_button_onUrl from '../../assets/ui/button_on.png?url';
+import ui_heart_fullUrl from '../../assets/ui/heart_full.png?url';
+import ui_heart_emptyUrl from '../../assets/ui/heart_empty.png?url';
+import ui_star_iconUrl from '../../assets/ui/star_icon.png?url';
+import ui_cat_pawUrl from '../../assets/ui/cat_paw.png?url';
+import ui_warning_bubbleUrl from '../../assets/ui/warning_bubble.png?url';
+import ui_warningUrl from '../../assets/ui/warning.png?url';
+import ui_cat_mood_bubblesUrl from '../../assets/ui/cat_mood_bubbles.png?url';
+import ui_cat_claw_cutsceneUrl from '../../assets/ui/cat_claw_cutscene.png?url';
+import ui_sound_onUrl from '../../assets/ui/sound_on.png?url';
+import ui_sound_offUrl from '../../assets/ui/sound_off.png?url';
+import ui_pause_iconUrl from '../../assets/ui/pause_icon.png?url';
+import ui_home_cardUrl from '../../assets/ui/home_card.png?url';
+import ui_btn_start_gameUrl from '../../assets/ui/btn_start_game.png?url';
+import ui_btn_start_game_hoverUrl from '../../assets/ui/btn_start_game_hover.png?url';
+import ui_combo_x2Url from '../../assets/ui/combo_x2.png?url';
+import ui_combo_x3Url from '../../assets/ui/combo_x3.png?url';
+import ui_combo_x4Url from '../../assets/ui/combo_x4.png?url';
+import ui_pause_panelUrl from '../../assets/ui/pause_panel.png?url';
+import ui_win_cat_peekUrl from '../../assets/ui/win_cat_peek.png?url';
+import ui_win_panel_bgUrl from '../../assets/ui/win_panel_bg.png?url';
+import ui_win_starUrl from '../../assets/ui/win_star.png?url';
+import cat_hole_peekUrl from '../../assets/cat_hole_peek.png?url';
+import cat_hole_watchUrl from '../../assets/cat_hole_watch.png?url';
+import cat_hole_attackUrl from '../../assets/cat_hole_attack.png?url';
+import cat_hole_sabotageUrl from '../../assets/cat_hole_sabotage.png?url';
+import cat_hole_hideUrl from '../../assets/cat_hole_hide.png?url';
 import { CAT_STATES } from './constants.js';
 import scoreBarUrl from '../../assets/ui/score_bar.png?url';
 import healthBarUrl from '../../assets/ui/health_bar.png?url';
@@ -7,56 +49,68 @@ import { CAT_CLAW_CUTSCENE_FRAME_SIZE } from '../ui/CatAttackCutscene.js';
 
 export { ASSET_KEYS } from './AssetKeys.js';
 
+
+// Imported URLs are emitted and hashed by Vite for production deployments.
+const catStateUrls = Object.freeze({
+  [CAT_STATES.HIDDEN]: cat_hole_hiddenUrl,
+  [CAT_STATES.WARNING]: cat_hole_hiddenUrl,
+  [CAT_STATES.PEEK]: cat_hole_peekUrl,
+  [CAT_STATES.WATCH]: cat_hole_watchUrl,
+  [CAT_STATES.ATTACK]: cat_hole_attackUrl,
+  [CAT_STATES.SABOTAGE]: cat_hole_sabotageUrl,
+  [CAT_STATES.HIDE]: cat_hole_hideUrl,
+});
+
 export const ASSET_MANIFEST = Object.freeze({
-  background: '/assets/background.png',
-  in_background_overlay: '/assets/in_background_overlay.png',
-  table_back: '/assets/table_back.png',
-  table_front: '/assets/table_front.png',
-  sabotage_paw: '/assets/sabotage_paw.png',
-  cat_rig_head: '/assets/cat-rig/cat_rig_head.png',
-  cat_rig_paws: '/assets/cat-rig/cat_rig_paws.png',
-  cat_reach_body_v2: '/assets/cat-rig/cat_reach_v2_body.png',
-  cat_reach_head_v2: '/assets/cat-rig/cat_reach_v2_head.png',
-  cat_reach_sleep_head_v3: '/assets/cat-rig/cat_reach_v3_sleep_head.png',
-  cat_reach_gaze_v3: '/assets/cat-rig/cat_reach_v3_gaze.png',
-  cat_reach_arm_left_v2: '/assets/cat-rig/cat_reach_v2_arm_left.png',
-  cat_reach_arm_right_v2: '/assets/cat-rig/cat_reach_v2_arm_right.png',
+  background: backgroundUrl,
+  in_background_overlay: in_background_overlayUrl,
+  table_back: table_backUrl,
+  table_front: table_frontUrl,
+  sabotage_paw: sabotage_pawUrl,
+  cat_rig_head: cat_rig_cat_rig_headUrl,
+  cat_rig_paws: cat_rig_cat_rig_pawsUrl,
+  cat_reach_body_v2: cat_rig_cat_reach_v2_bodyUrl,
+  cat_reach_head_v2: cat_rig_cat_reach_v2_headUrl,
+  cat_reach_sleep_head_v3: cat_rig_cat_reach_v3_sleep_headUrl,
+  cat_reach_gaze_v3: cat_rig_cat_reach_v3_gazeUrl,
+  cat_reach_arm_left_v2: cat_rig_cat_reach_v2_arm_leftUrl,
+  cat_reach_arm_right_v2: cat_rig_cat_reach_v2_arm_rightUrl,
   ...Object.fromEntries(
     Object.values(CAT_STATES).map((state) => [
       `cat_hole_${state}`,
-      state === CAT_STATES.WARNING ? '/assets/cat_hole_hidden.png' : `/assets/cat_hole_${state}.png`,
+      catStateUrls[state],
     ]),
   ),
-  button_off: '/assets/ui/button_off.png',
-  button_on: '/assets/ui/button_on.png',
-  btn_off: '/assets/ui/button_off.png',
-  btn_holding: '/assets/ui/button_off.png',
-  btn_on: '/assets/ui/button_on.png',
-  heart_full: '/assets/ui/heart_full.png',
-  heart_empty: '/assets/ui/heart_empty.png',
-  heart: '/assets/ui/heart_full.png',
-  star_icon: '/assets/ui/star_icon.png',
-  star: '/assets/ui/star_icon.png',
-  cat_paw: '/assets/ui/cat_paw.png',
-  warning_bubble: '/assets/ui/warning_bubble.png',
-  warning_mark: '/assets/ui/warning.png',
-  cat_mood_bubbles: '/assets/ui/cat_mood_bubbles.png',
-  cat_claw_cutscene: '/assets/ui/cat_claw_cutscene.png',
-  sound_on: '/assets/ui/sound_on.png',
-  sound_off: '/assets/ui/sound_off.png',
-  pause_icon: '/assets/ui/pause_icon.png',
-  home_card: '/assets/ui/home_card.png',
-  btn_start_game: '/assets/ui/btn_start_game.png',
-  btn_start_game_hover: '/assets/ui/btn_start_game_hover.png',
+  button_off: ui_button_offUrl,
+  button_on: ui_button_onUrl,
+  btn_off: ui_button_offUrl,
+  btn_holding: ui_button_offUrl,
+  btn_on: ui_button_onUrl,
+  heart_full: ui_heart_fullUrl,
+  heart_empty: ui_heart_emptyUrl,
+  heart: ui_heart_fullUrl,
+  star_icon: ui_star_iconUrl,
+  star: ui_star_iconUrl,
+  cat_paw: ui_cat_pawUrl,
+  warning_bubble: ui_warning_bubbleUrl,
+  warning_mark: ui_warningUrl,
+  cat_mood_bubbles: ui_cat_mood_bubblesUrl,
+  cat_claw_cutscene: ui_cat_claw_cutsceneUrl,
+  sound_on: ui_sound_onUrl,
+  sound_off: ui_sound_offUrl,
+  pause_icon: ui_pause_iconUrl,
+  home_card: ui_home_cardUrl,
+  btn_start_game: ui_btn_start_gameUrl,
+  btn_start_game_hover: ui_btn_start_game_hoverUrl,
   score_bar: scoreBarUrl,
   health_bar: healthBarUrl,
-  combo_x2: '/assets/ui/combo_x2.png',
-  combo_x3: '/assets/ui/combo_x3.png',
-  combo_x4: '/assets/ui/combo_x4.png',
-  pause_panel: '/assets/ui/pause_panel.png',
-  win_cat_peek: '/assets/ui/win_cat_peek.png',
-  win_panel_bg: '/assets/ui/win_panel_bg.png',
-  win_star: '/assets/ui/win_star.png',
+  combo_x2: ui_combo_x2Url,
+  combo_x3: ui_combo_x3Url,
+  combo_x4: ui_combo_x4Url,
+  pause_panel: ui_pause_panelUrl,
+  win_cat_peek: ui_win_cat_peekUrl,
+  win_panel_bg: ui_win_panel_bgUrl,
+  win_star: ui_win_starUrl,
 });
 
 export function preloadContractAssets(scene, { useRealAssets = false } = {}) {
