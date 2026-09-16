@@ -82,6 +82,10 @@ export class GameScene extends Phaser.Scene {
       onTutorialComplete: () => this.beginStage(),
       onTutorialReturn: () => this.showPause(),
       boardOffsetY: this.boardOffsetY,
+      getMoodCueAnchor: () => this.catAnimation?.getMoodCueAnchor?.() ?? {
+        x: 660,
+        y: this.boardCenterY - 180,
+      },
     });
 
     this.buttons = new ButtonManager(this, this.config, {
@@ -255,7 +259,10 @@ export class GameScene extends Phaser.Scene {
 
     this.cat.onPlayerActivated(button.slotId);
     if (this.buttons.areAllActivated()) {
-      if (this.cat.hasActiveAction()) {
+      if (!this.cat.hasPresentedEvent()) {
+        this.stageClearPending = true;
+        this.ui.setStatus('เปิดครบแล้ว... แมวกำลังจะมา!', true);
+      } else if (this.cat.hasActiveAction()) {
         this.stageClearPending = true;
         this.ui.setStatus('เปิดครบแล้ว... แต่แมวยังไม่ยอมแพ้!', true);
       } else {
@@ -399,7 +406,7 @@ export class GameScene extends Phaser.Scene {
 
   handleMoodChange(snapshot) {
     this.ui?.onMoodChange?.(snapshot);
-    this.catAnimation?.setMood?.(snapshot.level, snapshot.direction, snapshot.levelChanged);
+    this.catAnimation?.setMood?.(snapshot.level);
     this.refreshHud();
   }
 
@@ -470,7 +477,8 @@ export class GameScene extends Phaser.Scene {
       this.stageClearPending = false;
       return;
     }
-    if (!this.cat.hasActiveAction()) this.finishStage();
+    if (!this.cat.hasPresentedEvent() || this.cat.hasActiveAction()) return;
+    this.finishStage();
   }
 
   toggleMute() {

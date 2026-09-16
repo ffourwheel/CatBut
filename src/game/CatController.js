@@ -21,6 +21,7 @@ export class CatController {
     this.queuedSabotageSlotId = null;
     this.rapidTapCount = 0;
     this.rapidTapRemaining = 0;
+    this.firstEventPresented = false;
   }
 
   start() {
@@ -35,6 +36,7 @@ export class CatController {
     this.queuedSabotageSlotId = null;
     this.rapidTapCount = 0;
     this.rapidTapRemaining = 0;
+    this.firstEventPresented = false;
     this.eventResolved = false;
     this.setState(CAT_STATES.HIDDEN);
     this.scheduleNextEvent();
@@ -187,7 +189,12 @@ export class CatController {
     );
   }
 
+  hasPresentedEvent() {
+    return this.firstEventPresented;
+  }
+
   enterWarning() {
+    this.firstEventPresented = true;
     this.eventResolved = false;
     this.setState(CAT_STATES.WARNING);
     this.phaseRemaining = this.config.warningDuration;

@@ -2,6 +2,7 @@ import { CAT_STATES } from './constants.js';
 import scoreBarUrl from '../../assets/ui/score_bar.png?url';
 import healthBarUrl from '../../assets/ui/health_bar.png?url';
 import { ASSET_KEYS } from './AssetKeys.js';
+import { MOOD_CUE_FRAME_SIZE } from '../ui/MoodCue.js';
 
 export { ASSET_KEYS } from './AssetKeys.js';
 
@@ -38,6 +39,7 @@ export const ASSET_MANIFEST = Object.freeze({
   cat_paw: '/assets/ui/cat_paw.png',
   warning_bubble: '/assets/ui/warning_bubble.png',
   warning_mark: '/assets/ui/warning.png',
+  cat_mood_bubbles: '/assets/ui/cat_mood_bubbles.png',
   sound_on: '/assets/ui/sound_on.png',
   sound_off: '/assets/ui/sound_off.png',
   pause_icon: '/assets/ui/pause_icon.png',
@@ -59,6 +61,13 @@ export function preloadContractAssets(scene, { useRealAssets = false } = {}) {
   if (!useRealAssets) return;
 
   Object.entries(ASSET_MANIFEST).forEach(([key, path]) => {
+    if (key === ASSET_KEYS.ui.catMoodBubbles) {
+      scene.load.spritesheet(key, path, {
+        frameWidth: MOOD_CUE_FRAME_SIZE,
+        frameHeight: MOOD_CUE_FRAME_SIZE,
+      });
+      return;
+    }
     scene.load.image(key, path);
   });
 }

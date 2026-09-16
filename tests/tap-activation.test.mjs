@@ -52,6 +52,24 @@ test('tap activates a button immediately without an update or pointer release', 
   assert.equal(manager.buttons[0].activated, true);
 });
 
+test('cat reports the first event only when its warning begins', () => {
+  const config = createGameConfig({
+    catIntervalMin: 500,
+    catIntervalMax: 500,
+    catEventMinimumGap: 0,
+    debug: { disableRandomness: true },
+  });
+  const cat = new CatController(null, config);
+
+  cat.start();
+  assert.equal(cat.hasPresentedEvent(), false);
+  cat.update(499);
+  assert.equal(cat.hasPresentedEvent(), false);
+  cat.update(1);
+  assert.equal(cat.hasPresentedEvent(), true);
+  assert.equal(cat.state, 'warning');
+});
+
 test('sabotage targeting excludes the button just activated when another target exists', () => {
   const manager = createButtonManager();
   manager.buttons[0].activated = true;

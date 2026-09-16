@@ -89,6 +89,7 @@ All UI elements are provided as transparent PNGs tailored for mobile touch targe
 | `star_icon` | `assets/ui/star_icon.png` | `64 × 64` | 100 | Score and combo badge icon |
 | `cat_paw` | `assets/ui/cat_paw.png` | `64 × 64` | 100 | UI accent, menu badge, button icon |
 | `warning_bubble` | `assets/ui/warning_bubble.png` | `96 × 96` | 100 | Comic exclamation bubble above cat during WARNING |
+| `cat_mood_bubbles` | `assets/ui/cat_mood_bubbles.png` | `1254 × 1254` (2×2 frames, 627px each) | 60 | Generated floating Mood bubbles: sleepy, curious, annoyed, angry |
 | `sound_on` | `assets/ui/sound_on.png` | `64 × 64` | 100 | Sound enabled button icon (top right HUD) |
 | `sound_off` | `assets/ui/sound_off.png` | `64 × 64` | 100 | Sound muted button icon (top right HUD) |
 | `pause_icon` | `assets/ui/pause_icon.png` | `64 × 64` | 100 | Pause modal trigger button (top right HUD) |

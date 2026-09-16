@@ -14,7 +14,6 @@ import {
   drawCatBackHead,
   drawCatBody,
   drawCatGaze,
-  drawCatMoodOverlay,
   drawCatHead as drawVectorCatHead,
   drawCatSleepHead as drawVectorCatSleepHead,
 } from './VectorCatArt.js';
@@ -253,10 +252,6 @@ export function createCatTableAssembly(
     .setPosition(0, headY);
   const catReachGaze = createCatPart(drawCatGaze, ASSET_KEYS.catReach.gaze, bodyScale)
     .setPosition(0, headY);
-  const catMoodOverlay = scene.add.graphics()
-    .setPosition(0, headY)
-    .setScale(bodyScale);
-  drawCatMoodOverlay(catMoodOverlay, 'sleepy');
   const catReachArmLeft = createCatPart(
     (graphics) => drawCatArm(graphics, 'left'),
     ASSET_KEYS.catReach.armLeft,
@@ -274,7 +269,6 @@ export function createCatTableAssembly(
   catReachSleepHead.baseScale = bodyScale;
   catReachBackHead.baseScale = bodyScale;
   catReachGaze.baseScale = bodyScale;
-  catMoodOverlay.baseScale = bodyScale;
   catReachArmLeft.baseScale = armScale;
   catReachArmRight.baseScale = armScale;
   catReachArmLeft.baseX = -shoulder.x;
@@ -292,7 +286,6 @@ export function createCatTableAssembly(
     catReachSleepHead,
     catReachBackHead,
     catReachGaze,
-    catMoodOverlay,
   ]);
 
   const sabotagePaw = scene.add.image(0, CAT_HOLE_OFFSET_Y, ASSET_KEYS.sabotagePaw)
@@ -314,7 +307,6 @@ export function createCatTableAssembly(
     catReachSleepHead,
     catReachBackHead,
     catReachGaze,
-    catMoodOverlay,
     catReachArmLeft,
     catReachArmRight,
     hasCatRig,

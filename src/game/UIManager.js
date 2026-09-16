@@ -4,6 +4,13 @@ import { ScreenLayoutManager } from '../ui/ScreenLayouts.js';
 import { FEEDBACK_EFFECTS, FeedbackFX } from '../ui/FeedbackEffects.js';
 import { UI_DEPTH } from '../ui/UITokens.js';
 import { COPY_THAI } from '../ui/CopyThai.js';
+import {
+  getMoodCue,
+  isMoodCueVisibleForCatState,
+  MOOD_CUE_ICONS,
+  MOOD_CUE_FRAME_SIZE,
+} from '../ui/MoodCue.js';
+import { ASSET_KEYS } from './AssetManifest.js';
 import { CAT_STATES, GAME_SCREENS } from './constants.js';
 
 /**
@@ -61,11 +68,40 @@ export class UIManager {
     this.warningY = 355 + this.boardOffsetY;
     this.warningMark = scene.add.image(515, this.warningY, warningKey)
       .setOrigin(0.5, 0.5)
-      .setDepth(UI_DEPTH.CAT_FX)
+      .setDepth(UI_DEPTH.CAT_FX + 1)
       .setScale(0)
       .setAlpha(0)
       .setVisible(false);
     this.warningActive = false;
+
+    const moodCueKey = ASSET_KEYS.ui.catMoodBubbles;
+    const hasMoodCueTexture = scene.textures.exists(moodCueKey);
+    this.moodCueRoot = scene.add.container(0, 0)
+      .setDepth(UI_DEPTH.CAT_FX)
+      .setScale(0)
+      .setAlpha(0)
+      .setVisible(false);
+    this.moodCueMark = hasMoodCueTexture
+      ? scene.add.image(0, 0, moodCueKey, 0).setOrigin(0.5, 0.5).setScale(180 / MOOD_CUE_FRAME_SIZE)
+      : scene.add.text(0, 0, MOOD_CUE_ICONS.sleepy, {
+        fontFamily: 'Mali, sans-serif',
+        fontSize: '84px',
+        color: '#f7c948',
+        fontStyle: 'bold',
+        stroke: '#4c3030',
+        strokeThickness: 8,
+      }).setOrigin(0.5, 0.5);
+    this.moodCueLabel = scene.add.text(0, 48, getMoodCue('sleepy').label, {
+      fontFamily: 'Mali, sans-serif',
+      fontSize: '24px',
+      color: '#4c3030',
+      fontStyle: 'bold',
+      stroke: '#fff4dc',
+      strokeThickness: 4,
+    }).setOrigin(0.5, 0.5);
+    this.moodCueRoot.add([this.moodCueMark, this.moodCueLabel]);
+    this.moodCueStateVisible = true;
+    this.moodCueLevel = 'sleepy';
 
     this.hud.setVisible(false);
     this.screens.show('start');
@@ -74,7 +110,12 @@ export class UIManager {
   show(screenName) {
     this.currentScreen = screenName;
     const gameplay = screenName === GAME_SCREENS.GAMEPLAY;
-    if (!gameplay) this.hideWarningMark(true);
+    if (!gameplay) {
+      this.hideWarningMark(true);
+      this.hideMoodCue(true);
+    } else if (this.moodCueStateVisible) {
+      this.showMoodCue(false);
+    }
     this.screens.show(gameplay ? '__gameplay' : screenName);
     this.hud.setVisible(gameplay);
   }
@@ -92,6 +133,7 @@ export class UIManager {
   }
 
   update(delta) {
+    this.updateMoodCuePosition();
     if (this.feedbackHoldRemaining <= 0) return;
     this.feedbackHoldRemaining = Math.max(0, this.feedbackHoldRemaining - delta);
     if (this.feedbackHoldRemaining > 0 || !this.deferredFeedback) return;
@@ -120,6 +162,7 @@ export class UIManager {
       || this.lastStats.mood?.level !== mood?.level
     ) {
       this.hud.setMood(mood);
+      if (mood?.level !== this.moodCueLevel) this.setMoodCue(mood?.level);
     }
 
     this.lastStats = {
@@ -165,8 +208,9 @@ export class UIManager {
   }
 
   onMoodChange(snapshot) {
-    if (!snapshot?.levelChanged) return;
-    this.hud.pulseMood?.(snapshot.direction);
+    if (!snapshot) return;
+    this.setMoodCue(snapshot.level, { animate: snapshot.levelChanged });
+    if (snapshot.levelChanged) this.hud.pulseMood?.(snapshot.direction);
   }
 
   setClearStats(score, maxCombo) {
@@ -273,7 +317,73 @@ export class UIManager {
     });
   }
 
+  setMoodCue(level = 'sleepy', { animate = false } = {}) {
+    const cue = getMoodCue(level);
+    this.moodCueLevel = Object.hasOwn(MOOD_CUE_ICONS, level) ? level : 'sleepy';
+    if (this.moodCueMark.setFrame) this.moodCueMark.setFrame(cue.frame);
+    else this.moodCueMark.setText(MOOD_CUE_ICONS[this.moodCueLevel]);
+    this.moodCueLabel.setText(cue.label);
+    if (!this.moodCueStateVisible || this.currentScreen !== GAME_SCREENS.GAMEPLAY) return;
+    this.showMoodCue(animate);
+  }
+
+  setMoodCueVisibility(visible, immediate = false) {
+    this.moodCueStateVisible = visible;
+    if (!visible || this.currentScreen !== GAME_SCREENS.GAMEPLAY) {
+      this.hideMoodCue(immediate);
+      return;
+    }
+    this.showMoodCue(false);
+  }
+
+  showMoodCue(animate = false) {
+    if (!this.moodCueRoot || !this.moodCueStateVisible || this.currentScreen !== GAME_SCREENS.GAMEPLAY) return;
+    this.updateMoodCuePosition();
+    this.scene.tweens.killTweensOf(this.moodCueRoot);
+    this.moodCueRoot.setVisible(true).setAlpha(1);
+    if (!animate) {
+      this.moodCueRoot.setScale(1);
+      return;
+    }
+    this.moodCueRoot.setScale(0.72);
+    this.scene.tweens.add({
+      targets: this.moodCueRoot,
+      scaleX: 1.12,
+      scaleY: 1.12,
+      duration: 140,
+      ease: 'Back.easeOut',
+      yoyo: true,
+      hold: 30,
+      onComplete: () => this.moodCueRoot.setScale(1),
+    });
+  }
+
+  hideMoodCue(immediate = false) {
+    if (!this.moodCueRoot) return;
+    this.scene.tweens.killTweensOf(this.moodCueRoot);
+    if (immediate) {
+      this.moodCueRoot.setScale(0).setAlpha(0).setVisible(false);
+      return;
+    }
+    this.scene.tweens.add({
+      targets: this.moodCueRoot,
+      scaleX: 0,
+      scaleY: 0,
+      alpha: 0,
+      duration: 120,
+      ease: 'Back.easeIn',
+      onComplete: () => this.moodCueRoot.setVisible(false),
+    });
+  }
+
+  updateMoodCuePosition() {
+    const anchor = this.callbacks.getMoodCueAnchor?.();
+    if (!anchor || !this.moodCueRoot) return;
+    this.moodCueRoot.setPosition(anchor.x, anchor.y);
+  }
+
   onCatState(state, catStateImage) {
+    this.setMoodCueVisibility(isMoodCueVisibleForCatState(state));
     if (state === CAT_STATES.WARNING) {
       this.showGameplayFeedback('ระวังนะ! แมวเริ่มได้ยิน!', { priority: 30, highlight: true });
       this.showWarningMark();

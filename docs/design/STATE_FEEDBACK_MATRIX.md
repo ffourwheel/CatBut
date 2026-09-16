@@ -48,7 +48,7 @@ Rendered at Depth 20 between `tableBack` (Depth 10) and `tableFront` (Depth 30).
 | **SABOTAGE** | `cat_hole_sabotage` texture. Cat paw reaches out laterally toward an active button to reset it. | `sfx_cat_mischief` (Playful villainous meow + paw swipe thud) | Paw swipe tween toward target button coordinate (`Quad.easeInOut`, 220ms). Button triggers SABOTAGED state. | "แมวแอบปิดปุ่ม!" |
 | **HIDE** | `cat_hole_hide` texture. Cat plunges back down into hole. 3 downward motion retreat lines visible. Safe again. | `sfx_cat_retreat_whoosh` (Soft quick whoosh / slide down sound) | Rapid downward sink transition back to `cat_hole_hidden` (`Cubic.easeIn`, 160ms). | "แมวมุดกลับแล้ว! ปลอดภัย!" |
 
-Cat Mood remains a secondary visual layer: sleepy uses a `Z`, curious uses a `?`, annoyed uses twitch marks and furrowed brows, and angry uses furrowed brows with a red-orange anger symbol. The Cat Action pose always takes visual priority; Mood overlays are hidden while the cat faces away during SABOTAGE or HIDE.
+Cat Mood uses a generated floating bubble cue: sleepy uses `Z`, curious uses `?`, annoyed uses twitch marks, and angry uses a red-orange comic anger symbol. The cue is a UI layer that follows the head anchor without inheriting Cat Rig rotation or scale; the action Warning cue remains in front, and the Mood cue is hidden while the cat faces away during SABOTAGE or HIDE. The HUD keeps a compact four-segment Mood pill as fallback.
 
 ---
 

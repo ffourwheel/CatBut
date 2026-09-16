@@ -17,12 +17,12 @@ export const ACTIVE_GAME_PRESET = 'normal';
 
 | ค่า | ความหมาย | ตัวอย่าง |
 | --- | --- | ---: |
-| `catIntervalMin` / `catIntervalMax` | ระยะเวลาพื้นฐานที่แมวซ่อนก่อนเริ่ม Event แบบสุ่ม (มิลลิวินาที) | `750` ถึง `1300` |
+| `catIntervalMin` / `catIntervalMax` | ระยะเวลาพื้นฐานที่แมวซ่อนก่อนเริ่ม Event แบบสุ่ม (มิลลิวินาที) | `500` ถึง `850` |
 | `catEventMinimumGap` | ช่วงพักขั้นต่ำระหว่าง Cat Event (มิลลิวินาที) | `500` |
-| `warningDuration` | ระยะเวลาเตือนก่อนแมวมอง | `450` |
-| `peekDuration` | ระยะเวลาแมวโผล่ให้เห็น | `550` |
+| `warningDuration` | ระยะเวลาเตือนก่อนแมวมอง | `350` |
+| `peekDuration` | ระยะเวลาแมวโผล่ให้เห็น | `400` |
 | `watchDuration` | ระยะเวลาที่แมวจ้อง | `1000` |
-| `watchProbability` | โอกาสที่แมวจะเลือกจ้อง (0–1) | `0.50` |
+| `watchProbability` | โอกาสที่แมวจะเลือกจ้อง (0–1) | `0.60` |
 | `sabotagePreviewDuration` | เวลาที่แมวเล็งปุ่มและหันตัวก่อนยื่นแขน (มิลลิวินาที) | `350` |
 | `sabotageReachDuration` | เวลาที่แขนต่อจากไหล่ยื่นถึงปุ่ม (มิลลิวินาที) | `280` |
 | `sabotageHitDuration` | จังหวะสัมผัส/สั่งปิดปุ่มหลังเริ่มยื่นแขน (มิลลิวินาที) | `260` |
@@ -46,6 +46,12 @@ Mood มี 4 ระดับและเพิ่มขึ้นเฉพาะ
 | โมโห | `75–100` | `0.55` |
 
 Rapid Tap เพิ่ม Mood `25` หน่วยต่อครั้ง หลังไม่มี Rapid Tap `2,000 ms` Mood จะลดหนึ่งระดับทุก `1,500 ms` โดยช่วงพักขั้นต่ำของ Cat Event ยังคงเป็น `500 ms` เสมอ
+
+Mood cue ใช้ `assets/ui/cat_mood_bubbles.png` เป็น spritesheet แบบ 2×2: `sleepy=0`, `curious=1`, `annoyed=2`, `angry=3` โดย UI วาง label ภาษาไทยแยกจากภาพและติดตามหัวแมวโดยไม่หมุนตาม Cat Rig
+
+ถ้าเปิดปุ่มครบก่อน Cat Event แรก รอบจะรอให้แมวแสดง WARNING และจบ Event แรกก่อนจึงเคลียร์รอบ เพื่อให้ผู้เล่นได้เจอกลไกแมวทุกครั้ง
+
+Preset `hard` ใช้ Cat Event `500–700 ms`, WARNING `300 ms`, PEEK `350 ms`, WATCH probability `0.70`, ปุ่ม `6–8` ปุ่ม และ Sabotage cooldown `900 ms`; preset `easy` คงช่วงพักยาวเพื่อใช้เรียนรู้
 
 ## Override ตอนทดสอบ
 

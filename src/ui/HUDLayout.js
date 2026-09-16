@@ -7,6 +7,7 @@
 import { UI_COLORS, UI_FONTS, UI_SPACING, UI_DEPTH } from './UITokens.js';
 import { COPY_THAI } from './CopyThai.js';
 import { CAT_MOOD_LEVELS } from '../game/MoodManager.js';
+import { MOOD_CUE_ICONS } from './MoodCue.js';
 
 export const HUD_LAYOUT_CONFIG = Object.freeze({
   // Score plaque (Top Left)
@@ -123,13 +124,14 @@ export const HUD_LAYOUT_CONFIG = Object.freeze({
   moodBar: {
     x: 20,
     y: 342,
-    width: 340,
-    height: 58,
+    width: 320,
+    height: 54,
     radius: 24,
-    trackX: 128,
-    trackY: 367,
-    trackWidth: 210,
-    trackHeight: 14,
+    trackX: 146,
+    trackY: 366,
+    trackWidth: 176,
+    trackHeight: 12,
+    segmentGap: 5,
   },
 
   // Bottom Floating Table Instruction Banner
@@ -483,13 +485,13 @@ export function buildCozyHUD(scene, callbacks = {}) {
   moodBg.lineStyle(3, UI_COLORS.panelBorder, 0.95);
   moodBg.strokeRoundedRect(cfgMood.x, cfgMood.y, cfgMood.width, cfgMood.height, cfgMood.radius);
 
-  const moodLabel = scene.add.text(cfgMood.x + 18, cfgMood.y + 8, COPY_THAI.hud.moodLabel, {
+  const moodLabel = scene.add.text(cfgMood.x + 16, cfgMood.y + 7, COPY_THAI.hud.moodLabel, {
     fontFamily: UI_FONTS.family,
     fontSize: '16px',
     color: UI_COLORS.textLight,
     fontStyle: 'bold',
   }).setOrigin(0, 0);
-  const moodValue = scene.add.text(cfgMood.x + cfgMood.width - 18, cfgMood.y + 8, 'ง่วง', {
+  const moodValue = scene.add.text(cfgMood.x + cfgMood.width - 16, cfgMood.y + 7, 'Z ง่วง', {
     fontFamily: UI_FONTS.family,
     fontSize: '16px',
     color: UI_COLORS.greenSuccessHex,
@@ -500,41 +502,39 @@ export function buildCozyHUD(scene, callbacks = {}) {
   container.add(moodContainer);
 
   const moodPresentation = Object.freeze({
-    sleepy: { color: UI_COLORS.greenSuccess, hex: UI_COLORS.greenSuccessHex },
-    curious: { color: UI_COLORS.accentGold, hex: UI_COLORS.accentGoldHex },
-    annoyed: { color: UI_COLORS.accentAmber, hex: UI_COLORS.accentAmberHex },
-    angry: { color: UI_COLORS.dangerCoral, hex: UI_COLORS.dangerCoralHex },
+    sleepy: { color: UI_COLORS.greenSuccess, hex: UI_COLORS.greenSuccessHex, icon: MOOD_CUE_ICONS.sleepy },
+    curious: { color: UI_COLORS.accentGold, hex: UI_COLORS.accentGoldHex, icon: MOOD_CUE_ICONS.curious },
+    annoyed: { color: UI_COLORS.accentAmber, hex: UI_COLORS.accentAmberHex, icon: MOOD_CUE_ICONS.annoyed },
+    angry: { color: UI_COLORS.dangerCoral, hex: UI_COLORS.dangerCoralHex, icon: MOOD_CUE_ICONS.angry },
   });
 
   function renderMood(snapshot = {}) {
-    const value = snapshot?.value ?? 0;
-    const safeMax = Math.max(1, snapshot?.max ?? 100);
-    const ratio = Math.max(0, Math.min(1, value / safeMax));
     const level = snapshot?.level ?? 'sleepy';
     const presentation = moodPresentation[level] ?? moodPresentation.sleepy;
+    const levelIndex = Math.max(0, CAT_MOOD_LEVELS.findIndex((moodLevel) => moodLevel.key === level));
+    const segmentWidth = (cfgMood.trackWidth - (cfgMood.segmentGap * 3)) / 4;
 
     moodTrack.clear();
     moodTrack.fillStyle(0x241711, 1);
-    moodTrack.fillRoundedRect(
-      cfgMood.trackX,
-      cfgMood.trackY,
-      cfgMood.trackWidth,
-      cfgMood.trackHeight,
-      cfgMood.trackHeight / 2,
-    );
-    moodTrack.lineStyle(2, 0xf4dec2, 0.45);
-    for (let index = 1; index < 4; index += 1) {
-      const dividerX = cfgMood.trackX + (cfgMood.trackWidth / 4) * index;
-      moodTrack.lineBetween(dividerX, cfgMood.trackY - 2, dividerX, cfgMood.trackY + cfgMood.trackHeight + 2);
+    for (let index = 0; index < 4; index += 1) {
+      const segmentX = cfgMood.trackX + index * (segmentWidth + cfgMood.segmentGap);
+      moodTrack.fillRoundedRect(
+        segmentX,
+        cfgMood.trackY,
+        segmentWidth,
+        cfgMood.trackHeight,
+        cfgMood.trackHeight / 2,
+      );
     }
 
     moodFill.clear();
-    if (ratio > 0) {
-      moodFill.fillStyle(presentation.color, 1);
+    moodFill.fillStyle(presentation.color, 1);
+    for (let index = 0; index <= levelIndex; index += 1) {
+      const segmentX = cfgMood.trackX + index * (segmentWidth + cfgMood.segmentGap);
       moodFill.fillRoundedRect(
-        cfgMood.trackX,
+        segmentX,
         cfgMood.trackY,
-        Math.max(cfgMood.trackHeight, cfgMood.trackWidth * ratio),
+        segmentWidth,
         cfgMood.trackHeight,
         cfgMood.trackHeight / 2,
       );
@@ -542,7 +542,7 @@ export function buildCozyHUD(scene, callbacks = {}) {
     const moodLabelText = snapshot?.label
       ?? CAT_MOOD_LEVELS.find((moodLevel) => moodLevel.key === level)?.label
       ?? CAT_MOOD_LEVELS[0].label;
-    moodValue.setText(moodLabelText)
+    moodValue.setText(`${presentation.icon} ${moodLabelText}`)
       .setColor(presentation.hex);
   }
   renderMood();
