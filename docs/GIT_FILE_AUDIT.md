@@ -48,9 +48,9 @@ These assets were deleted after user approval. Historical design documents may s
 
 node_modules/ and dist/ are ignored and not tracked. Deleted assets appear as deletions in Git; development material listed above is already tracked. Adding them to .gitignore alone will not remove them from future commits. Existing published history, if any, is unaffected by later cleanup.
 
-## Deployment issue discovered
+## Deployment issue resolved
 
-AssetManifest.js uses absolute /assets/ paths for most images, but vite.config.js has no publicDir or copy configuration. The generated dist/assets/ includes only the two imported bar images and the two fonts, alongside JS/CSS. Most runtime PNGs are missing from dist. Build success alone does not validate image loading. Resolve asset copying/imports before hosting the production build; this is separate from uploading the source to Git.
+AssetManifest.js now imports all runtime PNGs with ?url, including dynamic cat states. Vite emits hashed files or embeds small images into the bundle. A production build regression test verifies image contents are included.
 
 ## Identical file contents (SHA-256)
 
