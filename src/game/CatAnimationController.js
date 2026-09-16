@@ -20,13 +20,16 @@ const POSES = Object.freeze({
   [CAT_STATES.WARNING]: Object.freeze({
     bodyY: 38,
     bodyAlpha: 1,
-    bodyScale: 0.98,
+    bodyScale: 1,
     headY: -30,
-    headAlpha: 0.72,
+    // Warning is anticipation, so keep the same opaque sleep head until the
+    // peek begins. Cross-fading two partial-alpha heads made the cat look
+    // translucent and smaller even though the torso was moving upward.
+    headAlpha: 0,
     sleepHeadY: -30,
-    sleepHeadAlpha: 0.28,
-    gazeAlpha: 0.72,
-    headScale: 0.98,
+    sleepHeadAlpha: 1,
+    gazeAlpha: 0,
+    headScale: 1,
     headRotation: -0.02,
     armAlpha: 0,
   }),
@@ -84,13 +87,15 @@ const POSES = Object.freeze({
   }),
   [CAT_STATES.HIDE]: Object.freeze({
     bodyY: 66,
-    bodyAlpha: 0,
+    // The hole rim hides the rig spatially; do not fade the cat while it
+    // ducks down because partial alpha reads as a visual glitch.
+    bodyAlpha: 1,
     bodyScale: 0.96,
     headY: 26,
-    headAlpha: 0,
+    headAlpha: 1,
     sleepHeadY: 26,
     sleepHeadAlpha: 0,
-    gazeAlpha: 0,
+    gazeAlpha: 1,
     headScale: 0.96,
     headRotation: 0,
     armAlpha: 0,
@@ -101,12 +106,12 @@ const POSES = Object.freeze({
 export const CAT_POSES = POSES;
 
 const TRANSITION_DURATION = Object.freeze({
-  [CAT_STATES.HIDDEN]: 180,
-  [CAT_STATES.WARNING]: 260,
-  [CAT_STATES.PEEK]: 420,
-  [CAT_STATES.WATCH]: 300,
+  [CAT_STATES.HIDDEN]: 220,
+  [CAT_STATES.WARNING]: 180,
+  [CAT_STATES.PEEK]: 280,
+  [CAT_STATES.WATCH]: 220,
   [CAT_STATES.ATTACK]: 120,
-  [CAT_STATES.SABOTAGE]: 180,
+  [CAT_STATES.SABOTAGE]: 160,
   [CAT_STATES.HIDE]: 220,
 });
 
@@ -118,7 +123,7 @@ const ARM_SIDE = Object.freeze({
   RIGHT: 'right',
 });
 
-const LOOK_ARM_ALPHA = 0.9;
+const LOOK_ARM_ALPHA = 1;
 const BACK_ZONE_THRESHOLD = -0.15;
 const REACH_SCALE_MIN = 0.72;
 // Comfortable stretch for the single-piece arm before the body starts to
@@ -240,6 +245,10 @@ export class CatAnimationController {  constructor(scene, assembly) {
       return;
     }
 
+    // Visibility is binary. Swap rig layers immediately and animate only
+    // transforms so no frame can contain a semi-transparent cat.
+    this.applyVisibility(motion);
+
     if (state === CAT_STATES.ATTACK) {
       this.playAttackMotion();
       return;
@@ -249,7 +258,6 @@ export class CatAnimationController {  constructor(scene, assembly) {
     this.tween(this.body, {
       x: motion.body.x,
       y: motion.body.y,
-      alpha: motion.body.alpha,
       scaleX: this.body.baseScale * motion.body.scaleX,
       scaleY: this.body.baseScale * motion.body.scaleY,
       rotation: motion.body.rotation,
@@ -259,7 +267,6 @@ export class CatAnimationController {  constructor(scene, assembly) {
     this.tween(this.head, {
       x: motion.head.x,
       y: motion.head.y,
-      alpha: motion.head.alpha,
       scaleX: this.head.baseScale * motion.head.scaleX,
       scaleY: this.head.baseScale * motion.head.scaleY,
       rotation: motion.head.rotation,
@@ -267,7 +274,6 @@ export class CatAnimationController {  constructor(scene, assembly) {
     this.tween(this.sleepHead, {
       x: motion.sleepHead.x,
       y: motion.sleepHead.y,
-      alpha: motion.sleepHead.alpha,
       scaleX: this.sleepHead.baseScale * motion.sleepHead.scaleX,
       scaleY: this.sleepHead.baseScale * motion.sleepHead.scaleY,
       rotation: motion.sleepHead.rotation,
@@ -275,7 +281,6 @@ export class CatAnimationController {  constructor(scene, assembly) {
     this.tween(this.backHead, {
       x: motion.backHead.x,
       y: motion.backHead.y,
-      alpha: motion.backHead.alpha,
       scaleX: this.backHead.baseScale * motion.backHead.scaleX,
       scaleY: this.backHead.baseScale * motion.backHead.scaleY,
       rotation: motion.backHead.rotation,
@@ -283,7 +288,6 @@ export class CatAnimationController {  constructor(scene, assembly) {
     this.tween(this.gaze, {
       x: motion.gaze.x,
       y: motion.gaze.y,
-      alpha: motion.gaze.alpha,
       scaleX: this.gaze.baseScale * motion.gaze.scaleX,
       scaleY: this.gaze.baseScale * motion.gaze.scaleY,
       rotation: motion.gaze.rotation,
@@ -351,10 +355,10 @@ export class CatAnimationController {  constructor(scene, assembly) {
   }
 
   tweenMotion(motion, duration, ease, onComplete) {
+    this.applyVisibility(motion);
     this.tween(this.body, {
       x: motion.body.x,
       y: motion.body.y,
-      alpha: motion.body.alpha,
       scaleX: this.body.baseScale * motion.body.scaleX,
       scaleY: this.body.baseScale * motion.body.scaleY,
       rotation: motion.body.rotation,
@@ -362,7 +366,6 @@ export class CatAnimationController {  constructor(scene, assembly) {
     this.tween(this.head, {
       x: motion.head.x,
       y: motion.head.y,
-      alpha: motion.head.alpha,
       scaleX: this.head.baseScale * motion.head.scaleX,
       scaleY: this.head.baseScale * motion.head.scaleY,
       rotation: motion.head.rotation,
@@ -370,7 +373,6 @@ export class CatAnimationController {  constructor(scene, assembly) {
     this.tween(this.sleepHead, {
       x: motion.sleepHead.x,
       y: motion.sleepHead.y,
-      alpha: motion.sleepHead.alpha,
       scaleX: this.sleepHead.baseScale * motion.sleepHead.scaleX,
       scaleY: this.sleepHead.baseScale * motion.sleepHead.scaleY,
       rotation: motion.sleepHead.rotation,
@@ -378,7 +380,6 @@ export class CatAnimationController {  constructor(scene, assembly) {
     this.tween(this.backHead, {
       x: motion.backHead.x,
       y: motion.backHead.y,
-      alpha: motion.backHead.alpha,
       scaleX: this.backHead.baseScale * motion.backHead.scaleX,
       scaleY: this.backHead.baseScale * motion.backHead.scaleY,
       rotation: motion.backHead.rotation,
@@ -386,7 +387,6 @@ export class CatAnimationController {  constructor(scene, assembly) {
     this.tween(this.gaze, {
       x: motion.gaze.x,
       y: motion.gaze.y,
-      alpha: motion.gaze.alpha,
       scaleX: this.gaze.baseScale * motion.gaze.scaleX,
       scaleY: this.gaze.baseScale * motion.gaze.scaleY,
       rotation: motion.gaze.rotation,
@@ -466,9 +466,11 @@ export class CatAnimationController {  constructor(scene, assembly) {
       headScaleY: 1 + turn * 0.02,
       // Pupil offsets stay inside the eye whites, so the read comes from the
       // head turn above plus this small eye lead.
-      gazeX: clamp(side * 16, -17, 17),
-      gazeY: clamp(depth * 12, -13, 13),
-      gazeRotation: clamp(side * 0.1, -0.12, 0.12),
+      // The complete compact eye layer stays registered to the face. The
+      // head turn communicates aim without sliding eyeballs around the skull.
+      gazeX: 0,
+      gazeY: 0,
+      gazeRotation: 0,
       facingBack,
       armSide,
       armRotation: reach.armRotation,
@@ -488,24 +490,30 @@ export class CatAnimationController {  constructor(scene, assembly) {
     this.targetPose = { ...this.targetPose, armAlpha: 1 };
     this.stopTweens();
     const to = this.getMotion(POSES[CAT_STATES.SABOTAGE], CAT_STATES.SABOTAGE, 1);
+    this.applyVisibility(to);
     const activeArm = this.targetPose.armSide;
     const inactiveArm = activeArm === ARM_SIDE.LEFT ? ARM_SIDE.RIGHT : ARM_SIDE.LEFT;
-    const reachDuration = Math.max(120, duration - 100);
+    // 150 + 55 + 55 = the default 260ms sabotage hit beat. Keeping visual
+    // contact on that beat prevents the button from changing before the paw
+    // appears to land.
+    const reachDuration = Math.max(110, duration - 130);
+    const pressLiftDuration = 55;
     const pressDownDuration = 55;
-    const pressUpDuration = 85;
+    const pressUpDuration = 120;
     this.reachProgress = 1;
 
+    // The body settles during the reach so it is free to dip with the press
+    // beat afterwards without two tweens fighting over the same properties.
     this.tween(this.body, {
       x: to.body.x,
       y: to.body.y - 3,
       rotation: to.body.rotation,
       scaleX: this.body.baseScale * to.body.scaleX,
       scaleY: this.body.baseScale * to.body.scaleY,
-    }, duration, 'Cubic.easeOut');
+    }, reachDuration, 'Cubic.easeOut');
     this.tween(this.head, {
       x: to.head.x,
       y: to.head.y - 5,
-      alpha: to.head.alpha,
       rotation: to.head.rotation,
       scaleX: this.head.baseScale * to.head.scaleX,
       scaleY: this.head.baseScale * to.head.scaleY,
@@ -514,20 +522,17 @@ export class CatAnimationController {  constructor(scene, assembly) {
       x: to.sleepHead.x,
       y: to.sleepHead.y,
       rotation: to.sleepHead.rotation,
-      alpha: 0,
     }, duration, 'Cubic.easeOut');
     this.tween(this.backHead, {
       x: to.backHead.x,
       y: to.backHead.y - 5,
       rotation: to.backHead.rotation,
-      alpha: to.backHead.alpha,
       scaleX: this.backHead.baseScale * to.backHead.scaleX,
       scaleY: this.backHead.baseScale * to.backHead.scaleY,
     }, Math.round(duration * 0.84), 'Cubic.easeOut');
     this.tween(this.gaze, {
       x: to.gaze.x,
       y: to.gaze.y,
-      alpha: to.gaze.alpha,
       rotation: to.gaze.rotation,
       scaleX: this.gaze.baseScale * to.gaze.scaleX,
       scaleY: this.gaze.baseScale * to.gaze.scaleY,
@@ -540,8 +545,7 @@ export class CatAnimationController {  constructor(scene, assembly) {
     this.tween(arm, {
       x: to.arms[activeArm].x,
       y: to.arms[activeArm].y,
-      alpha: to.arms[activeArm].alpha,
-    }, duration, 'Cubic.easeOut');
+    }, reachDuration, 'Cubic.easeOut');
     this.tween(arm, {
       rotation: to.arms[activeArm].rotation,
     }, Math.round(reachDuration * 0.7), 'Sine.easeOut');
@@ -549,21 +553,48 @@ export class CatAnimationController {  constructor(scene, assembly) {
       scaleX: arm.baseScale * to.arms[activeArm].scale,
       scaleY: arm.baseScale * to.arms[activeArm].scale,
     }, reachDuration, 'Cubic.easeOut', () => {
-      // Press along the actual shoulder-to-button direction with a squash,
-      // then settle back so the contact reads as weight, not a slide.
+      // The press lands in three beats: the paw lifts for a small wind-up,
+      // slaps down with a squash while the body dips into the button, then
+      // springs back so the contact reads as weight instead of a slide.
       const unit = this.targetPose.pressUnit ?? { x: 0, y: 1 };
+      const armRest = {
+        x: to.arms[activeArm].x,
+        y: to.arms[activeArm].y,
+        scale: to.arms[activeArm].scale,
+      };
       this.tween(arm, {
-        x: to.arms[activeArm].x + unit.x * 7,
-        y: to.arms[activeArm].y + unit.y * 7,
-        scaleX: arm.baseScale * to.arms[activeArm].scale * 0.95,
-        scaleY: arm.baseScale * to.arms[activeArm].scale * 0.95,
-      }, pressDownDuration, 'Sine.easeIn', () => {
+        x: armRest.x - unit.x * 10,
+        y: armRest.y - unit.y * 10,
+      }, pressLiftDuration, 'Sine.easeOut', () => {
+        this.tween(this.body, {
+          x: to.body.x + unit.x * 5,
+          y: to.body.y + unit.y * 5,
+          rotation: to.body.rotation + unit.x * 0.02,
+        }, pressDownDuration, 'Sine.easeIn');
+        this.tween(this.head, {
+          y: to.head.y + 3,
+        }, pressDownDuration, 'Sine.easeIn');
         this.tween(arm, {
-          x: to.arms[activeArm].x,
-          y: to.arms[activeArm].y,
-          scaleX: arm.baseScale * to.arms[activeArm].scale,
-          scaleY: arm.baseScale * to.arms[activeArm].scale,
-        }, pressUpDuration, 'Sine.easeOut');
+          x: armRest.x + unit.x * 13,
+          y: armRest.y + unit.y * 13,
+          scaleX: arm.baseScale * armRest.scale * 0.92,
+          scaleY: arm.baseScale * armRest.scale * 0.92,
+        }, pressDownDuration, 'Sine.easeIn', () => {
+          this.tween(arm, {
+            x: armRest.x,
+            y: armRest.y,
+            scaleX: arm.baseScale * armRest.scale,
+            scaleY: arm.baseScale * armRest.scale,
+          }, pressUpDuration, 'Back.easeOut');
+          this.tween(this.body, {
+            x: to.body.x,
+            y: to.body.y,
+            rotation: to.body.rotation,
+          }, pressUpDuration, 'Sine.easeOut');
+          this.tween(this.head, {
+            y: to.head.y,
+          }, pressUpDuration, 'Sine.easeOut');
+        });
       });
     });
     this.tweenArm(inactiveArm, to.arms[inactiveArm], Math.round(duration * 0.7), 'Sine.easeInOut');
@@ -578,11 +609,11 @@ export class CatAnimationController {  constructor(scene, assembly) {
     const activeArm = this.targetPose.armSide;
     const inactiveArm = activeArm === ARM_SIDE.LEFT ? ARM_SIDE.RIGHT : ARM_SIDE.LEFT;
     this.reachProgress = 1;
+    this.applyVisibility(motion);
 
     this.tween(this.body, {
       x: motion.body.x,
       y: motion.body.y,
-      alpha: 1,
       rotation: motion.body.rotation,
       scaleX: this.body.baseScale * motion.body.scaleX,
       scaleY: this.body.baseScale * motion.body.scaleY,
@@ -590,7 +621,6 @@ export class CatAnimationController {  constructor(scene, assembly) {
     this.tween(this.head, {
       x: motion.head.x,
       y: motion.head.y,
-      alpha: motion.head.alpha,
       rotation: motion.head.rotation,
       scaleX: this.head.baseScale * motion.head.scaleX,
       scaleY: this.head.baseScale * motion.head.scaleY,
@@ -599,12 +629,10 @@ export class CatAnimationController {  constructor(scene, assembly) {
       x: motion.sleepHead.x,
       y: motion.sleepHead.y,
       rotation: motion.sleepHead.rotation,
-      alpha: 0,
     }, 200, 'Sine.easeInOut');
     this.tween(this.backHead, {
       x: motion.backHead.x,
       y: motion.backHead.y,
-      alpha: motion.backHead.alpha,
       rotation: motion.backHead.rotation,
       scaleX: this.backHead.baseScale * motion.backHead.scaleX,
       scaleY: this.backHead.baseScale * motion.backHead.scaleY,
@@ -612,7 +640,6 @@ export class CatAnimationController {  constructor(scene, assembly) {
     this.tween(this.gaze, {
       x: motion.gaze.x,
       y: motion.gaze.y,
-      alpha: motion.gaze.alpha,
       rotation: motion.gaze.rotation,
       scaleX: this.gaze.baseScale * motion.gaze.scaleX,
       scaleY: this.gaze.baseScale * motion.gaze.scaleY,
@@ -730,7 +757,7 @@ export class CatAnimationController {  constructor(scene, assembly) {
         y: pose.headY + headY + (state === CAT_STATES.SABOTAGE ? target.gazeY * reachProgress : 0),
         alpha: state === CAT_STATES.SABOTAGE && target.facingBack ? 0 : pose.gazeAlpha,
         rotation: state === CAT_STATES.SABOTAGE
-          ? target.bodyRotation + target.gazeRotation
+          ? pose.headRotation + target.headRotation
           : pose.headRotation,
         scaleX: 1,
         scaleY: 1,
@@ -754,6 +781,17 @@ export class CatAnimationController {  constructor(scene, assembly) {
     });
   }
 
+  applyVisibility(motion) {
+    this.body.setAlpha(motion.body.alpha);
+    this.head.setAlpha(motion.head.alpha);
+    this.sleepHead.setAlpha(motion.sleepHead.alpha);
+    this.backHead.setAlpha(motion.backHead.alpha);
+    this.gaze.setAlpha(motion.gaze.alpha);
+    Object.values(ARM_SIDE).forEach((side) => {
+      this.arms[side].part.setAlpha(motion.arms[side].alpha);
+    });
+  }
+
   applyPart(part, motion) {
     part.setPosition(motion.x, motion.y)
       .setAlpha(motion.alpha)
@@ -766,10 +804,10 @@ export class CatAnimationController {  constructor(scene, assembly) {
 
   tweenArm(side, motion, duration, ease, onComplete) {
     const arm = this.arms[side].part;
+    arm.setAlpha(motion.alpha);
     this.tween(arm, {
       x: motion.x,
       y: motion.y,
-      alpha: motion.alpha,
       rotation: motion.rotation,
       scaleX: arm.baseScale * motion.scale,
       scaleY: arm.baseScale * motion.scale,

@@ -23,9 +23,11 @@ const COLORS = {
   tableDark: 0xc08b60,
   tableEdge: 0x8a5e43,
   hole: 0x3b2930,
-  cat: 0xf1a35b,
-  catDark: 0xc66f48,
-  eye: 0x2e2530,
+  // Fallback flat cat shares the vector rig's cream-marmalade palette so
+  // both art paths read as the same character.
+  cat: 0xffd493,
+  catDark: 0x8f5a45,
+  eye: 0x533a33,
   cream: 0xfff4dc,
   warning: 0xf7c948,
   danger: 0xe66b5d,
