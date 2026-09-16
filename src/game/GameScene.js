@@ -14,6 +14,7 @@ import { ButtonManager } from './ButtonManager.js';
 import { CatAnimationController } from './CatAnimationController.js';
 import { CatController } from './CatController.js';
 import { HealthManager } from './HealthManager.js';
+import { MoodManager } from './MoodManager.js';
 import { ScoreManager } from './ScoreManager.js';
 import { StageManager } from './StageManager.js';
 import { SettingsStore } from './SettingsStore.js';
@@ -60,6 +61,7 @@ export class GameScene extends Phaser.Scene {
     this.stage = new StageManager();
     this.score = new ScoreManager(this.config, () => this.refreshHud());
     this.health = new HealthManager(this.config.debug.forceHealth ?? this.config.startingHealth, () => this.refreshHud());
+    this.mood = new MoodManager(this.config, (snapshot) => this.handleMoodChange(snapshot));
 
     this.sessionScreen = GAME_SCREENS.START;
     this.inputLockRemaining = 0;
@@ -99,6 +101,8 @@ export class GameScene extends Phaser.Scene {
       }),
       getSabotageTarget: (excludedSlotId) => this.buttons.getSabotageTarget(excludedSlotId),
       isSabotageTargetAvailable: (slotId) => this.buttons.isActivated(slotId),
+      getMoodIntervalScale: () => this.mood.getIntervalScale(),
+      onRapidTap: () => this.handleRapidTap(),
     });
 
     this.showStart(true);
@@ -111,7 +115,9 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (!this.stage.isPlaying()) return;
+    this.ui.update(delta);
     this.score.update(delta);
+    this.mood.update(delta);
     this.buttons.update(delta, true);
     this.cat.update(delta);
     this.tryFinishPendingStage();
@@ -130,6 +136,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.score.reset();
     this.health.reset();
+    this.mood.reset();
     this.buttons.reset({ randomize: true });
     this.inputLockRemaining = 0;
     this.lastScoreEvent = null;
@@ -285,7 +292,8 @@ export class GameScene extends Phaser.Scene {
   handleAttack() {
     this.inputLockRemaining = this.config.attackRecovery;
     this.score.resetCombo();
-    this.health.damage(1);
+    const remainingHealth = this.health.damage(1);
+    this.ui.onAttackDamage?.(remainingHealth);
     this.audio.play('attack');
     if (this.health.isEmpty()) {
       this.finishGameOver();
@@ -383,6 +391,18 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  handleRapidTap() {
+    const moodChange = this.mood.recordRapidTap();
+    this.ui?.onRapidTap?.(moodChange);
+    this.refreshHud();
+  }
+
+  handleMoodChange(snapshot) {
+    this.ui?.onMoodChange?.(snapshot);
+    this.catAnimation?.setMood?.(snapshot.level, snapshot.direction, snapshot.levelChanged);
+    this.refreshHud();
+  }
+
   hideSabotagePaw(immediate = false) {
     const paw = this.assembly?.sabotagePaw;
     if (!paw) return;
@@ -471,6 +491,7 @@ export class GameScene extends Phaser.Scene {
     if (this.cat) this.cat.config = this.config;
     if (this.buttons) this.buttons.config = this.config;
     if (this.score) this.score.config = this.config;
+    if (this.mood) this.mood.config = this.config;
     this.ui?.setDifficulty?.(difficulty);
   }
 
@@ -488,6 +509,12 @@ export class GameScene extends Phaser.Scene {
       catState: this.cat?.state ?? CAT_STATES.HIDDEN,
       comboTimeRemaining: comboTimerInfo.remaining,
       comboTimeDuration: comboTimerInfo.duration,
+      mood: this.mood?.snapshot() ?? {
+        value: 0,
+        max: 100,
+        level: 'sleepy',
+        intervalScale: 1,
+      },
     });
   }
 

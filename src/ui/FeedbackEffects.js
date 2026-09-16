@@ -1,3 +1,5 @@
+import { UI_DEPTH } from './UITokens.js';
+
 /**
  * CatKub Visual Feedback & Animation FX Specifications
  * Visual Direction: Cozy Cat Café
@@ -48,6 +50,17 @@ export const FEEDBACK_EFFECTS = Object.freeze({
       scale: 1.4,
       dropDistanceY: 32,
       duration: 350,
+    },
+    clawScratch: {
+      color: 0xf4dec2,
+      alpha: 0.92,
+      lineWidth: 18,
+      offsetX: 26,
+      offsetY: 38,
+      depth: UI_DEPTH.CAT_FX + 1,
+      fadeDuration: 90,
+      holdDuration: 70,
+      startScale: 0.72,
     },
   },
 
@@ -102,6 +115,31 @@ export const FeedbackFX = {
       FEEDBACK_EFFECTS.catAttack.screenShake.duration,
       FEEDBACK_EFFECTS.catAttack.screenShake.intensity
     );
+  },
+
+  triggerClawScratch(scene, { x = 512, y = 910 } = {}) {
+    const config = FEEDBACK_EFFECTS.catAttack.clawScratch;
+    const scratch = scene.add.graphics().setDepth(config.depth).setPosition(x, y).setAlpha(0);
+    scratch.lineStyle(config.lineWidth, config.color, config.alpha);
+    [-1, 0, 1].forEach((offset) => {
+      const offsetX = offset * config.offsetX;
+      const offsetY = offset * config.offsetY;
+      scratch.beginPath();
+      scratch.moveTo(-150 + offsetX, -92 + offsetY);
+      scratch.lineTo(150 + offsetX, 92 + offsetY);
+      scratch.strokePath();
+    });
+    scene.tweens.add({
+      targets: scratch,
+      alpha: { from: 0, to: 1 },
+      scaleX: { from: config.startScale, to: 1 },
+      scaleY: { from: config.startScale, to: 1 },
+      duration: config.fadeDuration,
+      ease: 'Back.easeOut',
+      hold: config.holdDuration,
+      yoyo: true,
+      onComplete: () => scratch.destroy(),
+    });
   },
 
   triggerHeartDamage(scene, heartImage) {

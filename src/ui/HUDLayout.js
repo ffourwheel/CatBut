@@ -6,6 +6,7 @@
 
 import { UI_COLORS, UI_FONTS, UI_SPACING, UI_DEPTH } from './UITokens.js';
 import { COPY_THAI } from './CopyThai.js';
+import { CAT_MOOD_LEVELS } from '../game/MoodManager.js';
 
 export const HUD_LAYOUT_CONFIG = Object.freeze({
   // Score plaque (Top Left)
@@ -116,6 +117,19 @@ export const HUD_LAYOUT_CONFIG = Object.freeze({
     valueOffsetX: 80,
     trackOffsetX: -20,
     trackWidth: 70,
+  },
+
+  // Cat Mood (Below Hearts)
+  moodBar: {
+    x: 20,
+    y: 342,
+    width: 340,
+    height: 58,
+    radius: 24,
+    trackX: 128,
+    trackY: 367,
+    trackWidth: 210,
+    trackHeight: 14,
   },
 
   // Bottom Floating Table Instruction Banner
@@ -458,7 +472,82 @@ export function buildCozyHUD(scene, callbacks = {}) {
 
   renderTimer(5000, 5000);
 
-  // 6. Warning Speech Bubble (Replaced by centered warning mark above cat head)
+  // 6. Cat Mood Meter
+  const cfgMood = HUD_LAYOUT_CONFIG.moodBar;
+  const moodContainer = scene.add.container(0, 0);
+  const moodBg = scene.add.graphics();
+  const moodTrack = scene.add.graphics();
+  const moodFill = scene.add.graphics();
+  moodBg.fillStyle(UI_COLORS.panelBg, 0.94);
+  moodBg.fillRoundedRect(cfgMood.x, cfgMood.y, cfgMood.width, cfgMood.height, cfgMood.radius);
+  moodBg.lineStyle(3, UI_COLORS.panelBorder, 0.95);
+  moodBg.strokeRoundedRect(cfgMood.x, cfgMood.y, cfgMood.width, cfgMood.height, cfgMood.radius);
+
+  const moodLabel = scene.add.text(cfgMood.x + 18, cfgMood.y + 8, COPY_THAI.hud.moodLabel, {
+    fontFamily: UI_FONTS.family,
+    fontSize: '16px',
+    color: UI_COLORS.textLight,
+    fontStyle: 'bold',
+  }).setOrigin(0, 0);
+  const moodValue = scene.add.text(cfgMood.x + cfgMood.width - 18, cfgMood.y + 8, 'ง่วง', {
+    fontFamily: UI_FONTS.family,
+    fontSize: '16px',
+    color: UI_COLORS.greenSuccessHex,
+    fontStyle: 'bold',
+  }).setOrigin(1, 0);
+
+  moodContainer.add([moodBg, moodTrack, moodFill, moodLabel, moodValue]);
+  container.add(moodContainer);
+
+  const moodPresentation = Object.freeze({
+    sleepy: { color: UI_COLORS.greenSuccess, hex: UI_COLORS.greenSuccessHex },
+    curious: { color: UI_COLORS.accentGold, hex: UI_COLORS.accentGoldHex },
+    annoyed: { color: UI_COLORS.accentAmber, hex: UI_COLORS.accentAmberHex },
+    angry: { color: UI_COLORS.dangerCoral, hex: UI_COLORS.dangerCoralHex },
+  });
+
+  function renderMood(snapshot = {}) {
+    const value = snapshot?.value ?? 0;
+    const safeMax = Math.max(1, snapshot?.max ?? 100);
+    const ratio = Math.max(0, Math.min(1, value / safeMax));
+    const level = snapshot?.level ?? 'sleepy';
+    const presentation = moodPresentation[level] ?? moodPresentation.sleepy;
+
+    moodTrack.clear();
+    moodTrack.fillStyle(0x241711, 1);
+    moodTrack.fillRoundedRect(
+      cfgMood.trackX,
+      cfgMood.trackY,
+      cfgMood.trackWidth,
+      cfgMood.trackHeight,
+      cfgMood.trackHeight / 2,
+    );
+    moodTrack.lineStyle(2, 0xf4dec2, 0.45);
+    for (let index = 1; index < 4; index += 1) {
+      const dividerX = cfgMood.trackX + (cfgMood.trackWidth / 4) * index;
+      moodTrack.lineBetween(dividerX, cfgMood.trackY - 2, dividerX, cfgMood.trackY + cfgMood.trackHeight + 2);
+    }
+
+    moodFill.clear();
+    if (ratio > 0) {
+      moodFill.fillStyle(presentation.color, 1);
+      moodFill.fillRoundedRect(
+        cfgMood.trackX,
+        cfgMood.trackY,
+        Math.max(cfgMood.trackHeight, cfgMood.trackWidth * ratio),
+        cfgMood.trackHeight,
+        cfgMood.trackHeight / 2,
+      );
+    }
+    const moodLabelText = snapshot?.label
+      ?? CAT_MOOD_LEVELS.find((moodLevel) => moodLevel.key === level)?.label
+      ?? CAT_MOOD_LEVELS[0].label;
+    moodValue.setText(moodLabelText)
+      .setColor(presentation.hex);
+  }
+  renderMood();
+
+  // 7. Warning Speech Bubble (Replaced by centered warning mark above cat head)
   // Handled by UIManager to avoid duplicate warning marks
 
   // 7. Bottom Instruction / Toast Banner
@@ -589,11 +678,28 @@ export function buildCozyHUD(scene, callbacks = {}) {
         }
       });
     },
+    getHeartImage(index) {
+      return heartIcons[index] ?? null;
+    },
     setProgress(activeCount, totalCount = 4) {
       renderProgressSegments(activeCount, totalCount);
     },
     setComboTimer(remainingMs, durationMs) {
       renderTimer(remainingMs, durationMs);
+    },
+    setMood(snapshot) {
+      renderMood(snapshot);
+    },
+    pulseMood(direction = 'up') {
+      scene.tweens.add({
+        targets: moodContainer,
+        scaleX: direction === 'down' ? 0.97 : 1.04,
+        scaleY: direction === 'down' ? 0.97 : 1.04,
+        duration: direction === 'down' ? 220 : 140,
+        ease: 'Back.easeOut',
+        yoyo: true,
+        onComplete: () => moodContainer.setScale(1),
+      });
     },
     setWarning(_visible) {
       // Centered warning mark is handled directly above cat's head in UIManager

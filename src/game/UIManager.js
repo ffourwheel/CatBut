@@ -3,6 +3,7 @@ import { buildCozyHUD } from '../ui/HUDLayout.js';
 import { ScreenLayoutManager } from '../ui/ScreenLayouts.js';
 import { FEEDBACK_EFFECTS, FeedbackFX } from '../ui/FeedbackEffects.js';
 import { UI_DEPTH } from '../ui/UITokens.js';
+import { COPY_THAI } from '../ui/CopyThai.js';
 import { CAT_STATES, GAME_SCREENS } from './constants.js';
 
 /**
@@ -25,8 +26,12 @@ export class UIManager {
       muted: null,
       comboTimeRemaining: null,
       comboTimeDuration: null,
+      mood: null,
     };
     this.warningVisible = false;
+    this.feedbackHoldRemaining = 0;
+    this.feedbackPriority = 0;
+    this.deferredFeedback = null;
 
     this.hud = buildCozyHUD(scene, {
       onPause: () => callbacks.onPause?.(),
@@ -86,7 +91,17 @@ export class UIManager {
     this.screens.showTutorial(returnTo);
   }
 
-  updateStats({ score, combo, health, maxHealth, activeCount, totalCount, muted, catState, comboTimeRemaining, comboTimeDuration }) {
+  update(delta) {
+    if (this.feedbackHoldRemaining <= 0) return;
+    this.feedbackHoldRemaining = Math.max(0, this.feedbackHoldRemaining - delta);
+    if (this.feedbackHoldRemaining > 0 || !this.deferredFeedback) return;
+
+    const next = this.deferredFeedback;
+    this.deferredFeedback = null;
+    this.showGameplayFeedback(next.message, next.options);
+  }
+
+  updateStats({ score, combo, health, maxHealth, activeCount, totalCount, muted, catState, comboTimeRemaining, comboTimeDuration, mood }) {
     if (this.lastStats.score !== score) this.hud.setScore(score);
     if (this.lastStats.combo !== combo) this.hud.setCombo(combo);
     if (this.lastStats.health !== health) this.hud.setHearts(health, maxHealth);
@@ -99,6 +114,13 @@ export class UIManager {
     if (this.lastStats.comboTimeRemaining !== comboTimeRemaining || this.lastStats.comboTimeDuration !== comboTimeDuration) {
       this.hud.setComboTimer(comboTimeRemaining, comboTimeDuration);
     }
+    if (
+      this.lastStats.mood?.value !== mood?.value
+      || this.lastStats.mood?.max !== mood?.max
+      || this.lastStats.mood?.level !== mood?.level
+    ) {
+      this.hud.setMood(mood);
+    }
 
     this.lastStats = {
       score,
@@ -109,11 +131,42 @@ export class UIManager {
       muted,
       comboTimeRemaining,
       comboTimeDuration,
+      mood,
     };
   }
 
   setStatus(message, highlight = false) {
+    this.showGameplayFeedback(message, { highlight });
+  }
+
+  showGameplayFeedback(message, {
+    priority = 0,
+    holdMs = 0,
+    highlight = false,
+  } = {}) {
+    if (this.feedbackHoldRemaining > 0 && priority < this.feedbackPriority) {
+      this.deferredFeedback = { message, options: { priority, holdMs, highlight } };
+      return false;
+    }
+
     this.hud.setBanner(message, highlight);
+    this.feedbackPriority = priority;
+    this.feedbackHoldRemaining = Math.max(0, holdMs);
+    this.deferredFeedback = null;
+    return true;
+  }
+
+  onRapidTap() {
+    this.showGameplayFeedback(COPY_THAI.catFeedback.rapidTapMessage, {
+      priority: 70,
+      holdMs: 800,
+      highlight: true,
+    });
+  }
+
+  onMoodChange(snapshot) {
+    if (!snapshot?.levelChanged) return;
+    this.hud.pulseMood?.(snapshot.direction);
   }
 
   setClearStats(score, maxCombo) {
@@ -222,7 +275,7 @@ export class UIManager {
 
   onCatState(state, catStateImage) {
     if (state === CAT_STATES.WARNING) {
-      this.setStatus('ระวังนะ! แมวเริ่มได้ยิน!', true);
+      this.showGameplayFeedback('ระวังนะ! แมวเริ่มได้ยิน!', { priority: 30, highlight: true });
       this.showWarningMark();
       return;
     }
@@ -230,18 +283,26 @@ export class UIManager {
     this.hideWarningMark();
 
     if (state === CAT_STATES.PEEK) {
-      this.setStatus('แมวเริ่มมองหา...', true);
+      this.showGameplayFeedback('แมวเริ่มมองหา...', { priority: 30, highlight: true });
       return;
     }
 
     if (state === CAT_STATES.WATCH) {
-      this.setStatus('แมวจ้องอยู่! อย่าแตะปุ่มตอนนี้!', true);
+      this.showGameplayFeedback('แมวจ้องอยู่! อย่าแตะปุ่มตอนนี้!', { priority: 60, highlight: true });
       return;
     }
 
     if (state === CAT_STATES.ATTACK) {
-      this.setStatus('โดนแมวจับได้แล้ว!', true);
+      this.showGameplayFeedback(COPY_THAI.catFeedback.attackMessage, {
+        priority: 100,
+        holdMs: 500,
+        highlight: true,
+      });
       FeedbackFX.triggerScreenShake(this.scene);
+      FeedbackFX.triggerClawScratch(this.scene, {
+        x: 512,
+        y: this.viewportHeight / 2,
+      });
       this.scene.tweens.add({
         targets: this.attackFlash,
         alpha: { from: FEEDBACK_EFFECTS.catAttack.flashAlpha, to: 0 },
@@ -252,12 +313,17 @@ export class UIManager {
     }
 
     if (state === CAT_STATES.SABOTAGE) {
-      this.setStatus('แมวแอบปิดปุ่ม!', true);
+      this.showGameplayFeedback('แมวแอบปิดปุ่ม!', { priority: 40, highlight: true });
       return;
     }
 
     if (state === CAT_STATES.HIDE) {
-      this.setStatus('แมวมุดกลับแล้ว! ปลอดภัย!', false);
+      this.showGameplayFeedback('แมวมุดกลับแล้ว! ปลอดภัย!', { priority: 20 });
     }
+  }
+
+  onAttackDamage(remainingHealth) {
+    const heart = this.hud.getHeartImage?.(Math.max(0, remainingHealth));
+    if (heart) FeedbackFX.triggerHeartDamage(this.scene, heart);
   }
 }

@@ -17,11 +17,12 @@ export const ACTIVE_GAME_PRESET = 'normal';
 
 | ค่า | ความหมาย | ตัวอย่าง |
 | --- | --- | ---: |
-| `catIntervalMin` / `catIntervalMax` | ระยะเวลาที่แมวซ่อนก่อนเริ่ม Event แบบสุ่ม (มิลลิวินาที) | `900` ถึง `1600` |
-| `warningDuration` | ระยะเวลาเตือนก่อนแมวมอง | `700` |
-| `peekDuration` | ระยะเวลาแมวโผล่ให้เห็น | `900` |
+| `catIntervalMin` / `catIntervalMax` | ระยะเวลาพื้นฐานที่แมวซ่อนก่อนเริ่ม Event แบบสุ่ม (มิลลิวินาที) | `750` ถึง `1300` |
+| `catEventMinimumGap` | ช่วงพักขั้นต่ำระหว่าง Cat Event (มิลลิวินาที) | `500` |
+| `warningDuration` | ระยะเวลาเตือนก่อนแมวมอง | `450` |
+| `peekDuration` | ระยะเวลาแมวโผล่ให้เห็น | `550` |
 | `watchDuration` | ระยะเวลาที่แมวจ้อง | `1000` |
-| `watchProbability` | โอกาสที่แมวจะเลือกจ้อง (0–1) | `0.35` |
+| `watchProbability` | โอกาสที่แมวจะเลือกจ้อง (0–1) | `0.50` |
 | `sabotagePreviewDuration` | เวลาที่แมวเล็งปุ่มและหันตัวก่อนยื่นแขน (มิลลิวินาที) | `350` |
 | `sabotageReachDuration` | เวลาที่แขนต่อจากไหล่ยื่นถึงปุ่ม (มิลลิวินาที) | `280` |
 | `sabotageHitDuration` | จังหวะสัมผัส/สั่งปิดปุ่มหลังเริ่มยื่นแขน (มิลลิวินาที) | `260` |
@@ -30,7 +31,21 @@ export const ACTIVE_GAME_PRESET = 'normal';
 | `buttonCountMin` / `buttonCountMax` | จำนวนปุ่มที่สุ่มในแต่ละรอบ | `4` ถึง `8` |
 | `startingHealth` | จำนวนหัวใจเริ่มต้น (สูงสุด 3 ตาม UI ปัจจุบัน) | `3` |
 | `comboDuration` | อายุคอมโบหลังเปิดปุ่มสำเร็จ (มิลลิวินาที) | `2000` |
-| `newActivationScore` | คะแนนต่อการเปิดปุ่มใหม่ | `100` |
+| `newActivationScore` | คะแนนต่อการเปิดปุ่มใหม่ | `10` |
+| `reactivationBaseScore` / `reactivationStep` / `reactivationFloor` | คะแนน Reactivation ลดลงตามจำนวนครั้ง | `5` / `1` / `1` |
+
+## Cat Mood
+
+Mood มี 4 ระดับและเพิ่มขึ้นเฉพาะเมื่อเกิด Rapid Tap ไม่เพิ่มจากการเปิดปุ่มปกติหรือ Reactivation
+
+| ระดับ | ค่า | ตัวคูณระยะรอ Cat Event |
+| --- | ---: | ---: |
+| ง่วง | `0–24` | `1.00` |
+| สนใจ | `25–49` | `0.85` |
+| หงุดหงิด | `50–74` | `0.70` |
+| โมโห | `75–100` | `0.55` |
+
+Rapid Tap เพิ่ม Mood `25` หน่วยต่อครั้ง หลังไม่มี Rapid Tap `2,000 ms` Mood จะลดหนึ่งระดับทุก `1,500 ms` โดยช่วงพักขั้นต่ำของ Cat Event ยังคงเป็น `500 ms` เสมอ
 
 ## Override ตอนทดสอบ
 

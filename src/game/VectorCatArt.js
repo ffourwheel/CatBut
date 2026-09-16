@@ -233,6 +233,59 @@ export function drawCatGaze(graphics) {
   });
 }
 
+/**
+ * Draws a small, state-independent mood cue that can sit above the head.
+ * CatAnimationController owns its transform and visibility; this helper only
+ * defines the readable expression language for the four mood levels.
+ */
+export function drawCatMoodOverlay(graphics, level = 'sleepy') {
+  graphics.clear();
+  const moodColor = level === 'angry' ? 0xd75b4f : COLORS.outline;
+
+  if (level === 'sleepy') {
+    line(graphics, [
+      { x: 350, y: -390 },
+      { x: 460, y: -390 },
+      { x: 370, y: -285 },
+      { x: 480, y: -285 },
+    ], COLORS.outlineSoft, 18);
+    return;
+  }
+
+  if (level === 'curious') {
+    line(graphics, [
+      { x: 360, y: -360 },
+      { x: 420, y: -420 },
+      { x: 480, y: -360 },
+      { x: 420, y: -292 },
+      { x: 420, y: -250 },
+    ], COLORS.outline, 18);
+    graphics.fillStyle(COLORS.outline, 1);
+    graphics.fillCircle(420, -190, 12);
+    return;
+  }
+
+  line(graphics, [
+    { x: -300, y: 38 },
+    { x: -205, y: 12 },
+    { x: -115, y: 38 },
+  ], moodColor, 22);
+  line(graphics, [
+    { x: 115, y: 38 },
+    { x: 205, y: 12 },
+    { x: 300, y: 38 },
+  ], moodColor, 22);
+
+  if (level === 'annoyed') {
+    line(graphics, [{ x: -430, y: -70 }, { x: -390, y: -125 }], 0xd9924e, 16);
+    line(graphics, [{ x: 430, y: -70 }, { x: 390, y: -125 }], 0xd9924e, 16);
+    return;
+  }
+
+  line(graphics, [{ x: 360, y: -430 }, { x: 420, y: -370 }, { x: 480, y: -430 }], moodColor, 20);
+  line(graphics, [{ x: 420, y: -370 }, { x: 420, y: -290 }], moodColor, 20);
+}
+
 export function drawCatArm(graphics, side) {
   const direction = side === 'left' ? -1 : 1;
   // The elbow sits off the shoulder-paw line so the limb keeps a gentle bend

@@ -32,13 +32,13 @@ Core Loop:
 | Topic | Decision |
 |---|---|
 | Tap Activation | แตะครั้งเดียวแล้วเปิดปุ่มทันที |
-| Autonomous Cat Action | แมวสุ่ม WATCH หรือ SABOTAGE จาก Timer ทุกประมาณ 0.9–1.6 วินาที |
+| Autonomous Cat Action | แมวสุ่ม WATCH หรือ SABOTAGE จาก Timer พื้นฐานทุกประมาณ 0.75–1.3 วินาที และมีช่วงพักขั้นต่ำ 0.5 วินาที |
 | Tap Pressure | การเปิดปุ่มมีโอกาส 40% ที่จะเร่ง SABOTAGE แต่ไม่เกิดทุกครั้ง |
 | Anti-Mash | แตะ 2 ครั้งภายใน 500ms จะเร่ง SABOTAGE แน่นอน และรอให้ Cat Action จบก่อนตัดสิน Stage Clear |
 | Cat Warning | เตือนล่วงหน้าก่อนเข้า WATCH |
 | Cat Watch | เข้า WATCH แล้วตรวจจับทันที และโจมตีได้ครั้งเดียวต่อ Cat Event |
 | Cat Sabotage | ปิดได้เฉพาะปุ่มที่เป็น ON แล้ว ครั้งละ 1 ปุ่ม |
-| Sabotage Cooldown | ประมาณ 3 วินาที |
+| Sabotage Cooldown | ตาม Difficulty config (ปกติ 0.8 วินาที) และมีช่วงพักขั้นต่ำ 0.5 วินาที |
 | Cat Probability | WATCH 50% ตอนเริ่ม และลดได้ถึง 35% / SABOTAGE 50–65% ตาม Stage Progress |
 | No Active Button | หากไม่มีปุ่ม ON ให้เลือก WATCH เสมอ |
 | Player Health | เริ่มต้น 3 Hearts |
@@ -47,7 +47,8 @@ Core Loop:
 | Combo Cap | สูงสุด x4 |
 | Reactivation | เปิดปุ่มที่ถูก Sabotage ซ้ำได้ โดยคะแนนลดตามจำนวนครั้งและยังเพิ่ม Combo |
 | Combo Duration | คอมโบหมดอายุหลังไม่มีการเปิดปุ่มสำเร็จ 2 วินาที |
-| Score | ปุ่มใหม่ +100 × Combo และ Stage Clear Bonus +1000 |
+| Score | ปุ่มใหม่ +10 × Combo, Reactivation +5 ถึง +1 × Combo และ Stage Clear Bonus 0 |
+| Cat Mood | เพิ่มเฉพาะจาก Rapid Tap ครั้งละ 25; ง่วง/สนใจ/หงุดหงิด/โมโหเร่งระยะรอเป็น 100%/85%/70%/55% |
 | Win Priority | เปิดปุ่มสุดท้ายสำเร็จแล้วชนะทันที และหยุด Cat Event |
 | Stage Scope | Prototype มี Stage เดียวที่รองรับ Difficulty Config |
 | Pause | Freeze Timer, Cat State และ Progress ทั้งหมด |
@@ -261,6 +262,9 @@ assets/
 - ชะลอการแตะเพื่อหลบ WATCH ได้
 - โดนแมวแล้วลดหัวใจเพียงครั้งเดียว
 - แมว Sabotage ปุ่ม ON ได้ครั้งละ 1 ปุ่ม
+- การกดรัวทำให้ Mood แมวเพิ่มและแสดง Feedback เหตุและผลชัดเจน
+- Mood ลดเป็นระดับหลังไม่มีการกดรัว และไม่ทำให้ WATCH probability เปลี่ยนโดยตรง
+- Cat Event เว้นช่วงขั้นต่ำ 500 มิลลิวินาที รวมถึง Sabotage ที่เข้าคิวจากการกดรัว
 - Score และ Combo แสดงตลอดเวลา
 - Combo รีเซ็ตเมื่อโดนโจมตี
 - Sabotage ไม่รีเซ็ต Combo

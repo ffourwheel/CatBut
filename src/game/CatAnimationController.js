@@ -1,5 +1,6 @@
 import { CAT_STATES } from './constants.js';
 import { CAT_RIG_GEOMETRY } from './CatRigConstants.js';
+import { drawCatMoodOverlay } from './VectorCatArt.js';
 
 const POSES = Object.freeze({
   // HIDDEN is the gameplay rest state. Visually it is a small sleeping cat
@@ -201,6 +202,7 @@ export class CatAnimationController {  constructor(scene, assembly) {
     this.sleepHead = assembly?.catReachSleepHead ?? null;
     this.backHead = assembly?.catReachBackHead ?? null;
     this.gaze = assembly?.catReachGaze ?? null;
+    this.moodOverlay = assembly?.catMoodOverlay ?? null;
     this.arms = {
       [ARM_SIDE.LEFT]: { part: assembly?.catReachArmLeft ?? null },
       [ARM_SIDE.RIGHT]: { part: assembly?.catReachArmRight ?? null },
@@ -217,6 +219,7 @@ export class CatAnimationController {  constructor(scene, assembly) {
     );
     this.usesConnectedReach = this.enabled;
     this.state = CAT_STATES.HIDDEN;
+    this.moodLevel = 'sleepy';
     this.targetPose = NEUTRAL_TARGET_POSE;
     this.reachProgress = 0;
     this.activeTweens = new Set();
@@ -297,6 +300,25 @@ export class CatAnimationController {  constructor(scene, assembly) {
     });
   }
 
+  setMood(level = 'sleepy', direction = null, levelChanged = false) {
+    this.moodLevel = level;
+    if (!this.moodOverlay) return;
+    drawCatMoodOverlay(this.moodOverlay, level);
+    this.applyMoodMotion(this.getMotion(POSES[this.state], this.state, this.reachProgress));
+
+    if (!levelChanged || !this.enabled) return;
+    const baseScale = this.moodOverlay.baseScale ?? CAT_RIG_GEOMETRY.bodyScale;
+    this.tween(this.moodOverlay, {
+      scaleX: baseScale * 1.18,
+      scaleY: baseScale * 1.18,
+    }, direction === 'down' ? 220 : 140, 'Back.easeOut', () => {
+      this.tween(this.moodOverlay, {
+        scaleX: baseScale,
+        scaleY: baseScale,
+      }, 160, 'Sine.easeInOut');
+    });
+  }
+
   playAttackMotion() {
     const strike = this.getMotion(POSES[CAT_STATES.ATTACK], CAT_STATES.ATTACK, 0);
     const windUp = {
@@ -339,6 +361,14 @@ export class CatAnimationController {  constructor(scene, assembly) {
         rotation: -0.025,
         scaleX: 1,
         scaleY: 1,
+      },
+      mood: {
+        x: 0,
+        y: -43,
+        alpha: 1,
+        rotation: -0.025,
+        scaleX: 1.03,
+        scaleY: 0.94,
       },
       arms: {
         left: { ...strike.arms.left, alpha: 0 },
@@ -391,6 +421,15 @@ export class CatAnimationController {  constructor(scene, assembly) {
       scaleY: this.gaze.baseScale * motion.gaze.scaleY,
       rotation: motion.gaze.rotation,
     }, duration, ease);
+    if (this.moodOverlay && motion.mood) {
+      this.tween(this.moodOverlay, {
+        x: motion.mood.x,
+        y: motion.mood.y,
+        scaleX: this.moodOverlay.baseScale * motion.mood.scaleX,
+        scaleY: this.moodOverlay.baseScale * motion.mood.scaleY,
+        rotation: motion.mood.rotation,
+      }, duration, ease);
+    }
     Object.values(ARM_SIDE).forEach((side) => {
       this.tweenArm(side, motion.arms[side], duration, ease);
     });
@@ -762,6 +801,25 @@ export class CatAnimationController {  constructor(scene, assembly) {
         scaleX: 1,
         scaleY: 1,
       },
+      mood: {
+        x: (state === CAT_STATES.HIDDEN || state === CAT_STATES.WARNING) ? 0 : headX,
+        y: (state === CAT_STATES.HIDDEN || state === CAT_STATES.WARNING)
+          ? pose.sleepHeadY
+          : pose.headY + headY,
+        alpha: state === CAT_STATES.HIDE
+          || (state === CAT_STATES.SABOTAGE && target.facingBack)
+          ? 0
+          : (state === CAT_STATES.HIDDEN || state === CAT_STATES.WARNING)
+            ? pose.sleepHeadAlpha
+            : pose.headAlpha,
+        rotation: pose.headRotation + (state === CAT_STATES.SABOTAGE ? target.headRotation : 0),
+        scaleX: (state === CAT_STATES.HIDDEN || state === CAT_STATES.WARNING)
+          ? pose.headScale
+          : pose.headScale * (state === CAT_STATES.SABOTAGE ? target.headScaleX : 1),
+        scaleY: (state === CAT_STATES.HIDDEN || state === CAT_STATES.WARNING)
+          ? pose.headScale
+          : pose.headScale * (state === CAT_STATES.SABOTAGE ? target.headScaleY : 1),
+      },
       arms: {
         left: getArmMotion(ARM_SIDE.LEFT),
         right: getArmMotion(ARM_SIDE.RIGHT),
@@ -776,6 +834,7 @@ export class CatAnimationController {  constructor(scene, assembly) {
     this.applyPart(this.sleepHead, motion.sleepHead);
     this.applyPart(this.backHead, motion.backHead);
     this.applyPart(this.gaze, motion.gaze);
+    this.applyMoodMotion(motion);
     Object.values(ARM_SIDE).forEach((side) => {
       this.applyPart(this.arms[side].part, motion.arms[side]);
     });
@@ -787,6 +846,7 @@ export class CatAnimationController {  constructor(scene, assembly) {
     this.sleepHead.setAlpha(motion.sleepHead.alpha);
     this.backHead.setAlpha(motion.backHead.alpha);
     this.gaze.setAlpha(motion.gaze.alpha);
+    if (this.moodOverlay && motion.mood) this.moodOverlay.setAlpha(motion.mood.alpha);
     Object.values(ARM_SIDE).forEach((side) => {
       this.arms[side].part.setAlpha(motion.arms[side].alpha);
     });
@@ -800,6 +860,17 @@ export class CatAnimationController {  constructor(scene, assembly) {
         part.baseScale * (motion.scaleY ?? motion.scale),
       )
       .setRotation(motion.rotation);
+  }
+
+  applyMoodMotion(motion) {
+    if (!this.moodOverlay || !motion?.mood) return;
+    this.moodOverlay.setPosition(motion.mood.x, motion.mood.y)
+      .setAlpha(motion.mood.alpha)
+      .setRotation(motion.mood.rotation)
+      .setScale(
+        this.moodOverlay.baseScale * motion.mood.scaleX,
+        this.moodOverlay.baseScale * motion.mood.scaleY,
+      );
   }
 
   tweenArm(side, motion, duration, ease, onComplete) {
@@ -818,7 +889,7 @@ export class CatAnimationController {  constructor(scene, assembly) {
     if (!this.enabled || this.state === CAT_STATES.HIDE) return;
 
     const breathing = this.scene.tweens.add({
-      targets: [this.body, this.head, this.sleepHead, this.backHead, this.gaze],
+      targets: [this.body, this.head, this.sleepHead, this.backHead, this.gaze, this.moodOverlay].filter(Boolean),
       y: '+=2.5',
       duration: this.state === CAT_STATES.HIDDEN ? 1100 : 760,
       ease: 'Sine.easeInOut',
@@ -826,7 +897,7 @@ export class CatAnimationController {  constructor(scene, assembly) {
       repeat: -1,
     });
     const sway = this.scene.tweens.add({
-      targets: [this.body, this.head, this.sleepHead, this.backHead, this.gaze],
+      targets: [this.body, this.head, this.sleepHead, this.backHead, this.gaze, this.moodOverlay].filter(Boolean),
       rotation: '+=0.014',
       duration: this.state === CAT_STATES.HIDDEN ? 1900 : 1300,
       ease: 'Sine.easeInOut',
@@ -874,8 +945,9 @@ export class CatAnimationController {  constructor(scene, assembly) {
       this.sleepHead,
       this.backHead,
       this.gaze,
+      this.moodOverlay,
       this.arms.left.part,
       this.arms.right.part,
-    ]);
+    ].filter(Boolean));
   }
 }
