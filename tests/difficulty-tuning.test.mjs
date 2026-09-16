@@ -15,8 +15,6 @@ test('normal preset keeps the shorter cat pacing and readable warning windows', 
       watchProbability: config.watchProbability,
       catEventMinimumGap: config.catEventMinimumGap,
       buttonCount: config.buttonCount,
-      buttonCountMin: config.buttonCountMin,
-      buttonCountMax: config.buttonCountMax,
       sabotagePreviewDuration: config.sabotagePreviewDuration,
       sabotageReachDuration: config.sabotageReachDuration,
       sabotageHitDuration: config.sabotageHitDuration,
@@ -30,8 +28,6 @@ test('normal preset keeps the shorter cat pacing and readable warning windows', 
       watchProbability: 0.6,
       catEventMinimumGap: 500,
       buttonCount: 8,
-      buttonCountMin: 8,
-      buttonCountMax: 8,
       sabotagePreviewDuration: 160,
       sabotageReachDuration: 120,
       sabotageHitDuration: 80,
@@ -50,8 +46,6 @@ test('hard preset adds pressure without extending the post-sabotage pause', () =
       peekDuration: config.peekDuration,
       watchProbability: config.watchProbability,
       buttonCount: config.buttonCount,
-      buttonCountMin: config.buttonCountMin,
-      buttonCountMax: config.buttonCountMax,
       sabotageCooldown: config.sabotageCooldown,
       sabotagePreviewDuration: config.sabotagePreviewDuration,
       sabotageReachDuration: config.sabotageReachDuration,
@@ -64,8 +58,6 @@ test('hard preset adds pressure without extending the post-sabotage pause', () =
       peekDuration: 350,
       watchProbability: 0.7,
       buttonCount: 8,
-      buttonCountMin: 8,
-      buttonCountMax: 8,
       sabotageCooldown: 900,
       sabotagePreviewDuration: 120,
       sabotageReachDuration: 100,
@@ -78,6 +70,4 @@ test('easy preset also keeps the fixed eight-button target', () => {
   const config = createGameConfig({ preset: 'easy' });
 
   assert.equal(config.buttonCount, 8);
-  assert.equal(config.buttonCountMin, 8);
-  assert.equal(config.buttonCountMax, 8);
 });

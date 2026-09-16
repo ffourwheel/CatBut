@@ -63,7 +63,7 @@ test('gameplay resolves all eight button slots without randomizing the count', (
   manager.config = createGameConfig({ debug: { disableRandomness: false } });
 
   const first = manager.resolveActiveSlotIds();
-  const second = manager.resolveActiveSlotIds(first.length);
+  const second = manager.resolveActiveSlotIds();
 
   assert.equal(first.length, 8);
   assert.equal(second.length, 8);

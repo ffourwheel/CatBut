@@ -22,8 +22,6 @@ export const DEFAULT_CONFIG = Object.freeze({
   startingHealth: 3,
   // Every stage uses the complete ring so the player can learn one stable layout.
   buttonCount: 8,
-  buttonCountMin: 8,
-  buttonCountMax: 8,
   buttonSetPresets: BUTTON_SLOT_PRESETS,
   resumeSafeWindow: 500,
 
@@ -105,8 +103,6 @@ export const GAME_PRESETS = Object.freeze({
     watchProbability: 0.7,
     catWatchProbabilityAtMaxProgress: 0.55,
     buttonCount: 8,
-    buttonCountMin: 8,
-    buttonCountMax: 8,
     sabotageCooldown: 900,
     sabotagePreviewDuration: 120,
     sabotageReachDuration: 100,
@@ -209,19 +205,7 @@ function normalizeConfig(rawConfig) {
     annoyed: clamp(moodScales.annoyed, 0.25, 1, DEFAULT_CONFIG.moodIntervalScaleByLevel.annoyed),
     angry: clamp(moodScales.angry, 0.25, 1, DEFAULT_CONFIG.moodIntervalScaleByLevel.angry),
   });
-  config.buttonCountMin = clampInt(config.buttonCountMin, 1, 8, DEFAULT_CONFIG.buttonCountMin);
-  config.buttonCountMax = clampInt(
-    config.buttonCountMax,
-    config.buttonCountMin,
-    8,
-    DEFAULT_CONFIG.buttonCountMax,
-  );
-  config.buttonCount = clampInt(
-    config.buttonCount,
-    config.buttonCountMin,
-    config.buttonCountMax,
-    DEFAULT_CONFIG.buttonCount,
-  );
+  config.buttonCount = clampInt(config.buttonCount, 1, 8, DEFAULT_CONFIG.buttonCount);
   config.newActivationScore = clampInt(config.newActivationScore, 0, 100000, DEFAULT_CONFIG.newActivationScore);
   config.reactivationBaseScore = clampInt(config.reactivationBaseScore, 0, 100000, DEFAULT_CONFIG.reactivationBaseScore);
   config.reactivationStep = clampInt(config.reactivationStep, 0, 100000, DEFAULT_CONFIG.reactivationStep);
